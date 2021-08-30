@@ -1,0 +1,20 @@
+{
+  "registrar": {
+    "account": "SDC_REGISTRAR_ACCOUNT",
+    "signing_key": "SDC_REGISTRAR_SIGNINGKEY"
+  },
+  "server_session_secret": "SDC_SESSION_SECRETKEY",
+  "site_domain": "SDC_SITE_DOMAIN",
+  "tarantool": {
+    "host": "SDC_TARANTOOL_HOSTNAME",
+    "port": "SDC_TARANTOOL_PORT",
+    "username": "SDC_TARANTOOL_USERNAME",
+    "password": "SDC_TARANTOOL_PASSWORD"
+  },
+  "ws_connection_client": "SDC_CLIENT_WEBSOCKET_URL",
+  "ws_connection_server": "SDC_SERVER_WEBSOCKET_URL",
+  "gmail_send": {
+      "user": "SDC_GMAIL_SEND_USER",
+      "pass": "SDC_GMAIL_SEND_PASS"
+  }
+}
