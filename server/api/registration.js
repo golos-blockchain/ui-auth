@@ -2,7 +2,7 @@ const koa_router = require('koa-router');
 const koa_body = require('koa-body');
 const config = require('config');
 const Tarantool = require('../../db/tarantool');
-const { checkCSRF, getRemoteIp, rateLimitReq } = require('../utils/misc');
+const { checkCSRF, getRemoteIp, rateLimitReq, returnError } = require('../utils/misc');
 const { hash } = require('golos-classic-js/lib/auth/ecc');
 const { api } = require('golos-classic-js');
 const secureRandom = require('secure-random');
@@ -39,7 +39,7 @@ module.exports = function useRegistrationApi(app) {
         done(null, user);
     });
 
-    const router = koa_router({ prefix: '/api/v1' });
+    const router = koa_router({ prefix: '/api' });
     app.use(router.routes());
     const koaBody = koa_body();
 
@@ -55,7 +55,7 @@ module.exports = function useRegistrationApi(app) {
                 {
                     clientID: grant.key,
                     clientSecret: grant.secret,
-                    callbackURL: `${config.REST_API}/api/v1/auth/${grantId}/callback`,
+                    callbackURL: `${config.REST_API}/api/modal/${grantId}/callback`,
                     passReqToCallback: true
                 },
                 async (req, accessToken, refreshToken, params, profile, done) => {
@@ -87,8 +87,22 @@ module.exports = function useRegistrationApi(app) {
         }
     }
 
+    router.get('/get_uid', koaBody, async (ctx) => {
+        const last_visit = ctx.session.last_visit;
+        ctx.session.last_visit = new Date().getTime() / 1000 | 0;
+        if (!ctx.session.uid) {
+            ctx.session.uid = secureRandom.randomBuffer(13).toString('hex');
+            ctx.session.new_visit = true;
+        } else {
+            ctx.session.new_visit = ctx.session.last_visit - last_visit > 1800;
+        }
+        ctx.body = {
+            status: 'ok'
+        }
+    });
+
     router.post('/verify_code', koaBody, async (ctx) => {
-        if (rateLimitReq(this, ctx.req, 10)) return;
+        if (rateLimitReq(ctx, ctx.req, 10)) return;
 
         if (!ctx.request.body) {
             ctx.status = 400;
@@ -109,12 +123,10 @@ module.exports = function useRegistrationApi(app) {
             params = body;
         }
 
-        if (!checkCSRF(this, params.csrf)) return;
-
         const { confirmation_code, email } = params;
 
         console.log(
-            '-- /api/v1/verify_code -->',
+            '-- /api/verify_code -->',
             email,
             confirmation_code
         );
@@ -145,7 +157,7 @@ module.exports = function useRegistrationApi(app) {
     });
 
     router.post('/send_code', koaBody, async (ctx) => {
-        if (rateLimitReq(this, ctx.req)) return;
+        if (rateLimitReq(ctx, ctx.req)) return;
 
         if (!config.gmail_send.user || !config.gmail_send.pass) {
           ctx.status = 401;
@@ -163,8 +175,6 @@ module.exports = function useRegistrationApi(app) {
         } else {
             params = body;
         }
-
-        if (!checkCSRF(this, params.csrf)) return;
 
         const { email } = params;
 
@@ -270,7 +280,7 @@ module.exports = function useRegistrationApi(app) {
     });
 
     router.post('/use_invite', koaBody, async (ctx) => {
-        if (rateLimitReq(this, ctx.req)) return;
+        if (rateLimitReq(ctx, ctx.req)) return;
 
         const body = ctx.request.body;
         let params = {};
@@ -283,8 +293,6 @@ module.exports = function useRegistrationApi(app) {
         } else {
             params = body;
         }
-
-        if (!checkCSRF(this, params.csrf)) return;
 
         const { invite_key } = params
 
@@ -331,31 +339,33 @@ module.exports = function useRegistrationApi(app) {
         });
     });
 
-    router.get('/auth/vk', passport.authenticate('vkontakte'));
-    router.get('/auth/vk/callback', passport.authenticate('vkontakte', {
-        successRedirect: '/api/v1/auth/success',
-        failureRedirect: '/api/v1/auth/failure'
+    router.get('/modal/vk', (ctx, next) => {
+        passport.authenticate('vkontakte')(ctx, next);
+    });
+    router.get('/modal/vk/callback', passport.authenticate('vkontakte', {
+        successRedirect: '/api/modal/success',
+        failureRedirect: '/api/modal/failure'
     }));
 
-    router.get('/auth/facebook', passport.authenticate('facebook'));
-    router.get('/auth/facebook/callback', passport.authenticate('facebook', {
-        successRedirect: '/api/v1/auth/success',
-        failureRedirect: '/api/v1/auth/failure'
+    router.get('/modal/facebook', passport.authenticate('facebook'));
+    router.get('/modal/facebook/callback', passport.authenticate('facebook', {
+        successRedirect: '/api/modal/success',
+        failureRedirect: '/api/modal/failure'
     }));
 
-    router.get('/auth/mailru', passport.authenticate('mailru'));
-    router.get('/auth/mailru/callback', passport.authenticate('mailru', {
-        successRedirect: '/api/v1/auth/success',
-        failureRedirect: '/api/v1/auth/failure'
+    router.get('/modal/mailru', passport.authenticate('mailru'));
+    router.get('/modal/mailru/callback', passport.authenticate('mailru', {
+        successRedirect: '/api/modal/success',
+        failureRedirect: '/api/modal/failure'
     }));
 
-    router.get('/auth/yandex', passport.authenticate('yandex'));
-    router.get('/auth/yandex/callback', passport.authenticate('yandex', {
-        successRedirect: '/api/v1/auth/success',
-        failureRedirect: '/api/v1/auth/failure'
+    router.get('/modal/yandex', passport.authenticate('yandex'));
+    router.get('/modal/yandex/callback', passport.authenticate('yandex', {
+        successRedirect: '/api/modal/success',
+        failureRedirect: '/api/modal/failure'
     }));
 
-    router.get('/auth/failure', (ctx) => {
+    router.get('/modal/failure', (ctx) => {
         ctx.status = 200;
         ctx.statusText = 'OK';
         ctx.body = {
@@ -364,7 +374,7 @@ module.exports = function useRegistrationApi(app) {
         };
     });
 
-    router.get('/auth/success', (ctx) => {
+    router.get('/modal/success', (ctx) => {
         ctx.status = 200;
         ctx.statusText = 'OK';
         ctx.body = '<script>window.close();</script>';
