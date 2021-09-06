@@ -109,7 +109,7 @@ class CreateAccount extends React.Component {
         this.setState({
             authType
         });
-        window.open('/api/v1/auth/vk', '_blank');
+        window.open(`${getHost()}/api/modal/vk`, '_blank');
         this.useSocialLogin(authType);
     };
 
@@ -119,7 +119,7 @@ class CreateAccount extends React.Component {
         this.setState({
             authType
         });
-        window.open('/api/v1/auth/facebook', '_blank');
+        window.open(`${getHost()}/api/modal/facebook`, '_blank');
         this.useSocialLogin(authType);
     };
 
@@ -129,7 +129,7 @@ class CreateAccount extends React.Component {
         this.setState({
             authType
         });
-        window.open('/api/v1/auth/mailru', '_blank');
+        window.open(`${getHost()}/api/modal/mailru`, '_blank');
         this.useSocialLogin(authType);
     };
 
@@ -139,7 +139,7 @@ class CreateAccount extends React.Component {
         this.setState({
             authType
         });
-        window.open('/api/v1/auth/yandex', '_blank');
+        window.open(`${getHost()}/api/modal/yandex`, '_blank');
         this.useSocialLogin(authType);
     };
 
@@ -313,6 +313,7 @@ class CreateAccount extends React.Component {
                             {emailConfirmStep}
                             {showMailForm && !invite_enabled && (
                                 <div>
+                                    {fetchState.checking && <LoadingIndicator type='circle' size='20px' inline />}
                                     <p className="CreateAccount__send-code-block">
                                         <a
                                             className={cn('button', {
@@ -326,7 +327,6 @@ class CreateAccount extends React.Component {
                                         >
                                             {tt('g.continue')}
                                         </a>
-                                        {fetchState.checking && <LoadingIndicator type='circle' size='20px' inline />}
                                     </p>
                                 </div>
                             )}
@@ -678,7 +678,7 @@ class CreateAccount extends React.Component {
 
         try {
             // createAccount
-            const res = await callApi('/api/v1/accounts', {
+            const res = await callApi('/api/submit', {
                 csrf: $STM_csrf,
                 email: email != '' ? email : undefined,
                 invite_code: email == '' ? invite_code : undefined,
@@ -866,7 +866,7 @@ class CreateAccount extends React.Component {
         });
 
         try {
-            const res = await callApi('/api/v1/send_code', {
+            const res = await callApi('/api/send_code', {
                 csrf: $STM_csrf,
                 email
             });
@@ -908,7 +908,7 @@ class CreateAccount extends React.Component {
             showCheckInfo: false,
         };
 
-        const res = await callApi('/api/v1/use_invite', {
+        const res = await callApi('/api/use_invite', {
             csrf: $STM_csrf,
             invite_key: PrivateKey.fromWif(this.state.invite_code).toPublicKey().toString()
         });
@@ -932,7 +932,7 @@ class CreateAccount extends React.Component {
 
     onCheckCode = async () => {
         try {
-            const res = await callApi('/api/v1/verify_code', {
+            const res = await callApi('/api/verify_code', {
                 csrf: $STM_csrf,
                 confirmation_code: this.state.code,
                 email: this.state.email
@@ -1016,11 +1016,19 @@ class CreateAccount extends React.Component {
     };
 }
 
+function getHost() {
+    const { location, } = window;
+    if (process.env.NODE_ENV === 'development') {
+        return location.protocol + '//'+ location.hostname + ':8080';
+    }
+    return location.origin;
+}
+
 function callApi(apiName, data) {
-    return fetch(apiName, {
+    return fetch(getHost() + apiName, {
         method: 'post',
-        mode: 'no-cors',
-        credentials: 'same-origin',
+        //mode: 'no-cors',
+        credentials: 'include',
         headers: {
             Accept: 'application/json',
             'Content-type': 'application/json',

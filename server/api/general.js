@@ -2,57 +2,58 @@ const koa_router = require('koa-router');
 const koa_body = require('koa-body');
 const Tarantool = require('../../db/tarantool');
 const config = require('config');
-const {emailRegex, getRemoteIp, rateLimitReq, checkCSRF} = require('../utils/misc');
+const {emailRegex, getRemoteIp, rateLimitReq, checkCSRF, returnError} = require('../utils/misc');
 const {PublicKey, Signature, hash} = require('golos-classic-js/lib/auth/ecc');
 const {api, broadcast} = require('golos-classic-js');
 
 module.exports = function useGeneralApi(app) {
-    const router = koa_router({prefix: '/api/v1'});
+    const router = koa_router({prefix: '/api'});
     app.use(router.routes());
     const koaBody = koa_body();
 
-    router.get('/healthcheck', (ctx) => {
-        ctx.status = 200;
-        ctx.statusText = 'OK';
-        ctx.body = {status: 200, statusText: 'OK'};
+    router.get('/', (ctx) => {
+        ctx.body = {
+            status: 'ok',
+            date: new Date(),
+        };
     })
 
-    router.post('/accounts', koaBody, async (ctx) => {
-        if (rateLimitReq(this, ctx.req)) return;
+    router.post('/submit', koaBody, async (ctx) => {
+        if (rateLimitReq(ctx, ctx.req)) return;
         const params = ctx.request.body;
         const account = typeof(params) === 'string' ? JSON.parse(params) : params;
-        if (!checkCSRF(this, account.csrf)) return;
-        console.log('-- /accounts -->', ctx.session.uid, ctx.session.user, account);
+        //if (!checkCSRF(ctx, account.csrf)) return;
+        console.log('-- /submit -->', ctx.session.uid, ctx.session.user, account);
 
         const user_id = parseInt(ctx.session.user);
         if (isNaN(user_id)) { // require user to sign in with identity provider
             ctx.body = JSON.stringify({error: 'Unauthorized'});
             ctx.status = 401;
             if (ctx.session.user) {
-                console.log('-- /accounts - user_id is NaN:', user_id, account)
+                console.log('-- /submit - user_id is NaN:', user_id, account)
             }
             return;
         }
 
-        console.log('-- /accounts lock_entity');
+        console.log('-- /submit lock_entity');
 
         const lock_entity_res = await Tarantool.instance('tarantool').call('lock_entity', user_id.toString());
         if (!lock_entity_res[0][0]) {
-            console.log('-- /accounts lock_entity -->', user_id, lock_entity_res[0][0]);
+            console.log('-- /submit lock_entity -->', user_id, lock_entity_res[0][0]);
             ctx.body = JSON.stringify({error: 'Conflict'});
             ctx.status = 409;
             return;
         }
 
         try {
-            console.log('-- /accounts check user id');
+            console.log('-- /submit check user id');
 
             const user = await Tarantool.instance('tarantool').select('users', 'primary',
                 1, 0, 'eq', [user_id]);
             if (!user[0]) {
                 ctx.body = JSON.stringify({error: 'Unauthorized'});
                 ctx.status = 401;
-                console.log('-- /accounts - user_id is wrong:', user_id, account)
+                console.log('-- /submit - user_id is wrong:', user_id, account)
                 return;
             }
 
@@ -60,23 +61,23 @@ module.exports = function useGeneralApi(app) {
                 throw new Error('Only one Golos account per user is allowed in order to prevent abuse');
             }
 
-            console.log('-- /accounts check same_email_account');
+            console.log('-- /submit check same_email_account');
 
             if (user[0][2] === 'email') {
                 const emailHash = user[0][3];
                 const existing_email = await Tarantool.instance('tarantool').select('users', 'by_verify_registered',
                     1, 0, 'eq', ['email', emailHash, true]);
                 if (existing_email[0]) {
-                    console.log('-- /accounts existing_email error -->',
+                    console.log('-- /submit existing_email error -->',
                         ctx.session.user, ctx.session.uid,
                         emailHash, existing_email[0][0]
                     );
-                    console.log(`api /accounts: existing_same-email account ${ctx.session.uid} #${user_id}, IP ${remote_ip}`);
+                    console.log(`api /submit: existing_same-email account ${ctx.session.uid} #${user_id}, IP ${remote_ip}`);
                     throw new Error('Account with such email already registered');
                 }
             }
 
-            console.log('-- /accounts check same_ip_account');
+            console.log('-- /submit check same_ip_account');
 
             const remote_ip = getRemoteIp(ctx.req);
             const same_ip_account = await Tarantool.instance('tarantool').select('accounts', 'by_remote_ip',
@@ -86,7 +87,7 @@ module.exports = function useGeneralApi(app) {
                 const minSeconds = process.env.REGISTER_INTERVAL_SEC || 10*60;
                 if (seconds < minSeconds) {
                     const minMinutes = Math.ceil(minSeconds / 60);
-                    console.log(`api /accounts: IP rate limit for user ${ctx.session.uid} #${user_id}, IP ${remote_ip}`);
+                    console.log(`api /submit: IP rate limit for user ${ctx.session.uid} #${user_id}, IP ${remote_ip}`);
                     throw new Error('Only one Golos account allowed per IP address every ' + minMinutes + ' minutes');
                 }
             }
@@ -96,33 +97,33 @@ module.exports = function useGeneralApi(app) {
             let mid;
             if (account.invite_code && !ctx.session.soc_id) {
                 if (!user[0][4]) {
-                    console.log(`api /accounts: try to skip use_invite step by user ${ctx.session.uid} #${user_id}`);
+                    console.log(`api /submit: try to skip use_invite step by user ${ctx.session.uid} #${user_id}`);
                     throw new Error('Not passed entering use_invite step');
                 }
                 else {
-                  console.log(`api /accounts: found use_invite step for user ${ctx.session.uid} #${user_id}`)
+                  console.log(`api /submit: found use_invite step for user ${ctx.session.uid} #${user_id}`)
                 }
             } else if (ctx.session.soc_id && ctx.session.soc_id_type) {
                 if (!user[0][4]) {
-                    console.log(`api /accounts: not authorized with social site for user ${ctx.session.uid} #${user_id}`);
+                    console.log(`api /submit: not authorized with social site for user ${ctx.session.uid} #${user_id}`);
                     throw new Error('Not authorized with social site');
                 }
                 else {
-                  console.log(`api /accounts: is authorized with social site for user ${ctx.session.uid} #${user_id}`)
+                  console.log(`api /submit: is authorized with social site for user ${ctx.session.uid} #${user_id}`)
                 }
                 json_metadata = {[ctx.session.soc_id_type]: ctx.session.soc_id};
                 json_metadata = JSON.stringify(json_metadata);
             } else {
                 if (!user[0][4]) {
-                    console.log(`api /accounts: not confirmed e-mail for user ${ctx.session.uid} #${user_id}`);
+                    console.log(`api /submit: not confirmed e-mail for user ${ctx.session.uid} #${user_id}`);
                     throw new Error('E-mail is not confirmed');
                 }
                 else {
-                  console.log(`api /accounts: is confirmed e-mail for user ${ctx.session.uid} #${user_id}`)
+                  console.log(`api /submit: is confirmed e-mail for user ${ctx.session.uid} #${user_id}`)
                 }
             }
 
-            console.log('-- /accounts creating account');
+            console.log('-- /submit creating account');
 
             const [fee_value, fee_currency] = config.get('registrar.fee').split(' ');
             const delegation = config.get('registrar.delegation')
@@ -136,7 +137,7 @@ module.exports = function useGeneralApi(app) {
                 const chain_fee = parseFloat(chain_properties.account_creation_fee);
                 if (chain_fee && chain_fee > fee) {
                     if (fee / chain_fee > 0.5) { // just a sanity check - chain fee shouldn't be a way larger
-                        console.log('-- /accounts warning: chain_fee is larger than config fee -->', ctx.session.uid, fee, chain_fee);
+                        console.log('-- /submit warning: chain_fee is larger than config fee -->', ctx.session.uid, fee, chain_fee);
                         fee = chain_fee;
                     }
                 }
@@ -144,7 +145,7 @@ module.exports = function useGeneralApi(app) {
                 max_referral_term_sec = chain_properties.max_referral_term_sec;
                 max_referral_break_fee = chain_properties.max_referral_break_fee;
             } catch (error) {
-                console.error('Error in /accounts get_chain_properties', error);
+                console.error('Error in /submit get_chain_properties', error);
             }
 
             const dgp = await api.getDynamicGlobalPropertiesAsync();
@@ -196,21 +197,20 @@ module.exports = function useGeneralApi(app) {
 
             ctx.body = JSON.stringify({status: 'ok'});
         } catch (error) {
-            console.error('Error in /accounts api call', ctx.session.uid, error.toString());
+            console.error('Error in /submit api call', ctx.session.uid, error.toString());
             ctx.body = JSON.stringify({error: error.message});
             ctx.status = 500;
         } finally {
-            // console.log('-- /accounts unlock_entity -->', user_id);
+            // console.log('-- /submit unlock_entity -->', user_id);
             await Tarantool.instance('tarantool').call('unlock_entity', user_id.toString());
         }
-        recordWebEvent(this, 'api/accounts', account ? account.name : 'n/a');
     });
 }
 
 /**
  @arg signingKey {string|PrivateKey} - WIF or PrivateKey object
  */
-module.exports.createAccount = async function createAccount({
+var createAccount = async function createAccount({
     signingKey, fee, creator, new_account_name, json_metadata = '',
     owner, active, posting, memo, delegation, extensions, invite_secret = ''
 }) {

@@ -3593,7 +3593,7 @@ co-body@^5.1.1:
     raw-body "^2.2.0"
     type-is "^1.6.14"
 
-co@^4.4.0, co@^4.6.0:
+co@^4.6.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"
   integrity sha1-bqa989hTrlTMuOR7+gvz+QMfsYQ=
@@ -7693,13 +7693,12 @@ koa-mount@^1.3.0:
     debug "^3.2.5"
     koa-compose "^2.2.0"
 
-koa-passport@^1.0.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/koa-passport/-/koa-passport-1.4.0.tgz#7b432e4ee10886cc14356c0dae12df06af8f31ed"
-  integrity sha1-e0MuTuEIhswUNWwNrhLfBq+PMe0=
+koa-passport@^4.1.4:
+  version "4.1.4"
+  resolved "https://registry.yarnpkg.com/koa-passport/-/koa-passport-4.1.4.tgz#5f1665c1c2a37ace79af9f970b770885ca30ccfa"
+  integrity sha512-dJBCkl4X+zdYxbI2V2OtoGy0PUenpvp2ZLLWObc8UJhsId0iQpTFT8RVcuA0709AL2txGwRHnSPoT1bYNGa6Kg==
   dependencies:
-    co "^4.4.0"
-    passport "^0.3.0"
+    passport "^0.4.0"
 
 koa-router@^10.0.0:
   version "10.1.1"
@@ -9203,10 +9202,10 @@ passport-yandex@^0.0.5:
     passport-oauth "1.0.x"
     pkginfo "0.3.x"
 
-passport@^0.3.0:
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/passport/-/passport-0.3.2.tgz#9dd009f915e8fe095b0124a01b8f82da07510102"
-  integrity sha1-ndAJ+RXo/glbASSgG4+C2gdRAQI=
+passport@^0.4.0:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/passport/-/passport-0.4.1.tgz#941446a21cb92fc688d97a0861c38ce9f738f270"
+  integrity sha512-IxXgZZs8d7uFSt3eqNjM9NQ3g3uQCW5avD8mRNoXV99Yig50vjuaez6dQK2qC0kVWPRTujxY0dWgGfT09adjYg==
   dependencies:
     passport-strategy "1.x.x"
     pause "0.0.1"

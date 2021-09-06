@@ -4,5 +4,15 @@
 @include foundation-everything(true);
 
 @import "./components/elements/GeneratedPasswordInput";
+@import "./components/elements/LoadingIndicator";
 
 @import "./foundation-overrides";
+
+@keyframes loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

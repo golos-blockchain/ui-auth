@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const golos = require('golos-classic-js');
 const Koa = require('koa');
 const mount = require('koa-mount');
 //const koa_logger = require('koa-logger');
@@ -8,19 +9,30 @@ const mount = require('koa-mount');
 const static = require('koa-static');
 const useGeneralApi = require('./api/general');
 const useRegistrationApi = require('./api/registration');
+const useUtilsApi = require('./api/utils');
 //const isBot = require('koa-isbot');
 const session = require('./utils/cryptoSession');
 const csrf = require('koa-csrf');
+const cors = require('koa-cors');
 const config = require('config');
-const secureRandom = require('secure-random');
 
 console.log('application server starting, please wait.');
+
+golos.config.set('websocket', config.get('ws_connection_server') || 'https://api.golos.id');
+const CHAIN_ID = config.get('chain_id');
+if (CHAIN_ID) {
+    golos.config.set('chain_id', CHAIN_ID);
+}
 
 const app = new Koa();
 app.name = 'Golos Register app';
 const env = process.env.NODE_ENV || 'development';
 // cache of a thousand days
 const cacheOpts = { maxage: 86400000, gzip: true };
+
+app.use(cors({ credentials: true,
+    expose: ['X-Session', 'Retry-After'],
+}));
 
 app.keys = [config.get('session_key')];
 
@@ -48,24 +60,9 @@ if (env === 'production') {
     app.use(koa_logger());
 }*/
 
-// set user's uid - used to identify users in logs and some other places
-// FIXME SECURITY PRIVACY cycle this uid after a period of time
-/*app.use(function*(next) {
-    if (! /(\.js(on)?|\.css|\.map|\.ico|\.png|\.jpe?g)$/.test(this.url)) {
-        const last_visit = this.session.last_visit;
-        this.session.last_visit = new Date().getTime() / 1000 | 0;
-        if (!this.session.uid) {
-            this.session.uid = secureRandom.randomBuffer(13).toString('hex');
-            this.session.new_visit = true;
-        } else {
-            this.session.new_visit = this.session.last_visit - last_visit > 1800;
-        }
-    }
-    yield next;
-});*/
-
 useRegistrationApi(app);
 useGeneralApi(app);
+useUtilsApi(app);
 
 //app.use(favicon(path.join(__dirname, '../app/assets/images/favicons/favicon.ico')));
 //app.use(mount('/favicons', staticCache(path.join(__dirname, '../app/assets/images/favicons'), cacheOpts)));

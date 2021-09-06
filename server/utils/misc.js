@@ -37,6 +37,12 @@ function rateLimitReq(ctx, req, limit, suffix) {
     return result;
 }
 
+async function slowDownLimitReq(ctx, req, limit, slowDown, suffix) {
+    if (rateLimitReq(ctx, req, limit, suffix)) {
+        await new Promise(resolve => setTimeout(resolve, slowDown*1000));
+    }
+}
+
 function checkCSRF(ctx, csrf) {
     try { ctx.assertCSRF(csrf); } catch (e) {
         ctx.status = 403;
@@ -47,9 +53,16 @@ function checkCSRF(ctx, csrf) {
     return true;
 }
 
+const returnError = (ctx, error) => {
+    ctx.status = 400;
+    ctx.body = {status: 'err', error: error};
+};
+
 module.exports = {
     emailRegex,
     getRemoteIp,
     rateLimitReq,
-    checkCSRF
+    slowDownLimitReq,
+    checkCSRF,
+    returnError,
 };
