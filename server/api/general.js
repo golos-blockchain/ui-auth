@@ -5,6 +5,8 @@ const config = require('config');
 const {emailRegex, getRemoteIp, rateLimitReq, checkCSRF, returnError} = require('../utils/misc');
 const {PublicKey, Signature, hash} = require('golos-classic-js/lib/auth/ecc');
 const {api, broadcast} = require('golos-classic-js');
+const axios = require('axios');
+const querystring = require('querystring');
 
 module.exports = function useGeneralApi(app) {
     const router = koa_router({prefix: '/api'});
@@ -22,6 +24,7 @@ module.exports = function useGeneralApi(app) {
         if (rateLimitReq(ctx, ctx.req)) return;
         const params = ctx.request.body;
         const account = typeof(params) === 'string' ? JSON.parse(params) : params;
+
         //if (!checkCSRF(ctx, account.csrf)) return;
         console.log('-- /submit -->', ctx.session.uid, ctx.session.user, account);
 
@@ -33,6 +36,25 @@ module.exports = function useGeneralApi(app) {
                 console.log('-- /submit - user_id is NaN:', user_id, account)
             }
             return;
+        }
+
+        let captcha = config.get('captcha');
+        if (captcha) {
+            let recaptcha_v2 = captcha.get('recaptcha_v2');
+            if (recaptcha_v2.get('enabled')) {
+                const secret_key = recaptcha_v2.get('secret_key');
+
+                const res = await axios.post('https://www.google.com/recaptcha/api/siteverify',
+                    querystring.stringify({
+                        secret: secret_key,
+                        response: account.recaptcha_v2,
+                    }));
+                if (!res.data.success) {
+                    console.error('-- /submit: try to register without ReCaptcha v2 solving, data:', res.data, ', user-id:', user_id, ', form fields:', account);
+                    ctx.status = 403;
+                    return returnError(ctx, 'Captcha failed: ' + JSON.stringify(res.data['error-codes']));
+                }
+            }
         }
 
         console.log('-- /submit lock_entity');

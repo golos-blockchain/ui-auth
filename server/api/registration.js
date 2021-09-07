@@ -96,8 +96,35 @@ module.exports = function useRegistrationApi(app) {
         } else {
             ctx.session.new_visit = ctx.session.last_visit - last_visit > 1800;
         }
+
+        let cfg = {};
+
+        cfg.captcha = {};
+        let captcha = config.get('captcha');
+        if (captcha) {
+            let recaptcha_v2 = captcha.get('recaptcha_v2');
+            if (recaptcha_v2) {
+                cfg.captcha['recaptcha_v2'] = {};
+                cfg.captcha['recaptcha_v2'].enabled = recaptcha_v2.get('enabled');
+                if (recaptcha_v2.get('enabled')) {
+                    cfg.captcha['recaptcha_v2'].site_key = recaptcha_v2.get('site_key');
+
+                    if (!cfg.captcha['recaptcha_v2'].site_key) {
+                        console.error('Captcha ERROR: recaptcha_v2 has wrong site_key in config!');
+                    }
+                } else {
+                    console.error('Captcha ERROR: recaptcha_v2 is disabled in config!');
+                }
+            } else {
+                console.error('Captcha ERROR: recaptcha_v2 is absent in config!');
+            }
+        } else {
+            console.error('Captcha ERROR: captcha is absent in config!');
+        }
+
         ctx.body = {
-            status: 'ok'
+            status: 'ok',
+            config: cfg,
         }
     });
 

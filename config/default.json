@@ -18,6 +18,13 @@
       "secret": "ca10592646784980a11179cc72146344"
     }
   },
+  "captcha": {
+    "recaptcha_v2": {
+      "enabled": true,
+      "site_key": "6LcDa08cAAAAAA7fZTpQ-7muLyqam8ui3U62S2Lh",
+      "secret_key": "6LcDa08cAAAAAME702LXqy3u7lq0zDn-3-W9nudS"
+    }
+  },
   "read_only_mode": false,
   "registrar": {
     "account": "cyberfounder",

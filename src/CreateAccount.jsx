@@ -2,8 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import tt from 'counterpart';
 import cn from 'classnames';
-import { api } from 'golos-classic-js';
 import { PrivateKey } from 'golos-classic-js/lib/auth/ecc';
+import ReCAPTCHA from 'react-google-recaptcha';
 import LoadingIndicator from './components/elements/LoadingIndicator';
 import Tooltip from './components/elements/Tooltip';
 import validate_account_name from './validate_account_name';
@@ -50,6 +50,7 @@ class CreateAccount extends React.Component {
         inviteError: '',
         codeError: '',
         codeHint: '',
+        recaptcha_v2: '',
         serverError: '',
         submitting: false,
         cryptographyFailure: false,
@@ -59,7 +60,7 @@ class CreateAccount extends React.Component {
         showHowMuchHelp: false,
     };
 
-    componentDidMount() {
+    async componentDidMount() {
         const cryptoTestResult = undefined;
         if (cryptoTestResult !== undefined) {
             console.error(
@@ -82,6 +83,13 @@ class CreateAccount extends React.Component {
                 });
             }
         }
+
+        const res = await callApi(`/api/get_uid`);
+        const data = await res.json();
+        this.setState({
+            loaded: true,
+            config: data.config,
+        });
     }
 
     componentWillUnmount() {
@@ -144,13 +152,13 @@ class CreateAccount extends React.Component {
     };
 
     render() {
-        /*if (!process.env.BROWSER) {
+        if (!this.state.loaded) {
             return (
-                <div className="row">
-                    <div className="column">{tt('g.loading')}...</div>
+                <div className='row'>
+                    <div className='column'>{tt('g.loading')}...</div>
                 </div>
             );
-        }*/
+        }
 
         const { loggedIn, offchainUser, serverBusy } = this.props;
         const {
@@ -213,21 +221,21 @@ class CreateAccount extends React.Component {
         if (serverError) {
             if (serverError === 'Email address is not confirmed') {
                 nextStep = (
-                    <div className="callout alert">
-                        <a href="/enter_email">{tt('tips_js.confirm_email')}</a>
+                    <div className='callout alert'>
+                        <a href='/enter_email'>{tt('tips_js.confirm_email')}</a>
                     </div>
                 );
             } else if (serverError === 'Phone number is not confirmed') {
                 nextStep = (
-                    <div className="callout alert">
-                        <a href="/enter_mobile">
+                    <div className='callout alert'>
+                        <a href='/enter_mobile'>
                             {tt('tips_js.confirm_phone')}
                         </a>
                     </div>
                 );
             } else {
                 nextStep = (
-                    <div className="callout alert">
+                    <div className='callout alert'>
                         <strong>
                             {tt(
                                 'createaccount_jsx.couldnt_create_account_server_returned_error'
@@ -255,22 +263,22 @@ class CreateAccount extends React.Component {
 
         return (
             <div>
-                <div className="CreateAccount row">
+                <div className='CreateAccount row'>
                     <div
-                        className="column"
+                        className='column'
                         style={{ maxWidth: '36rem', margin: '0 auto' }}
                     >
                         <h2>{tt('g.sign_up')}</h2>
-                        <p className="CreateAccount__account-name-hint">
+                        <p className='CreateAccount__account-name-hint'>
                             <img src='/icons/info_o.svg' width='20' height='20' />
-                            Возникли сложности? Напишите в <a target="_blank" href="https://t.me/goloshelp">телеграм-чат</a> или на <a href={'mailto:' + SUPPORT_EMAIL}>{SUPPORT_EMAIL}</a>
+                            Возникли сложности? Напишите в <a target='_blank' href='https://t.me/goloshelp'>телеграм-чат</a> или на <a href={'mailto:' + SUPPORT_EMAIL}>{SUPPORT_EMAIL}</a>
                         </p>
                         <hr />
                         <form
                             onSubmit={this._onSubmit}
-                            autoComplete="off"
+                            autoComplete='off'
                             noValidate
-                            method="post"
+                            method='post'
                         >
                             {(showMailForm || invite_enabled) && (
                                 <div>
@@ -288,11 +296,11 @@ class CreateAccount extends React.Component {
                                             <span style={{ color: 'red' }}>
                                                 *
                                             </span>{' '}
-                                            {'Введите вашу Gmail-почту'} (создать <a target="_blank" href="https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp">по ссылке</a>) 
+                                            {'Введите вашу Gmail-почту'} (создать <a target='_blank' href='https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp'>по ссылке</a>) 
                                             <input
-                                                type="text"
-                                                name="email"
-                                                autoComplete="off"
+                                                type='text'
+                                                name='email'
+                                                autoComplete='off'
                                                 disabled={fetchState.checking}
                                                 onChange={this.onEmailChange}
                                                 value={email}
@@ -314,7 +322,7 @@ class CreateAccount extends React.Component {
                             {showMailForm && !invite_enabled && (
                                 <div>
                                     {fetchState.checking && <LoadingIndicator type='circle' size='20px' inline />}
-                                    <p className="CreateAccount__send-code-block">
+                                    <p className='CreateAccount__send-code-block'>
                                         <a
                                             className={cn('button', {
                                                 disabled: disableGetCode,
@@ -356,19 +364,19 @@ class CreateAccount extends React.Component {
                                 <label>
                                     {tt('createaccount_jsx.enter_account_name')}
 
-                                    <div className="input-group">
+                                    <div className='input-group'>
                                         <input
-                                            className="input-group-field"
-                                            type="text"
-                                            name="name"
-                                            autoComplete="off"
+                                            className='input-group-field'
+                                            type='text'
+                                            name='name'
+                                            autoComplete='off'
                                             disabled={!okStatus}
                                             onChange={this.onNameChange}
                                             value={name}
                                         />
                                     </div>
 
-                                    <div className="CreateAccount__account-name-hint">
+                                    <div className='CreateAccount__account-name-hint'>
                                         {tt(
                                             'createaccount_jsx.account_name_hint'
                                         )}
@@ -383,10 +391,11 @@ class CreateAccount extends React.Component {
                                     name.length > 0 && !nameError
                                 }
                             />
+                            {this._renderCaptcha()}
                             <br />
                             {nextStep}
                             <noscript>
-                                <div className="callout alert">
+                                <div className='callout alert'>
                                     <p>
                                         {tt(
                                             'createaccount_jsx.form_requires_javascript_to_be_enabled'
@@ -414,9 +423,9 @@ class CreateAccount extends React.Component {
         const APP_NAME = tt('g.APP_NAME');
 
         return (
-            <div className="row">
-                <div className="column">
-                    <div className="callout alert">
+            <div className='row'>
+                <div className='column'>
+                    <div className='callout alert'>
                         <p>
                             {tt(
                                 'createaccount_jsx.our_records_indicate_you_already_have_account',
@@ -433,7 +442,7 @@ class CreateAccount extends React.Component {
                             {tt(
                                 'createaccount_jsx.next_3_blocks.you_can_either'
                             ) + ' '}
-                            <a href="/login.html">{tt('g.login')}</a>
+                            <a href='/login.html'>{tt('g.login')}</a>
                             {tt(
                                 'createaccount_jsx.next_3_blocks.to_your_existing_account_or'
                             ) + ' '}
@@ -455,13 +464,13 @@ class CreateAccount extends React.Component {
         const { country, codeError, codeHint, fetchState, iSent, showHowMuchHelp } = this.state;
 
         return (
-            <div className="callout">
-                <div className="CreateAccount__confirm-email-block">
+            <div className='callout'>
+                <div className='CreateAccount__confirm-email-block'>
                     {'Введите проверочный код отправленный на вашу почту'}
                     <input
-                        type="email"
-                        name="email"
-                        autoComplete="off"
+                        type='email'
+                        name='email'
+                        autoComplete='off'
                         onChange={this.onCodeChange}
                     />
                 </div>
@@ -497,9 +506,9 @@ class CreateAccount extends React.Component {
 
     _renderInvitationError() {
         return (
-            <div className="row">
-                <div className="column">
-                    <div className="callout alert">
+            <div className='row'>
+                <div className='column'>
+                    <div className='callout alert'>
                         <p>Registration is disabled for a while. </p>
                     </div>
                 </div>
@@ -511,12 +520,12 @@ class CreateAccount extends React.Component {
         const APP_NAME = tt('g.APP_NAME');
 
         return (
-            <div className="row">
-                <div className="column">
-                    <div className="callout alert">
+            <div className='row'>
+                <div className='column'>
+                    <div className='callout alert'>
                         <p>
                             {tt('createaccount_jsx.you_need_to')}
-                            <a href="#" onClick={this._onLogoutClick}>
+                            <a href='#' onClick={this._onLogoutClick}>
                                 {tt('g.logout')}
                             </a>
                             {tt('createaccount_jsx.before_creating_account')}
@@ -537,9 +546,9 @@ class CreateAccount extends React.Component {
         const APP_NAME = tt('g.APP_NAME');
 
         return (
-            <div className="row">
-                <div className="column">
-                    <div className="callout alert">
+            <div className='row'>
+                <div className='column'>
+                    <div className='callout alert'>
                         <h4>
                             {tt('createaccount_jsx.ctyptography_test_failed')}
                         </h4>
@@ -551,9 +560,9 @@ class CreateAccount extends React.Component {
                         </p>
                         <p>
                             {tt('loginform_jsx.the_latest_versions_of') + ' '}
-                            <a href="https://www.google.com/chrome/">Chrome</a>
+                            <a href='https://www.google.com/chrome/'>Chrome</a>
                             {' ' + tt('g.and')}
-                            <a href="https://www.mozilla.org/en-US/firefox/new/">
+                            <a href='https://www.mozilla.org/en-US/firefox/new/'>
                                 Firefox
                             </a>
                             {' ' +
@@ -570,7 +579,7 @@ class CreateAccount extends React.Component {
 
     _renderCheckInfo() {
         return (
-            <p className="CreateAccount__check-info">
+            <p className='CreateAccount__check-info'>
                 {tt('createaccount_jsx.check_code')}{' '}
                 <a href={'mailto:' + SUPPORT_EMAIL}>{SUPPORT_EMAIL}</a>.
             </p>
@@ -579,7 +588,7 @@ class CreateAccount extends React.Component {
 
     _renderSocialButtons() {
         return (
-            <div align="center">
+            <div align='center'>
                 {!this.state.authType && tt('createaccount_jsx.or_use_socsite')}<br/>
                 <Tooltip t='VK'>
                     <span onClick={this.useVk} style={{cursor: 'pointer', marginRight: '5px' }}>
@@ -620,9 +629,9 @@ class CreateAccount extends React.Component {
                 {required ? ' ' : null}
                 {tt(required ? 'createaccount_jsx.enter_invite_code' : 'createaccount_jsx.enter_invite_code_optional')}
                 <input
-                    type="text"
-                    name="invite_code"
-                    autoComplete="off"
+                    type='text'
+                    name='invite_code'
+                    autoComplete='off'
                     disabled={required ? fetchState.checking : false}
                     onChange={this.onInviteCodeChange}
                     value={invite_code}
@@ -639,6 +648,30 @@ class CreateAccount extends React.Component {
         );
     }
 
+    _onRecaptchaChange = (value) => {
+        console.log('Captcha value:', value);
+        this.setState({
+            recaptcha_v2: value,
+        });
+    };
+
+    _renderCaptcha = () => {
+        if (!this.state.config)
+            return null;
+        const { captcha } = this.state.config;
+        if (!captcha.recaptcha_v2 || !captcha.recaptcha_v2.enabled) {
+            console.warn('captcha.recaptcha_v2 is disabled');
+            return;
+        }
+        if (!captcha.recaptcha_v2.site_key) {
+            console.warn('captcha.recaptcha_v2 has no site_key');
+            return;
+        }
+        return (<ReCAPTCHA
+            sitekey={captcha.recaptcha_v2.site_key}
+            onChange={this._onRecaptchaChange} />);
+    };
+
     _onHowMuchClick = () => {
         this.setState({
             showHowMuchHelp: !this.state.showHowMuchHelp,
@@ -654,7 +687,7 @@ class CreateAccount extends React.Component {
     _onSubmit = async e => {
         e.preventDefault();
         this.setState({ serverError: '', submitting: true });
-        const { email, invite_code, name, password, passwordValid, referrer } = this.state;
+        const { email, invite_code, name, password, passwordValid, referrer, recaptcha_v2, } = this.state;
         if (!name || !password || !passwordValid) return;
 
         let publicKeys;
@@ -688,6 +721,7 @@ class CreateAccount extends React.Component {
                 posting_key: publicKeys[2],
                 memo_key: publicKeys[3],
                 referrer,
+                recaptcha_v2,
             });
 
             const data = await res.json();
@@ -700,7 +734,8 @@ class CreateAccount extends React.Component {
                 });
             } else {
                 keyFile.save();
-                window.location = `/login.html#account=${name}&msg=accountcreated`;
+                window.location = 'https://golos.id';
+                //window.location = `/login.html#account=${name}&msg=accountcreated`;
             }
         } catch (err) {
             console.error('Caught CreateAccount server error', err);
@@ -767,14 +802,17 @@ class CreateAccount extends React.Component {
                 inviteError = tt('invites_jsx.claim_wrong_secret');
             }
             if (pk) try {
-                const res = await api.getInvite(pk.toPublicKey().toString());
+                const res = await callApi(`/api/utils/get_invite/${pk.toPublicKey().toString()}`);
 
-                if (!res) {
+                let data = await res.json();
+                if (data.invite) {
+                    inviteHint = tt(
+                        'createaccount_jsx.invite_new_account_will_receive',
+                        {amount: formatAsset(data.invite.balance, true, false, '')});
+                } else {
                     inviteError = tt(
                         'invites_jsx.claim_wrong_secret_fatal'
                     );
-                } else {
-                    inviteHint = tt('createaccount_jsx.invite_new_account_will_receive', {amount: formatAsset(res.balance, true, false, '')});
                 }
             } catch (err) {
                 inviteError = tt('invites_jsx.claim_wrong_secret_cannot_fetch');
@@ -968,9 +1006,10 @@ class CreateAccount extends React.Component {
 
             if (!nameError) {
                 try {
-                    const res = await api.getAccountsAsync([name]);
+                    const res = await callApi(`/api/utils/account_exists/${name}`);
 
-                    if (res && res.length > 0) {
+                    let data = await res.json();
+                    if (data.exists) {
                         nameError = tt(
                             'createaccount_jsx.account_name_already_used'
                         );
@@ -1026,14 +1065,14 @@ function getHost() {
 
 function callApi(apiName, data) {
     return fetch(getHost() + apiName, {
-        method: 'post',
+        method: data ? 'post' : 'get',
         //mode: 'no-cors',
         credentials: 'include',
         headers: {
             Accept: 'application/json',
-            'Content-type': 'application/json',
+            'Content-type': data ? 'application/json' : undefined,
         },
-        body: JSON.stringify(data),
+        body: data ? JSON.stringify(data) : undefined,
     });
 }
 
