@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import tt from 'counterpart';
 import cn from 'classnames';
 import { PrivateKey } from 'golos-classic-js/lib/auth/ecc';
+import ReCAPTCHA from 'react-google-recaptcha';
 import LoadingIndicator from './components/elements/LoadingIndicator';
 import Tooltip from './components/elements/Tooltip';
 import validate_account_name from './validate_account_name';
@@ -49,6 +50,7 @@ class CreateAccount extends React.Component {
         inviteError: '',
         codeError: '',
         codeHint: '',
+        recaptcha_v2: '',
         serverError: '',
         submitting: false,
         cryptographyFailure: false,
@@ -82,9 +84,11 @@ class CreateAccount extends React.Component {
             }
         }
 
-        await callApi(`/api/get_uid`);
+        const res = await callApi(`/api/get_uid`);
+        const data = await res.json();
         this.setState({
             loaded: true,
+            config: data.config,
         });
     }
 
@@ -387,6 +391,7 @@ class CreateAccount extends React.Component {
                                     name.length > 0 && !nameError
                                 }
                             />
+                            {this._renderCaptcha()}
                             <br />
                             {nextStep}
                             <noscript>
@@ -643,6 +648,30 @@ class CreateAccount extends React.Component {
         );
     }
 
+    _onRecaptchaChange = (value) => {
+        console.log('Captcha value:', value);
+        this.setState({
+            recaptcha_v2: value,
+        });
+    };
+
+    _renderCaptcha = () => {
+        if (!this.state.config)
+            return null;
+        const { captcha } = this.state.config;
+        if (!captcha.recaptcha_v2 || !captcha.recaptcha_v2.enabled) {
+            console.warn('captcha.recaptcha_v2 is disabled');
+            return;
+        }
+        if (!captcha.recaptcha_v2.site_key) {
+            console.warn('captcha.recaptcha_v2 has no site_key');
+            return;
+        }
+        return (<ReCAPTCHA
+            sitekey={captcha.recaptcha_v2.site_key}
+            onChange={this._onRecaptchaChange} />);
+    };
+
     _onHowMuchClick = () => {
         this.setState({
             showHowMuchHelp: !this.state.showHowMuchHelp,
@@ -658,7 +687,7 @@ class CreateAccount extends React.Component {
     _onSubmit = async e => {
         e.preventDefault();
         this.setState({ serverError: '', submitting: true });
-        const { email, invite_code, name, password, passwordValid, referrer } = this.state;
+        const { email, invite_code, name, password, passwordValid, referrer, recaptcha_v2, } = this.state;
         if (!name || !password || !passwordValid) return;
 
         let publicKeys;
@@ -692,6 +721,7 @@ class CreateAccount extends React.Component {
                 posting_key: publicKeys[2],
                 memo_key: publicKeys[3],
                 referrer,
+                recaptcha_v2,
             });
 
             const data = await res.json();
