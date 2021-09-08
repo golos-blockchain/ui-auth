@@ -10,6 +10,7 @@ const static = require('koa-static');
 const useGeneralApi = require('./api/general');
 const useRegistrationApi = require('./api/registration');
 const useUtilsApi = require('./api/utils');
+const useAuthApi = require('./api/auth');
 //const isBot = require('koa-isbot');
 const session = require('./utils/cryptoSession');
 const csrf = require('koa-csrf');
@@ -31,7 +32,7 @@ const env = process.env.NODE_ENV || 'development';
 const cacheOpts = { maxage: 86400000, gzip: true };
 
 app.use(cors({ credentials: true,
-    expose: ['X-Session', 'Retry-After'],
+    expose: ['X-Auth-Session', 'Retry-After'],
 }));
 
 app.keys = [config.get('session_key')];
@@ -63,6 +64,7 @@ if (env === 'production') {
 useRegistrationApi(app);
 useGeneralApi(app);
 useUtilsApi(app);
+useAuthApi(app);
 
 //app.use(favicon(path.join(__dirname, '../app/assets/images/favicons/favicon.ico')));
 //app.use(mount('/favicons', staticCache(path.join(__dirname, '../app/assets/images/favicons'), cacheOpts)));

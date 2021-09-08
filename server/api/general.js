@@ -20,7 +20,7 @@ module.exports = function useGeneralApi(app) {
         };
     })
 
-    router.post('/submit', koaBody, async (ctx) => {
+    router.post('/reg/submit', koaBody, async (ctx) => {
         if (rateLimitReq(ctx, ctx.req)) return;
         const params = ctx.request.body;
         const account = typeof(params) === 'string' ? JSON.parse(params) : params;

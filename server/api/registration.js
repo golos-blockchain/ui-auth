@@ -39,7 +39,7 @@ module.exports = function useRegistrationApi(app) {
         done(null, user);
     });
 
-    const router = koa_router({ prefix: '/api' });
+    const router = koa_router({ prefix: '/api/reg' });
     app.use(router.routes());
     const koaBody = koa_body();
 
@@ -49,7 +49,7 @@ module.exports = function useRegistrationApi(app) {
     };
     for (const [grantId, grant] of Object.entries(config.grant)) {
         const strategy = strategies[grantId];
-        if (!strategy) continue;
+        if (!strategy || !grant.enabled) continue;
         try {
             passport.use(new strategy(
                 {
@@ -405,5 +405,11 @@ module.exports = function useRegistrationApi(app) {
         ctx.status = 200;
         ctx.statusText = 'OK';
         ctx.body = '<script>window.close();</script>';
+    });
+
+    router.get('/check_soc_auth', (ctx) => {
+        ctx.body = {
+            soc_id_type: ctx.session.soc_id_type || null,
+        };
     });
 }

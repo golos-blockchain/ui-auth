@@ -84,7 +84,7 @@ class CreateAccount extends React.Component {
             }
         }
 
-        const res = await callApi(`/api/get_uid`);
+        const res = await callApi(`/api/reg/get_uid`);
         const data = await res.json();
         this.setState({
             loaded: true,
@@ -97,13 +97,48 @@ class CreateAccount extends React.Component {
         clearTimeout(this._waitTimeout);
     }
 
+    checkSocAuth = async (event) => {
+        console.log('checkSocAuth');
+        window.addEventListener('focus', this.checkSocAuth, {once: true});
+
+        const response = await callApi('/api/reg/check_soc_auth');
+        if (response.ok) {
+            const result = await response.json();
+            if (result.soc_id_type) {
+                window.removeEventListener('focus', this.checkSocAuth);
+                this.useSocialLogin(result.soc_id_type);
+            } else if (!event) {
+                setTimeout(this.checkSocAuth, 5000);
+            } else {
+                console.log('checkSocAuth event from focus');
+            }
+        }
+    };
+
+    startSocialLoading = (socName) => {
+        let fetchState = {
+            checking: true,
+            success: true,
+            status: 'done',
+            message: (<div>
+                <LoadingIndicator type='circle' size='20px' inline />
+                {tt('createaccount_jsx.authorizing_with') + socName + '...'}
+                {this._renderSocialButtons()}
+            </div>),
+            showCheckInfo: false,
+        };
+        this.setState({ fetchState, email: '', invite_enabled: false });
+
+        this.checkSocAuth();
+    };
+
     useSocialLogin = (socName) => {
         let fetchState = {
             checking: true,
             success: true,
             status: 'done',
             message: (<div>
-                {tt('createaccount_jsx.authorized_with_') + socName + '.'}
+                {tt('createaccount_jsx.authorized_with_') + this.state.authType + '.'}
                 {this._renderSocialButtons()}
             </div>),
             showCheckInfo: false,
@@ -117,8 +152,8 @@ class CreateAccount extends React.Component {
         this.setState({
             authType
         });
+        this.startSocialLoading(authType);
         window.open(`${getHost()}/api/modal/vk`, '_blank');
-        this.useSocialLogin(authType);
     };
 
     useFacebook = (e) => {
@@ -127,8 +162,8 @@ class CreateAccount extends React.Component {
         this.setState({
             authType
         });
+        this.startSocialLoading(authType);
         window.open(`${getHost()}/api/modal/facebook`, '_blank');
-        this.useSocialLogin(authType);
     };
 
     useMailru = (e) => {
@@ -137,8 +172,8 @@ class CreateAccount extends React.Component {
         this.setState({
             authType
         });
+        this.startSocialLoading(authType);
         window.open(`${getHost()}/api/modal/mailru`, '_blank');
-        this.useSocialLogin(authType);
     };
 
     useYandex = (e) => {
@@ -147,8 +182,8 @@ class CreateAccount extends React.Component {
         this.setState({
             authType
         });
+        this.startSocialLoading(authType);
         window.open(`${getHost()}/api/modal/yandex`, '_blank');
-        this.useSocialLogin(authType);
     };
 
     render() {
@@ -711,7 +746,7 @@ class CreateAccount extends React.Component {
 
         try {
             // createAccount
-            const res = await callApi('/api/submit', {
+            const res = await callApi('/api/reg/submit', {
                 csrf: $STM_csrf,
                 email: email != '' ? email : undefined,
                 invite_code: email == '' ? invite_code : undefined,
@@ -904,7 +939,7 @@ class CreateAccount extends React.Component {
         });
 
         try {
-            const res = await callApi('/api/send_code', {
+            const res = await callApi('/api/reg/send_code', {
                 csrf: $STM_csrf,
                 email
             });
@@ -946,7 +981,7 @@ class CreateAccount extends React.Component {
             showCheckInfo: false,
         };
 
-        const res = await callApi('/api/use_invite', {
+        const res = await callApi('/api/reg/use_invite', {
             csrf: $STM_csrf,
             invite_key: PrivateKey.fromWif(this.state.invite_code).toPublicKey().toString()
         });
@@ -970,7 +1005,7 @@ class CreateAccount extends React.Component {
 
     onCheckCode = async () => {
         try {
-            const res = await callApi('/api/verify_code', {
+            const res = await callApi('/api/reg/verify_code', {
                 csrf: $STM_csrf,
                 confirmation_code: this.state.code,
                 email: this.state.email

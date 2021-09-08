@@ -640,6 +640,7 @@
     "you_can_change_your_number": "You can change your number at any time if we didn't receive your sms with verification code. ",
     "re_send": "Re-send",
     "phone_number_has_been_verified": "Phone number has been verified, please continue the registration.",
+    "authorizing_with": "Authorizing with ",
     "authorized_with_": "Аuthorized with ",
     "this_phone_number_has_already_been_used": "This phone number has already been used"
   },
