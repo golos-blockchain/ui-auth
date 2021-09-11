@@ -1,0 +1,11 @@
+header {
+    background-color: #2185d0 !important;
+}
+
+.Locale_current:not(.open) {
+    color: #fff !important;
+}
+
+.Locale_current-chevron:not(.open) {
+    border-top-color: #fff !important;
+}

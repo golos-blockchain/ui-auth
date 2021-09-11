@@ -1,5 +1,6 @@
 .CreateAccount {
     margin: 20px 0;
+    margin-top: 6rem;
 
     &__hello {
         margin-bottom: 10px;
@@ -77,6 +78,9 @@
         }
         .success {
             color: #268c4c;
+        }
+        .error {
+            color: #f00;
         }
         label {
             text-transform: none;

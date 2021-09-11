@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet';
 import PropTypes from 'prop-types';
 import tt from 'counterpart';
 import cn from 'classnames';
@@ -6,6 +7,7 @@ import { PrivateKey } from 'golos-classic-js/lib/auth/ecc';
 import ReCAPTCHA from 'react-google-recaptcha';
 import LoadingIndicator from './components/elements/LoadingIndicator';
 import Tooltip from './components/elements/Tooltip';
+import Header from './components/modules/Header';
 import validate_account_name from './validate_account_name';
 import KeyFile from './utils/KeyFile';
 import GeneratedPasswordInput from './components/elements/GeneratedPasswordInput';
@@ -84,8 +86,23 @@ class CreateAccount extends React.Component {
             }
         }
 
-        const res = await callApi(`/api/reg/get_uid`);
+        let client = '';
+        const query = new URLSearchParams(window.location.search);
+        if (query && query.get('client')) {
+            client = query.get('client');
+        }
+
+        const res = await callApi(`/api/reg/get_uid/${client}`);
         const data = await res.json();
+
+        let theme = 'blogs';
+        const config = data.config;
+        const cfgclient = config && config.client;
+        if (cfgclient) {
+            theme = cfgclient.id;
+        }
+        this._applyTheme(getHost() + '/themes/' + theme + '/theme.css');
+
         this.setState({
             loaded: true,
             config: data.config,
@@ -153,7 +170,7 @@ class CreateAccount extends React.Component {
             authType
         });
         this.startSocialLoading(authType);
-        window.open(`${getHost()}/api/modal/vk`, '_blank');
+        window.open(`${getHost()}/api/reg/modal/vk`, '_blank');
     };
 
     useFacebook = (e) => {
@@ -163,7 +180,7 @@ class CreateAccount extends React.Component {
             authType
         });
         this.startSocialLoading(authType);
-        window.open(`${getHost()}/api/modal/facebook`, '_blank');
+        window.open(`${getHost()}/api/reg/modal/facebook`, '_blank');
     };
 
     useMailru = (e) => {
@@ -173,7 +190,7 @@ class CreateAccount extends React.Component {
             authType
         });
         this.startSocialLoading(authType);
-        window.open(`${getHost()}/api/modal/mailru`, '_blank');
+        window.open(`${getHost()}/api/reg/modal/mailru`, '_blank');
     };
 
     useYandex = (e) => {
@@ -183,8 +200,49 @@ class CreateAccount extends React.Component {
             authType
         });
         this.startSocialLoading(authType);
-        window.open(`${getHost()}/api/modal/yandex`, '_blank');
+        window.open(`${getHost()}/api/reg/modal/yandex`, '_blank');
     };
+
+    _applyTheme = (href) => {
+        let link = document.createElement( "link" );
+        link.href = href;
+        link.type = "text/css";
+        link.rel = "stylesheet";
+        link.media = "screen,print";
+
+        document.getElementsByTagName( "head" )[0].appendChild( link );
+    };
+
+    _getConfig() {
+        let title = tt('createaccount_jsx.title_default');
+        let favicon = null;
+
+        const LOGO_TITLE = 'GOLOS';
+        const LOGO_SUBTITLE = 'blockchain';
+        let logo_title = LOGO_TITLE;
+        let logo_subtitle = LOGO_SUBTITLE;
+        let logo = '/icons/logo.svg';
+
+        const { config, } = this.state;
+        const client = config && config.client && config.client[tt.getLocale()];
+        if (client) {
+            if (title) {
+                title = client.page_title;
+            }
+            if (client.favicon) {
+                favicon = getHost() + '/themes/' + config.client.id + '/' + client.favicon;            
+            }
+            // - They will be null if not set in client
+            logo_title = client.logo_title;
+            logo_subtitle = client.logo_subtitle;
+            // -
+            logo = client.logo ?
+                getHost() + '/themes/' + config.client.id + '/' + client.logo
+                : logo;
+        }
+
+        return { title, favicon, logo_title, logo_subtitle, logo, };
+    }
 
     render() {
         if (!this.state.loaded) {
@@ -194,6 +252,8 @@ class CreateAccount extends React.Component {
                 </div>
             );
         }
+
+        const { title, favicon, logo_title, logo_subtitle, logo, } = this._getConfig();
 
         const { loggedIn, offchainUser, serverBusy } = this.props;
         const {
@@ -298,6 +358,12 @@ class CreateAccount extends React.Component {
 
         return (
             <div>
+                <Helmet>
+                    <meta charSet='utf-8' />
+                    <title>{title}</title>
+                    <link rel="icon" type="image/png" href={favicon} sizes="16x16" />
+                </Helmet>
+                <Header logo={logo} title={logo_title} subtitle={logo_subtitle} />
                 <div className='CreateAccount row'>
                     <div
                         className='column'
@@ -305,8 +371,11 @@ class CreateAccount extends React.Component {
                     >
                         <h2>{tt('g.sign_up')}</h2>
                         <p className='CreateAccount__account-name-hint'>
-                            <img src='/icons/info_o.svg' width='20' height='20' />
-                            Возникли сложности? Напишите в <a target='_blank' href='https://t.me/goloshelp'>телеграм-чат</a> или на <a href={'mailto:' + SUPPORT_EMAIL}>{SUPPORT_EMAIL}</a>
+                            <img src='/icons/info_o.svg' width='20' height='20' style={{  paddingRight: '3px' }}/>
+                            {tt('createaccount_jsx.support')}
+                            <a target='_blank' href='https://t.me/goloshelp'>{tt('createaccount_jsx.telegram')}</a>
+                            {tt('createaccount_jsx.support_or')}
+                            <a href={'mailto:' + SUPPORT_EMAIL}>{SUPPORT_EMAIL}</a>
                         </p>
                         <hr />
                         <form
@@ -331,7 +400,7 @@ class CreateAccount extends React.Component {
                                             <span style={{ color: 'red' }}>
                                                 *
                                             </span>{' '}
-                                            {'Введите вашу Gmail-почту'} (создать <a target='_blank' href='https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp'>по ссылке</a>) 
+                                            {tt('createaccount_jsx.enter_email')}<a target='_blank' href='https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp'>{tt('createaccount_jsx.here')}</a>{')'} 
                                             <input
                                                 type='text'
                                                 name='email'
@@ -501,7 +570,7 @@ class CreateAccount extends React.Component {
         return (
             <div className='callout'>
                 <div className='CreateAccount__confirm-email-block'>
-                    {'Введите проверочный код отправленный на вашу почту'}
+                    {tt('mobilevalidation_js.enter_confirm_code')}
                     <input
                         type='email'
                         name='email'
@@ -804,13 +873,10 @@ class CreateAccount extends React.Component {
         let emailError = null;
         let emailHint = null;
 
-        // TODO добавить перевод для подсказки для google email
         if (!value) {
-            emailError = 'Google email не может быть пустым';
+            emailError = tt('mobilevalidation_js.email_cannot_be_empty');
         } else if (!/^[a-z0-9](\.?[a-z0-9]){5,}@g(oogle)?mail\.com$/.test(value)) {
-            // TODO добавить перевод для подсказки для google email
-            //emailError = tt('mobilevalidation_js.have_only_digits');
-            emailError = 'Email должен принадлежать Google Mail (gmail.com)';
+            emailError = tt('mobilevalidation_js.email_must_be_gmail');
         }
 
         if (emailError) {

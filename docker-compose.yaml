@@ -8,6 +8,7 @@ services:
     command: bash -c "yarn run production"
     volumes:
       - ./config/default.json:/var/app/config/default.json
+      - ./themes:/var/app/themes
     depends_on:
       - db
     ports:

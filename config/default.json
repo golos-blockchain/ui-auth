@@ -6,6 +6,60 @@
     "localhost",
     "37.18.27.45"
   ],
+  "default_client": "blogs",
+  "clients": {
+    "blogs": {
+      "ru": {
+        "favicon": "favicon.ico",
+        "logo": "logo.svg",
+        "logo_title": "GOLOS",
+        "logo_subtitle": "blockchain",
+        "page_title": "Регистрация Golos Blockchain"
+      },
+      "en": {
+        "favicon": "favicon.ico",
+        "logo": "logo.svg",
+        "page_title": "Sign up for Golos Blockchain"
+      }
+    },
+    "golostalk": {
+      "ru": {
+        "favicon": "favicon.ico",
+        "logo": "logo.png",
+        "page_title": "Регистрация на форуме GolosTalk"
+      },
+      "en": {
+        "favicon": "favicon.ico",
+        "logo": "logo.png",
+        "page_title": "Sign up for GolosTalk Forum"
+      }
+    },
+    "prizmtalk": {
+      "ru": {
+        "favicon": "favicon.png",
+        "logo": "logo.jpg",
+        "page_title": "Регистрация на форуме PrizmTalk"
+      },
+      "en": {
+        "favicon": "favicon.png",
+        "logo": "logo.jpg",
+        "page_title": "Sign up for PrizmTalk Forum"
+      }
+    },
+    "graphene": {
+      "default_locale": "en",
+      "ru": {
+        "favicon": "favicon.png",
+        "logo": "logo.png",
+        "page_title": "Регистрация на форуме о Graphene"
+      },
+      "en": {
+        "favicon": "favicon.png",
+        "logo": "logo.png",
+        "page_title": "Sign up for Graphene Forum"
+      }
+    }
+  },
   "grant": {
     "vk": {
       "enabled": true,

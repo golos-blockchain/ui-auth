@@ -74,12 +74,14 @@ useAuthApi(app);
 // Proxy asset folder to webpack development server in development mode
 if (env === 'production') {
     app.use(async (ctx, next) => {
-        if (ctx.url === '/register') ctx.url = '/';
+        if (ctx.path === '/register') ctx.url = '/';
         await next();
     })
 
     app.use(static(path.join(__dirname, '../build'), cacheOpts));
 }
+
+app.use(mount('/themes', static(path.join(__dirname, '../themes'), cacheOpts)));
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 

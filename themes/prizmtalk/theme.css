@@ -1,0 +1,27 @@
+header {
+    background-color: #9a33cc !important;
+}
+
+.Header__top-logo > img {
+    height: 5rem;
+}
+
+a:not(.button) {
+    color: #9a33cc !important;
+}
+
+.button {
+    background-color: #9a33cc !important;
+}
+
+.button:hover {
+    background-color: #9a33cc !important;
+}
+
+.Locale_current:not(.open) {
+    color: #fff !important;
+}
+
+.Locale_current-chevron:not(.open) {
+    border-top-color: #fff !important;
+}

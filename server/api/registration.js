@@ -55,7 +55,7 @@ module.exports = function useRegistrationApi(app) {
                 {
                     clientID: grant.key,
                     clientSecret: grant.secret,
-                    callbackURL: `${config.REST_API}/api/modal/${grantId}/callback`,
+                    callbackURL: `${config.REST_API}/api/reg/modal/${grantId}/callback`,
                     passReqToCallback: true
                 },
                 async (req, accessToken, refreshToken, params, profile, done) => {
@@ -87,7 +87,7 @@ module.exports = function useRegistrationApi(app) {
         }
     }
 
-    router.get('/get_uid', koaBody, async (ctx) => {
+    router.get('/get_uid/:client?', koaBody, async (ctx) => {
         const last_visit = ctx.session.last_visit;
         ctx.session.last_visit = new Date().getTime() / 1000 | 0;
         if (!ctx.session.uid) {
@@ -121,6 +121,22 @@ module.exports = function useRegistrationApi(app) {
         } else {
             console.error('Captcha ERROR: captcha is absent in config!');
         }
+
+        cfg.client = {};
+        let client = config.get('default_client');
+        if (ctx.params.client) {
+            if (config.get('clients').has(ctx.params.client)) {
+                client = ctx.params.client;
+            } else {
+                console.error('Cannot get config for client ' + ctx.params.client);
+            }
+        }
+        const clientParams = config.get('clients').get(client);
+        cfg.client.id = client;
+        cfg.client.locale =
+            clientParams.has('default_locale') ?
+            clientParams.get('default_locale') : 'ru';
+        cfg.client = {...cfg.client, ...clientParams};
 
         ctx.body = {
             status: 'ok',
@@ -370,26 +386,26 @@ module.exports = function useRegistrationApi(app) {
         passport.authenticate('vkontakte')(ctx, next);
     });
     router.get('/modal/vk/callback', passport.authenticate('vkontakte', {
-        successRedirect: '/api/modal/success',
-        failureRedirect: '/api/modal/failure'
+        successRedirect: '/api/reg/modal/success',
+        failureRedirect: '/api/reg/modal/failure'
     }));
 
     router.get('/modal/facebook', passport.authenticate('facebook'));
     router.get('/modal/facebook/callback', passport.authenticate('facebook', {
-        successRedirect: '/api/modal/success',
-        failureRedirect: '/api/modal/failure'
+        successRedirect: '/api/reg/modal/success',
+        failureRedirect: '/api/reg/modal/failure'
     }));
 
     router.get('/modal/mailru', passport.authenticate('mailru'));
     router.get('/modal/mailru/callback', passport.authenticate('mailru', {
-        successRedirect: '/api/modal/success',
-        failureRedirect: '/api/modal/failure'
+        successRedirect: '/api/reg/modal/success',
+        failureRedirect: '/api/reg/modal/failure'
     }));
 
     router.get('/modal/yandex', passport.authenticate('yandex'));
     router.get('/modal/yandex/callback', passport.authenticate('yandex', {
-        successRedirect: '/api/modal/success',
-        failureRedirect: '/api/modal/failure'
+        successRedirect: '/api/reg/modal/success',
+        failureRedirect: '/api/reg/modal/failure'
     }));
 
     router.get('/modal/failure', (ctx) => {
