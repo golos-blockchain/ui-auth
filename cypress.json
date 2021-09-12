@@ -1,4 +1,5 @@
 {
+    "baseUrl": "https://devauth.golos.today",
     "env": {
         "NODE_URL": "ws://127.0.0.1:8091",
         "CHAIN_ID": "5876894a41e6361bde2e73278f07340f2eb8b41c2facd29099de9deef6cdb679",

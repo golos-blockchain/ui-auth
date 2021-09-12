@@ -9,7 +9,7 @@ if (CHAIN_ID) {
 it('/ healthcheck: server is running and connects to Golos node', async function() {
     var resp = null;
     try {
-        resp = await fetch(global.HOST + '/api');
+        resp = await fetch(global.API_HOST + '/api');
     } catch (err) {
         global.log('It looks like notify server is not running. It should be running to pass these tests.')
         expect(true).to.equal(false);
@@ -39,7 +39,7 @@ it('/login_account - missing account', async function() {
         body: JSON.stringify(body),
     };
 
-    var resp = await fetch(global.HOST + '/api/login_account', request);
+    var resp = await fetch(global.API_HOST + '/api/login_account', request);
 
     var json = await resp.json();
     expect(json.error).to.equal('missing blockchain account');
@@ -89,7 +89,7 @@ it('/logout_account', async function() {
         method: 'get',
     };
 
-    var resp = await fetch(global.HOST + '/api/logout_account', request);
+    var resp = await fetch(global.API_HOST + '/api/logout_account', request);
 
     var json = await resp.json();
     expect(json.error).to.equal(undefined);
@@ -104,7 +104,7 @@ it('/logout_account', async function() {
         method: 'get',
     };
 
-    var resp = await fetch(global.HOST + '/api/logout_account', request);
+    var resp = await fetch(global.API_HOST + '/api/logout_account', request);
 
     var json = await resp.json();
     expect(json.error).to.equal(undefined);

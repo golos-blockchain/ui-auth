@@ -7,7 +7,7 @@ if (CHAIN_ID) {
     golos.config.set('chain_id', CHAIN_ID);
 }
 
-global.HOST = 'http://localhost:8080';
+global.API_HOST = 'https://devauth.golos.today';
 
 global.log = (msg) => {
     console.log(msg);
@@ -48,7 +48,7 @@ global.obtainLoginChallenge = async (acc) => {
         body: JSON.stringify(body),
     });
 
-    var resp = await fetch(global.HOST + '/api/login_account', request);
+    var resp = await fetch(global.API_HOST + '/api/login_account', request);
 
     var json = await resp.json();
     expect(json.error).to.equal(undefined);
@@ -84,7 +84,7 @@ global.signAndAuth = async (login_challenge, acc, postingKey) => {
         },
     };
 
-    var resp = await fetch(global.HOST + '/api/login_account', request);
+    var resp = await fetch(global.API_HOST + '/api/login_account', request);
 
     global.session = resp.headers.get('X-Auth-Session');
 
