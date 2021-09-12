@@ -74,6 +74,7 @@ class CreateAccount extends React.Component {
         const invite = new URLSearchParams(window.location.search).get('invite');
         if (invite) {
             if (!validate_account_name(invite)) {
+                console.log('Referrer account will be ', invite);
                 this.setState({referrer: invite});
             } else {
                 this.setState({
@@ -86,9 +87,11 @@ class CreateAccount extends React.Component {
         }
 
         let client = '';
-        const query = new URLSearchParams(window.location.search);
-        if (query && query.get('client')) {
-            client = query.get('client');
+        const pathnameParts = window.location.pathname.split('/');
+        if (pathnameParts.length >= 3 && pathnameParts[2] === 'register') {
+            client = pathnameParts[1];
+        } else if (pathnameParts.length >= 2 && pathnameParts[1] && pathnameParts[1] !== 'register') {
+            client = pathnameParts[1];
         }
 
         const res = await callApi(`/api/reg/get_uid/${client}`);
@@ -102,9 +105,24 @@ class CreateAccount extends React.Component {
         }
         this._applyTheme(getHost() + '/themes/' + theme + '/theme.css');
 
+        let afterRedirect = document.referrer;
+        if (cfgclient && cfgclient.after_redirect) {
+            afterRedirect = cfgclient.after_redirect;
+            if (!afterRedirect.startsWith('http')) {
+                try {
+                    afterRedirect = new URL(afterRedirect, cfgclient.origin).href;
+                } catch (e) {}
+            }
+        } else if (!afterRedirect && cfgclient && cfgclient.origin) {
+            afterRedirect = cfgclient.origin;
+        }
+
         this.setState({
             loaded: true,
             config: data.config,
+            afterRedirect,
+        }, () => {
+            console.log('afterRedirect is', this.state.afterRedirect);
         });
     }
 
@@ -215,6 +233,7 @@ class CreateAccount extends React.Component {
     _getConfig() {
         let title = tt('createaccount_jsx.title_default');
         let favicon = null;
+        let origin = 'https://golos.id';
 
         const LOGO_TITLE = 'GOLOS';
         const LOGO_SUBTITLE = 'blockchain';
@@ -238,9 +257,10 @@ class CreateAccount extends React.Component {
             logo = client.logo ?
                 getHost() + '/themes/' + config.client.id + '/' + client.logo
                 : logo;
+            origin = config.client.origin || origin;
         }
 
-        return { title, favicon, logo_title, logo_subtitle, logo, };
+        return { title, favicon, logo_title, logo_subtitle, logo, origin, };
     }
 
     render() {
@@ -252,7 +272,7 @@ class CreateAccount extends React.Component {
             );
         }
 
-        const { title, favicon, logo_title, logo_subtitle, logo, grants, } = this._getConfig();
+        const { title, favicon, logo_title, logo_subtitle, logo, origin, } = this._getConfig();
 
         const { loggedIn, offchainUser, serverBusy } = this.props;
         const {
@@ -359,7 +379,7 @@ class CreateAccount extends React.Component {
                     <title>{title}</title>
                     <link rel='icon' type='image/png' href={favicon} sizes='16x16' />
                 </Helmet>
-                <Header logo={logo} title={logo_title} subtitle={logo_subtitle} />
+                <Header logo={logo} title={logo_title} subtitle={logo_subtitle} logoUrl={origin} />
                 <div className='CreateAccount row'>
                     <div
                         className='column'
@@ -848,8 +868,9 @@ class CreateAccount extends React.Component {
                 });
             } else {
                 keyFile.save();
-                window.location = 'https://golos.id';
-                //window.location = `/login.html#account=${name}&msg=accountcreated`;
+                if (this.state.afterRedirect) {
+                    window.location = this.state.afterRedirect.replace('{account}', name);
+                }
             }
         } catch (err) {
             console.error('Caught CreateAccount server error', err);

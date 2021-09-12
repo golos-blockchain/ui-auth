@@ -422,7 +422,7 @@
     "backup_password_by_storing_it": "Мы не храним пароли и не сможем восстановить ваш пароль, если он будет утерян.",
     "click_to_generate_password": "Нажмите, чтобы сгенерировать пароль",
     "re_enter_generate_password": "Введите сгенерированный пароль",
-    "understand_that_APP_NAME_cannot_recover_password": "Я понимаю, что %(APP_NAME)s не сможет восстановить потерянные пароли",
+    "understand_that_we_cannot_recover_password": "Я понимаю, что невозможно  восстановить потерянные пароли.",
     "i_saved_password": "Я надежно сохранил сгенерированный пароль",
     "update_password": "Обновить пароль",
     "confirm_password": "Подтвердить пароль",

@@ -5,8 +5,13 @@ class Header extends React.Component {
     static propTypes = {
     };
 
+    onLogoClick = (e) => {
+        const { logoUrl, } = this.props;
+        window.location.href = logoUrl;
+    }
+
     render() {
-        const { logo, title, subtitle, } = this.props;
+        const { logo, title, subtitle, logoUrl, } = this.props;
 
         return (
             <header className='Header noPrint'>
@@ -15,11 +20,13 @@ class Header extends React.Component {
                         <div className='columns'>
                             <ul className='menu'>
                                 <li className='Header__top-logo'>
-                                    <img src={logo} alt='' />
+                                    <img src={logo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />
                                 </li>
                                 <li className='Header__top-title show-for-large noPrint'>
-                                    <a href='#'>{title}
-                                        <span className='subtitle'>{subtitle}</span></a>
+                                    <a href={logoUrl}>
+                                        {title}
+                                        <span className='subtitle'>{subtitle}</span>
+                                    </a>
                                 </li>
                             </ul>
                         </div>

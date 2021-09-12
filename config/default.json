@@ -9,20 +9,63 @@
   "default_client": "blogs",
   "clients": {
     "blogs": {
+      "origin": "https://golos.id",
+      "after_redirect": "/login.html#account={account}&msg=accountcreated",
       "ru": {
-        "favicon": "favicon.ico",
-        "logo": "logo.svg",
-        "logo_title": "GOLOS",
-        "logo_subtitle": "blockchain",
+        "favicon": "favicon.ico", "logo": "logo.svg",
+        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
         "page_title": "Регистрация Golos Blockchain"
       },
       "en": {
-        "favicon": "favicon.ico",
-        "logo": "logo.svg",
+        "favicon": "favicon.ico", "logo": "logo.svg",
+        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
+        "page_title": "Sign up for Golos Blockchain"
+      }
+    },
+    "blogs-dev": {
+      "origin": "https://dev.golos.id",
+      "after_redirect": "/login.html#account={account}&msg=accountcreated",
+      "ru": {
+        "favicon": "favicon.ico", "logo": "logo.svg",
+        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
+        "page_title": "Регистрация Golos Blockchain"
+      },
+      "en": {
+        "favicon": "favicon.ico", "logo": "logo.svg",
+        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
+        "page_title": "Sign up for Golos Blockchain"
+      }
+    },
+    "blogs-in": {
+      "origin": "https://golos.in",
+      "after_redirect": "/login.html#account={account}&msg=accountcreated",
+      "ru": {
+        "favicon": "favicon.ico", "logo": "logo.svg",
+        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
+        "page_title": "Регистрация Golos Blockchain"
+      },
+      "en": {
+        "favicon": "favicon.ico", "logo": "logo.svg",
+        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
+        "page_title": "Sign up for Golos Blockchain"
+      }
+    },
+    "blogs-today": {
+      "origin": "https://golos.today",
+      "after_redirect": "/login.html#account={account}&msg=accountcreated",
+      "ru": {
+        "favicon": "favicon.ico", "logo": "logo.svg",
+        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
+        "page_title": "Регистрация Golos Blockchain"
+      },
+      "en": {
+        "favicon": "favicon.ico", "logo": "logo.svg",
+        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
         "page_title": "Sign up for Golos Blockchain"
       }
     },
     "golostalk": {
+      "origin": "https://golostalk.com",
       "ru": {
         "favicon": "favicon.ico",
         "logo": "logo.png",
@@ -35,6 +78,7 @@
       }
     },
     "prizmtalk": {
+      "origin": "https://prizmtalk.com",
       "ru": {
         "favicon": "favicon.png",
         "logo": "logo.jpg",
@@ -47,6 +91,7 @@
       }
     },
     "graphene": {
+      "origin": "https://forum.gph.ai",
       "default_locale": "en",
       "ru": {
         "favicon": "favicon.png",

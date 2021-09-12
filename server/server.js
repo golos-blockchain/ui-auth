@@ -74,7 +74,7 @@ useAuthApi(app);
 // Proxy asset folder to webpack development server in development mode
 if (env === 'production') {
     app.use(async (ctx, next) => {
-        if (ctx.path === '/register') ctx.url = '/';
+        if (ctx.path !== '/') ctx.url = '/';
         await next();
     })
 

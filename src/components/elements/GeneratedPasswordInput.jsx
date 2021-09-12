@@ -4,7 +4,7 @@ import { key_utils } from 'golos-classic-js/lib/auth/ecc';
 import tt from 'counterpart';
 
 function allChecked(confirmCheckboxes) {
-    return confirmCheckboxes.box1 && confirmCheckboxes.box2;
+    return confirmCheckboxes.box1;
 }
 
 export default class GeneratedPasswordInput extends React.Component {
@@ -19,7 +19,7 @@ export default class GeneratedPasswordInput extends React.Component {
         generatedPassword: 'P' + key_utils.get_random_key().toWif(),
         confirmPassword: '',
         confirmPasswordError: '',
-        confirmCheckboxes: {box1: false, box2: false},
+        confirmCheckboxes: {box1: false},
         showRules: false,
     };
 
@@ -68,10 +68,7 @@ export default class GeneratedPasswordInput extends React.Component {
                 </div>
                 <div className='GeneratedPasswordInput__checkboxes'>
                     <label><input type='checkbox' name='box1' onChange={this.confirmCheckChange} checked={confirmCheckboxes.box1} disabled={disabled} />
-                        {tt('g.understand_that_APP_NAME_cannot_recover_password', {APP_NAME: 'GOLOS'})}.
-                    </label>
-                    <label><input type='checkbox' name='box2' onChange={this.confirmCheckChange} checked={confirmCheckboxes.box2} disabled={disabled} />
-                        {tt('g.i_saved_password')}.
+                        {tt('g.understand_that_we_cannot_recover_password', {APP_NAME: 'GOLOS'})}.
                     </label>
                 </div>
             </div>
