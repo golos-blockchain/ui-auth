@@ -1,15 +1,9 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import tt from 'counterpart';
 import LocaleSelect from '../elements/LocaleSelect';
 
 class Header extends React.Component {
     static propTypes = {
     };
-
-    constructor(props) {
-        super(props);
-    }
 
     render() {
         const { logo, title, subtitle, } = this.props;
@@ -21,7 +15,7 @@ class Header extends React.Component {
                         <div className='columns'>
                             <ul className='menu'>
                                 <li className='Header__top-logo'>
-                                    <img src={logo} />
+                                    <img src={logo} alt='' />
                                 </li>
                                 <li className='Header__top-title show-for-large noPrint'>
                                     <a href='#'>{title}

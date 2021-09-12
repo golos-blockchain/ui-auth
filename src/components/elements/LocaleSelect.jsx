@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import styled from 'styled-components';
-import is, {isNot,} from 'styled-is';
+import is from 'styled-is';
 import { LANGUAGES } from '../../client_config';
 
 const HIDE_CHEVRON_WIDTH = 500;
@@ -141,8 +141,6 @@ class LocaleSelect extends PureComponent {
 
     render() {
         const { open } = this.state;
-
-        const { darkMode } = this.props;
 
         const locale = localStorage.getItem('locale') || 'ru';
 

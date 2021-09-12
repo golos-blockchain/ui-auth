@@ -22,7 +22,6 @@ function formatAsset(val) {
 
 class CreateAccount extends React.Component {
     static propTypes = {
-        loginUser: PropTypes.func.isRequired,
         serverBusy: PropTypes.bool,
     };
 
@@ -204,13 +203,13 @@ class CreateAccount extends React.Component {
     };
 
     _applyTheme = (href) => {
-        let link = document.createElement( "link" );
+        let link = document.createElement('link');
         link.href = href;
-        link.type = "text/css";
-        link.rel = "stylesheet";
-        link.media = "screen,print";
+        link.type = 'text/css';
+        link.rel = 'stylesheet';
+        link.media = 'screen,print';
 
-        document.getElementsByTagName( "head" )[0].appendChild( link );
+        document.getElementsByTagName('head')[0].appendChild(link);
     };
 
     _getConfig() {
@@ -258,10 +257,7 @@ class CreateAccount extends React.Component {
         const { loggedIn, offchainUser, serverBusy } = this.props;
         const {
             fetchState,
-            phone,
-            country,
             email,
-            invite_code,
             invite_enabled,
             name,
             passwordValid,
@@ -361,7 +357,7 @@ class CreateAccount extends React.Component {
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{title}</title>
-                    <link rel="icon" type="image/png" href={favicon} sizes="16x16" />
+                    <link rel='icon' type='image/png' href={favicon} sizes='16x16' />
                 </Helmet>
                 <Header logo={logo} title={logo_title} subtitle={logo_subtitle} />
                 <div className='CreateAccount row'>
@@ -371,9 +367,9 @@ class CreateAccount extends React.Component {
                     >
                         <h2>{tt('g.sign_up')}</h2>
                         <p className='CreateAccount__account-name-hint'>
-                            <img src='/icons/info_o.svg' width='20' height='20' style={{  paddingRight: '3px' }}/>
+                            <img src='/icons/info_o.svg' alt='' width='20' height='20' style={{  paddingRight: '3px' }}/>
                             {tt('createaccount_jsx.support')}
-                            <a target='_blank' href='https://t.me/goloshelp'>{tt('createaccount_jsx.telegram')}</a>
+                            <a target='_blank' rel='noopener noreferrer' href='https://t.me/goloshelp'>{tt('createaccount_jsx.telegram')}</a>
                             {tt('createaccount_jsx.support_or')}
                             <a href={'mailto:' + SUPPORT_EMAIL}>{SUPPORT_EMAIL}</a>
                         </p>
@@ -400,7 +396,7 @@ class CreateAccount extends React.Component {
                                             <span style={{ color: 'red' }}>
                                                 *
                                             </span>{' '}
-                                            {tt('createaccount_jsx.enter_email')}<a target='_blank' href='https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp'>{tt('createaccount_jsx.here')}</a>{')'} 
+                                            {tt('createaccount_jsx.enter_email')}<a target='_blank' rel='noopener noreferrer' href='https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp'>{tt('createaccount_jsx.here')}</a>{')'} 
                                             <input
                                                 type='text'
                                                 name='email'
@@ -565,7 +561,7 @@ class CreateAccount extends React.Component {
     }
 
     _renderCodeWaiting() {
-        const { country, codeError, codeHint, fetchState, iSent, showHowMuchHelp } = this.state;
+        const { codeError, codeHint, } = this.state;
 
         return (
             <div className='callout'>
@@ -696,22 +692,22 @@ class CreateAccount extends React.Component {
                 {!this.state.authType && tt('createaccount_jsx.or_use_socsite')}<br/>
                 <Tooltip t='VK'>
                     <span onClick={this.useVk} style={{cursor: 'pointer', marginRight: '5px' }}>
-                        <img src='/images/icon-vk.png' />
+                        <img src='/images/icon-vk.png' alt='VK' />
                     </span>
                 </Tooltip>
                 <Tooltip t='Facebook'>
                     <span onClick={this.useFacebook} style={{cursor: 'pointer', marginRight: '5px' }}>
-                        <img src='/images/icon-fb.png' />
+                        <img src='/images/icon-fb.png' alt='Facebook' />
                     </span>
                 </Tooltip>
                 <Tooltip t='Yandex'>
                     <span onClick={this.useYandex} style={{cursor: 'pointer', marginRight: '5px' }}>
-                        <img src='/images/icon-ya.png' />
+                        <img src='/images/icon-ya.png' alt='Yandex' />
                     </span>
                 </Tooltip>
                 <Tooltip t='Mail.Ru'>
                     <span onClick={this.useMailru} style={{cursor: 'pointer', marginRight: '5px' }}>
-                        <img src='/images/icon-mail.png' />
+                        <img src='/images/icon-mail.png' alt='Mail.Ru' />
                     </span>
                 </Tooltip>                
             </div>
@@ -817,8 +813,8 @@ class CreateAccount extends React.Component {
             // createAccount
             const res = await callApi('/api/reg/submit', {
                 csrf: $STM_csrf,
-                email: email != '' ? email : undefined,
-                invite_code: email == '' ? invite_code : undefined,
+                email: email !== '' ? email : undefined,
+                invite_code: email === '' ? invite_code : undefined,
                 name,
                 owner_key: publicKeys[0],
                 active_key: publicKeys[1],
@@ -1053,7 +1049,6 @@ class CreateAccount extends React.Component {
         });
 
         if (res.status === 200) {
-            let data = await res.json();
             fetchState.success = true;
         } else {
             let message = res.status + ' ' + await res.text();
@@ -1077,7 +1072,6 @@ class CreateAccount extends React.Component {
                 email: this.state.email
             });
 
-            let data;
             if (res.status === 200) {
                 this.updateFetchingState({status: 'done'})
             } else {

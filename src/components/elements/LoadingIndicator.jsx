@@ -24,10 +24,10 @@ export default class LoadingIndicator extends React.Component {
         switch (type) {
             case 'dots':
                 return (
-                    <div className="LoadingIndicator three-bounce">
-                        <div className="bounce1" />
-                        <div className="bounce2" />
-                        <div className="bounce3" />
+                    <div className='LoadingIndicator three-bounce'>
+                        <div className='bounce1' />
+                        <div className='bounce2' />
+                        <div className='bounce3' />
                     </div>
                 );
             case 'circle':
@@ -59,13 +59,13 @@ export default class LoadingIndicator extends React.Component {
                             'with-progress': this.progress > 0,
                         })}
                     >
-                        <div className="loading-panel">
-                            <div className="spinner">
-                                <div className="bounce1" />
-                                <div className="bounce2" />
-                                <div className="bounce3" />
+                        <div className='loading-panel'>
+                            <div className='spinner'>
+                                <div className='bounce1' />
+                                <div className='bounce2' />
+                                <div className='bounce3' />
                             </div>
-                            <div className="progress-indicator">
+                            <div className='progress-indicator'>
                                 <span>{this.state.progress}</span>
                             </div>
                         </div>
