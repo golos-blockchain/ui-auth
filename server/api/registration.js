@@ -138,6 +138,14 @@ module.exports = function useRegistrationApi(app) {
             clientParams.get('default_locale') : 'ru';
         cfg.client = {...cfg.client, ...clientParams};
 
+        cfg.grants = {};
+        const grant = config.get('grant') || {};
+        for (const [key, val] of Object.entries(grant)) {
+            cfg.grants[key] = {
+                enabled: val.enabled,
+            };
+        }
+
         ctx.body = {
             status: 'ok',
             config: cfg,

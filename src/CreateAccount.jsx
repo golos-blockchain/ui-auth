@@ -252,7 +252,7 @@ class CreateAccount extends React.Component {
             );
         }
 
-        const { title, favicon, logo_title, logo_subtitle, logo, } = this._getConfig();
+        const { title, favicon, logo_title, logo_subtitle, logo, grants, } = this._getConfig();
 
         const { loggedIn, offchainUser, serverBusy } = this.props;
         const {
@@ -687,29 +687,43 @@ class CreateAccount extends React.Component {
     }
 
     _renderSocialButtons() {
+        const { config } = this.state;
+        if (!config || !config.grants) {
+            return null;
+        }
+        const { grants, } = config;
+        const hasGrant = (id) => {
+            return grants[id] && grants[id].enabled;
+        };
+        const vk = hasGrant('vk');
+        const facebook = hasGrant('facebook');
+        const yandex = hasGrant('yandex');
+        const mailru = hasGrant('mailru');
+        const empty = !vk && !facebook && !yandex && !mailru;
+
         return (
             <div align='center'>
-                {!this.state.authType && tt('createaccount_jsx.or_use_socsite')}<br/>
-                <Tooltip t='VK'>
+                {!this.state.authType && !empty && tt('createaccount_jsx.or_use_socsite')}<br/>
+                {vk && <Tooltip t='VK'>
                     <span onClick={this.useVk} style={{cursor: 'pointer', marginRight: '5px' }}>
                         <img src='/images/icon-vk.png' alt='VK' />
                     </span>
-                </Tooltip>
-                <Tooltip t='Facebook'>
+                </Tooltip>}
+                {facebook && <Tooltip t='Facebook'>
                     <span onClick={this.useFacebook} style={{cursor: 'pointer', marginRight: '5px' }}>
                         <img src='/images/icon-fb.png' alt='Facebook' />
                     </span>
-                </Tooltip>
-                <Tooltip t='Yandex'>
+                </Tooltip>}
+                {yandex && <Tooltip t='Yandex'>
                     <span onClick={this.useYandex} style={{cursor: 'pointer', marginRight: '5px' }}>
                         <img src='/images/icon-ya.png' alt='Yandex' />
                     </span>
-                </Tooltip>
-                <Tooltip t='Mail.Ru'>
+                </Tooltip>}
+                {mailru && <Tooltip t='Mail.Ru'>
                     <span onClick={this.useMailru} style={{cursor: 'pointer', marginRight: '5px' }}>
                         <img src='/images/icon-mail.png' alt='Mail.Ru' />
                     </span>
-                </Tooltip>                
+                </Tooltip>}
             </div>
         );
     }
