@@ -511,8 +511,8 @@ class CreateAccount extends React.Component {
                                     name.length > 0 && !nameError
                                 }
                             />
-                            {this._renderCaptcha()}
-                            <br />
+                            {okStatus && this._renderCaptcha()}
+                            <div style={{ height: '10px' }}></div>
                             {nextStep}
                             <noscript>
                                 <div className='callout alert'>
