@@ -14,7 +14,7 @@ const useAuthApi = require('./api/auth');
 //const isBot = require('koa-isbot');
 const session = require('./utils/cryptoSession');
 const csrf = require('koa-csrf');
-const cors = require('koa-cors');
+const cors = require('@koa/cors');
 const config = require('config');
 
 console.log('application server starting, please wait.');
