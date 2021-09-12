@@ -8,6 +8,7 @@ const { api } = require('golos-classic-js');
 const secureRandom = require('secure-random');
 const gmailSend = require('gmail-send');
 const passport = require('koa-passport');
+const git = require('git-rev-sync');
 const VKontakteStrategy = require('passport-vk').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const MailruStrategy = require('passport-mail').Strategy;
@@ -148,6 +149,7 @@ module.exports = function useRegistrationApi(app) {
 
         ctx.body = {
             status: 'ok',
+            version: git.short(),
             config: cfg,
         }
     });

@@ -11,6 +11,7 @@
     "classnames": "^2.2.5",
     "config": "^1.26.2",
     "counterpart": "^0.17.9",
+    "git-rev-sync": "^3.0.1",
     "gmail-send": "^1.8.10",
     "golos-classic-js": "^0.8.8",
     "jspdf": "^2.3.0",

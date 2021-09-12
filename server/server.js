@@ -28,8 +28,7 @@ if (CHAIN_ID) {
 const app = new Koa();
 app.name = 'Golos Register app';
 const env = process.env.NODE_ENV || 'development';
-// cache of a thousand days
-const cacheOpts = { maxage: 86400000, gzip: true };
+const cacheOpts = { maxage: 0, gzip: true };
 
 app.use(cors({ credentials: true,
     expose: ['X-Auth-Session', 'Retry-After'],
@@ -75,9 +74,10 @@ useAuthApi(app);
 if (env === 'production') {
     app.use(async (ctx, next) => {
         const pathParts = ctx.path.split('/');
-        if (pathParts.includes('register')
-            || pathParts.length === 2
-            || (pathParts.length === 3 && !pathParts[2])) {
+        if (!ctx.url.includes('static/') &&
+            !ctx.url.includes('images/') &&
+            !ctx.url.includes('icons/') &&
+            !ctx.url.includes('themes/')) {
             ctx.url = '/';
         }
         await next();

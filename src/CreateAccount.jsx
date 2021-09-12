@@ -97,6 +97,8 @@ class CreateAccount extends React.Component {
         const res = await callApi(`/api/reg/get_uid/${client}`);
         const data = await res.json();
 
+        console.log('Auth service version:', data.version);
+
         let theme = 'blogs';
         const config = data.config;
         const cfgclient = config && config.client;
