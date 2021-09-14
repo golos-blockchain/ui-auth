@@ -1,4 +1,5 @@
 require 'locks'
+require 'guid'
 
 io.output():setvbuf('no')
 
@@ -80,4 +81,7 @@ box.once('bootstrap', function()
 
     locks = box.schema.create_space('locks')
     locks:create_index('primary', {type = 'tree', parts = {1, 'STR'}})
+
+    guid = box.schema.create_space('guid')
+    guid:create_index('primary', {type = 'tree', parts = {1, 'STR'}})
 end)

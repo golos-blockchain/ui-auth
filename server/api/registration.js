@@ -2,11 +2,12 @@ const koa_router = require('koa-router');
 const koa_body = require('koa-body');
 const config = require('config');
 const Tarantool = require('../../db/tarantool');
-const { checkCSRF, getRemoteIp, rateLimitReq, returnError } = require('../utils/misc');
+const { checkCSRF, getRemoteIp, rateLimitReq, throwErr, } = require('../utils/misc');
 const { hash } = require('golos-classic-js/lib/auth/ecc');
 const { api } = require('golos-classic-js');
 const secureRandom = require('secure-random');
 const gmailSend = require('gmail-send');
+const git = require('git-rev-sync');
 const passport = require('koa-passport');
 const VKontakteStrategy = require('passport-vk').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
@@ -18,16 +19,6 @@ function digits(text) {
     return digitArray ? digitArray.join('') : '';
 }
 
-/**
- * return status types:
- * session - new user without identity in DB
- * waiting - user verification email in progress
- * done - user verification email is successfuly done
- * already_used -
- * attempts_10 - Confirmation was attempted a moment ago. You can try again only in 10 seconds
- * attempts_300 - Confirmation was attempted a moment ago. You can try again only in 5 minutes
- * @param {*} app
- */
 module.exports = function useRegistrationApi(app) {
     app.use(passport.initialize());
     app.use(passport.session());
@@ -39,8 +30,10 @@ module.exports = function useRegistrationApi(app) {
         done(null, user);
     });
 
-    const router = koa_router({ prefix: '/api' });
+    const router = koa_router({ prefix: '/api/reg' });
     app.use(router.routes());
+    app.use(router.allowedMethods({ throw: true, }));
+
     const koaBody = koa_body();
 
     const strategies = {
@@ -49,17 +42,16 @@ module.exports = function useRegistrationApi(app) {
     };
     for (const [grantId, grant] of Object.entries(config.grant)) {
         const strategy = strategies[grantId];
-        if (!strategy) continue;
+        if (!strategy || !grant.enabled) continue;
         try {
             passport.use(new strategy(
                 {
                     clientID: grant.key,
                     clientSecret: grant.secret,
-                    callbackURL: `${config.REST_API}/api/modal/${grantId}/callback`,
+                    callbackURL: `${config.REST_API}/api/reg/modal/${grantId}/callback`,
                     passReqToCallback: true
                 },
                 async (req, accessToken, refreshToken, params, profile, done) => {
-                    console.log(req)
                     req.session.soc_id = profile.id;
                     req.session.soc_id_type = grantId + '_id';
 
@@ -97,6 +89,25 @@ module.exports = function useRegistrationApi(app) {
             ctx.session.new_visit = ctx.session.last_visit - last_visit > 1800;
         }
 
+        ctx.body = {
+            status: 'ok',
+            version: git.short(),
+        };
+    });
+
+    router.get('/get_client/:client?', koaBody, async (ctx) => {
+        const { locale, } = ctx.query;
+        let localeWasAlreadySet = undefined;
+        if (locale) {
+            if (locale !== 'ru' && locale !== 'en') {
+                throwErr(ctx, 400, ['Locale must be ru or en']);
+            }
+            localeWasAlreadySet = false;
+            if (ctx.session.locale === locale)
+                localeWasAlreadySet = true;
+            ctx.session.locale = locale;
+        }
+
         let cfg = {};
 
         cfg.captcha = {};
@@ -122,19 +133,51 @@ module.exports = function useRegistrationApi(app) {
             console.error('Captcha ERROR: captcha is absent in config!');
         }
 
+        cfg.client = {};
+        let client = config.get('default_client');
+        if (ctx.params.client) {
+            if (config.get('clients').has(ctx.params.client)) {
+                client = ctx.params.client;
+            } else {
+                console.error('Cannot get config for client ' + ctx.params.client);
+            }
+        }
+        const clientParams = config.get('clients').get(client);
+        cfg.client.id = client;
+        cfg.client.locale =
+            clientParams.has('default_locale') ?
+            clientParams.get('default_locale') : 'ru';
+        cfg.client = {...cfg.client, ...clientParams};
+
+        cfg.grants = {};
+        const grant = config.get('grant') || {};
+        for (const [key, val] of Object.entries(grant)) {
+            cfg.grants[key] = {
+                enabled: val.enabled,
+            };
+        }
+
+        cfg.fake_emails_allowed = config.has('fake_emails_allowed')
+            && config.get('fake_emails_allowed');
+
         ctx.body = {
             status: 'ok',
+            version: git.short(),
+            locale_was_already_set: localeWasAlreadySet,
             config: cfg,
         }
     });
 
     router.post('/verify_code', koaBody, async (ctx) => {
-        if (rateLimitReq(ctx, ctx.req, 10)) return;
+        let state = {
+            verification_way: 'email',
+            step: 'sent',
+        };
+
+        rateLimitReq(ctx, ctx.req, state, 10);
 
         if (!ctx.request.body) {
-            ctx.status = 400;
-            ctx.body = 'Bad Request';
-            return;
+            throwErr(ctx, 400, ['request_should_have_json_body'], null, state);
         }
 
         const body = ctx.request.body;
@@ -164,35 +207,41 @@ module.exports = function useRegistrationApi(app) {
             1, 0, 'eq', ['email', emailHash, ctx.session.uid, false]);
 
         if (!user[0]) {
-            ctx.status = 401;
-            ctx.body = 'No confirmation for this e-mail';
-            return;
+            throwErr(ctx, 400, ['no_confirmation_for_this_email'], null, state);
         }
 
         if (user[0][5] != confirmation_code) {
-            ctx.status = 401;
-            ctx.body = 'Wrong confirmation code';
-            return;
+            throwErr(ctx, 400, ['wrong_confirmation'], null, state);
         }
 
         await Tarantool.instance('tarantool').update('users', 'primary', [user[0][0]], [['=', 4, true]])
 
         ctx.session.user = user[0][0];
 
-        ctx.body =
-            'GOLOS.id \nСпасибо за подтверждение вашей почты';
+        state.step = 'verified';
+        state.status = 'ok';
+        ctx.body = {
+            ...state,
+        };
     });
 
     router.post('/send_code', koaBody, async (ctx) => {
-        if (rateLimitReq(ctx, ctx.req)) return;
+        let state = {
+            verification_way: 'email',
+            step: 'sending',
+        };
+
+        rateLimitReq(ctx, ctx.req, state);
 
         if (!config.gmail_send.user || !config.gmail_send.pass) {
-          ctx.status = 401;
-          ctx.body = 'Mail service disabled';
-          return;
+            throwErr(ctx, 503, ['registration_with_email_disabled'], null, state);
         }
 
         const body = ctx.request.body;
+        if (!body) {
+            throwErr(ctx, 400, ['request_should_have_json_body'], null, state);
+        }
+
         let params = {};
 
         if (typeof body === 'string') {
@@ -207,9 +256,13 @@ module.exports = function useRegistrationApi(app) {
 
         //const retry = params.retry ? params.retry : null;
 
-        if (!email || !/^[a-z0-9](\.?[a-z0-9]){5,}@g(oogle)?mail\.com$/.test(email)) {
-            ctx.body = JSON.stringify({ status: 'provide_email' });
-            return;
+        if (!email) {
+            throwErr(ctx, 400, ['no_email_parameter'], null, state);
+        }
+        const fakeEmailsAllowed = config.has('fake_emails_allowed')
+            && config.get('fake_emails_allowed');
+        if (fakeEmailsAllowed && !/^[a-z0-9](\.?[a-z0-9]){5,}@g(oogle)?mail\.com$/.test(email)) {
+            throwErr(ctx, 400, ['wrong_mail_service'], null, state);
         }
 
         const emailHash = hash.sha256(email, 'hex');
@@ -223,8 +276,7 @@ module.exports = function useRegistrationApi(app) {
                 ctx.session.user, ctx.session.uid,
                 emailHash, existing_email[0][0]
             );
-            ctx.body = JSON.stringify({ status: 'already_used' });
-            return;
+            throwErr(ctx, 400, ['email_already_used'], null, state);
         }
 
         let confirmation_code = parseInt(
@@ -253,9 +305,12 @@ module.exports = function useRegistrationApi(app) {
 
         if (user[0] && user[0][2] === 'email' && user[0][3] === emailHash && user[0][1] === ctx.session.uid) {
             if (user[0][4]) {
-                ctx.body = JSON.stringify({
-                    status: 'done',
-                });
+                state.step = 'verified';
+                ctx.body = {
+                    status: 'ok',
+                    already_verified: true,
+                    ...state,
+                };
                 ctx.session.user = user[0][0];
                 return;
             }
@@ -277,14 +332,8 @@ module.exports = function useRegistrationApi(app) {
                 html: `Registration code: <h4>${confirmation_code}</h4>`,
             });
         } catch (e) {
-            console.log(e);
-
-            ctx.body = JSON.stringify({
-                status: 'error',
-                error: 'Send code error ' + e,
-            });
-
-            return;
+            console.log('Send code to e-mail error', e);
+            throwErr(ctx, 500, ['cannot_send_email'], null, state);
         }
 
         const ip = getRemoteIp(ctx.request.req);
@@ -301,13 +350,22 @@ module.exports = function useRegistrationApi(app) {
                 [['=', 5, confirmation_code], ['=', 6, ip]])
         }
 
-        ctx.body = JSON.stringify({
-            status: 'waiting',
-        });
+        state.step = 'sent';
+        state.status = 'ok';
+        ctx.body = {
+            status: 'ok',
+            already_verified: false,
+            ...state,
+        };
     });
 
     router.post('/use_invite', koaBody, async (ctx) => {
-        if (rateLimitReq(ctx, ctx.req)) return;
+        let state = {
+            verification_way: 'invite_code',
+            step: 'sending',
+        };
+
+        rateLimitReq(ctx, ctx.req, state);
 
         const body = ctx.request.body;
         let params = {};
@@ -326,8 +384,7 @@ module.exports = function useRegistrationApi(app) {
         //const retry = params.retry ? params.retry : null;
 
         if (!invite_key) {
-            ctx.body = JSON.stringify({ status: 'provide_email' });
-            return;
+            throwErr(ctx, 400, ['no_invite_key_parameter'], null, state);
         }
 
         let invite = null;
@@ -335,15 +392,14 @@ module.exports = function useRegistrationApi(app) {
             invite = await api.getInviteAsync(invite_key);
         } catch (err) {
             if (err.message.includes('Invalid value')) {
-                ctx.body = JSON.stringify({ status: 'no_invite' });
+                throwErr(ctx, 400, ['no_such_invite'], null, state);
             } else {
-                ctx.body = JSON.stringify({ status: 'blockchain_not_available' });
+                throwErr(ctx, 503, ['blockchain_not_available_for_invite'], null, state);
             }
             return;
         }
         if (!invite) {
-            ctx.body = JSON.stringify({ status: 'no_invite' });
-            return;
+            throwErr(ctx, 400, ['no_such_invite'], null, state);
         }
 
         console.log('-- /use_invite select user');
@@ -361,35 +417,48 @@ module.exports = function useRegistrationApi(app) {
 
         ctx.session.user = user[0][0];
 
+        state.step = 'verified';
+        state.status = 'ok';
         ctx.body = JSON.stringify({
             status: 'done',
+            ...state,
         });
     });
 
     router.get('/modal/vk', (ctx, next) => {
+        ctx.session.soc_type = 'vkontakte';
         passport.authenticate('vkontakte')(ctx, next);
     });
     router.get('/modal/vk/callback', passport.authenticate('vkontakte', {
-        successRedirect: '/api/modal/success',
-        failureRedirect: '/api/modal/failure'
+        successRedirect: '/api/reg/modal/success',
+        failureRedirect: '/api/reg/modal/failure'
     }));
 
-    router.get('/modal/facebook', passport.authenticate('facebook'));
+    router.get('/modal/facebook', (ctx, next) => {
+        ctx.session.soc_type = 'facebook';
+        passport.authenticate('facebook')(ctx, next);
+    });
     router.get('/modal/facebook/callback', passport.authenticate('facebook', {
-        successRedirect: '/api/modal/success',
-        failureRedirect: '/api/modal/failure'
+        successRedirect: '/api/reg/modal/success',
+        failureRedirect: '/api/reg/modal/failure'
     }));
 
-    router.get('/modal/mailru', passport.authenticate('mailru'));
+    router.get('/modal/mailru', (ctx, next) => {
+        ctx.session.soc_type = 'mailru';
+        passport.authenticate('mailru')(ctx, next);
+    });
     router.get('/modal/mailru/callback', passport.authenticate('mailru', {
-        successRedirect: '/api/modal/success',
-        failureRedirect: '/api/modal/failure'
+        successRedirect: '/api/reg/modal/success',
+        failureRedirect: '/api/reg/modal/failure'
     }));
 
-    router.get('/modal/yandex', passport.authenticate('yandex'));
+    router.get('/modal/yandex', (ctx, next) => {
+        ctx.session.soc_type = 'yandex';
+        passport.authenticate('yandex')(ctx, next);
+    });
     router.get('/modal/yandex/callback', passport.authenticate('yandex', {
-        successRedirect: '/api/modal/success',
-        failureRedirect: '/api/modal/failure'
+        successRedirect: '/api/reg/modal/success',
+        failureRedirect: '/api/reg/modal/failure'
     }));
 
     router.get('/modal/failure', (ctx) => {
@@ -405,5 +474,18 @@ module.exports = function useRegistrationApi(app) {
         ctx.status = 200;
         ctx.statusText = 'OK';
         ctx.body = '<script>window.close();</script>';
+    });
+
+    router.get('/check_soc_auth', (ctx) => {
+        const { soc_type, soc_id_type, } = ctx.session;
+        let state = {
+            status: 'ok',
+            verification_way: 'social-' + soc_type,
+            step: soc_id_type ? 'verified' : 'sending',
+        };
+        ctx.body = {
+            soc_id_type: soc_id_type || null,
+            ...state,
+        };
     });
 }

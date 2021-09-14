@@ -6,6 +6,8 @@ const { getRemoteIp, slowDownLimitReq, returnError } = require('../utils/misc');
 module.exports = function useUtilsApi(app) {
     const router = koa_router({ prefix: '/api/utils' });
     app.use(router.routes());
+    app.use(router.allowedMethods({ throw: true, }));
+
     const koaBody = koa_body();
 
     router.get('/account_exists/:name', koaBody, async (ctx) => {

@@ -1,5 +1,4 @@
 import tt from 'counterpart';
-import logo from './logo.svg';
 import './App.scss';
 import CreateAccount from './CreateAccount.jsx';
 

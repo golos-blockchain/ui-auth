@@ -4,7 +4,7 @@ import { key_utils } from 'golos-classic-js/lib/auth/ecc';
 import tt from 'counterpart';
 
 function allChecked(confirmCheckboxes) {
-    return confirmCheckboxes.box1 && confirmCheckboxes.box2;
+    return confirmCheckboxes.box1;
 }
 
 export default class GeneratedPasswordInput extends React.Component {
@@ -19,7 +19,7 @@ export default class GeneratedPasswordInput extends React.Component {
         generatedPassword: 'P' + key_utils.get_random_key().toWif(),
         confirmPassword: '',
         confirmPasswordError: '',
-        confirmCheckboxes: {box1: false, box2: false},
+        confirmCheckboxes: {box1: false},
         showRules: false,
     };
 
@@ -44,34 +44,31 @@ export default class GeneratedPasswordInput extends React.Component {
         const {disabled, showPasswordString} = this.props;
         const {generatedPassword, confirmPassword, confirmPasswordError, confirmCheckboxes} = this.state;
         return (
-            <div className="GeneratedPasswordInput">
-                <div className="GeneratedPasswordInput__field">
-                    <label className="uppercase">
+            <div className='GeneratedPasswordInput'>
+                <div className='GeneratedPasswordInput__field'>
+                    <label className='uppercase'>
                         {tt('createaccount_jsx.take_your_secret_key')}
                         <br />
                         <code className={(disabled ? 'disabled ' : '') + 'GeneratedPasswordInput__generated_password'}>{showPasswordString ? generatedPassword : '-'}</code>
-                        <div className="GeneratedPasswordInput__backup_text">
+                        <div className='GeneratedPasswordInput__backup_text'>
                             {tt('g.backup_password_by_storing_it')}
                         </div>
                     </label>
                 </div>
-                <div className="GeneratedPasswordInput__field">
-                    <label className="uppercase">
+                <div className='GeneratedPasswordInput__field'>
+                    <label className='uppercase'>
                         {tt('g.re_enter_generate_password')}
-                        <input type="password" name="confirmPassword" autoComplete="off" onChange={this.confirmPasswordChange} value={confirmPassword} disabled={disabled} />
+                        <input type='password' name='confirmPassword' autoComplete='off' onChange={this.confirmPasswordChange} value={confirmPassword} disabled={disabled} />
                     </label>
-                    <div className="error">{confirmPasswordError}</div>
+                    <div className='error'>{confirmPasswordError}</div>
                 </div>
                 {this._renderPasswordRules()}
-                <div className="GeneratedPasswordInput__confirm">
+                <div className='GeneratedPasswordInput__confirm'>
                     {tt('createaccount_jsx.final_confirm')}
                 </div>
-                <div className="GeneratedPasswordInput__checkboxes">
-                    <label><input type="checkbox" name="box1" onChange={this.confirmCheckChange} checked={confirmCheckboxes.box1} disabled={disabled} />
-                        {tt('g.understand_that_APP_NAME_cannot_recover_password', {APP_NAME: 'GOLOS'})}.
-                    </label>
-                    <label><input type="checkbox" name="box2" onChange={this.confirmCheckChange} checked={confirmCheckboxes.box2} disabled={disabled} />
-                        {tt('g.i_saved_password')}.
+                <div className='GeneratedPasswordInput__checkboxes'>
+                    <label><input type='checkbox' name='box1' onChange={this.confirmCheckChange} checked={confirmCheckboxes.box1} disabled={disabled} />
+                        {tt('g.understand_that_we_cannot_recover_password', {APP_NAME: 'GOLOS'})}.
                     </label>
                 </div>
             </div>
@@ -84,7 +81,7 @@ export default class GeneratedPasswordInput extends React.Component {
 
             return (
                 <div>
-                    <p className="GeneratedPasswordInput__rule">
+                    <p className='GeneratedPasswordInput__rule'>
                         {tt('g.the_rules_of_APP_NAME.one', { APP_NAME })}
                         <br />
                         {tt('g.the_rules_of_APP_NAME.second', { APP_NAME })}
@@ -99,10 +96,10 @@ export default class GeneratedPasswordInput extends React.Component {
                         <br />
                         {tt('g.the_rules_of_APP_NAME.seventh')}
                     </p>
-                    <div className="text-left">
+                    <div className='text-left'>
                         <a
-                            className="GeneratedPasswordInput__rules-button"
-                            href="#"
+                            className='GeneratedPasswordInput__rules-button'
+                            href='#'
                             onClick={this._onToggleRulesClick}
                         >
                             {tt('g.close')}&nbsp;&uarr;
@@ -115,8 +112,8 @@ export default class GeneratedPasswordInput extends React.Component {
             return (
                 <p>
                     <a
-                        className="GeneratedPasswordInput__rules-button"
-                        href="#"
+                        className='GeneratedPasswordInput__rules-button'
+                        href='#'
                         onClick={this._onToggleRulesClick}
                     >
                         {tt('g.show_rules')}&nbsp;&darr;

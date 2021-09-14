@@ -1,10 +1,13 @@
 @import "./foundation-settings";
 @import "~foundation-sites/scss/foundation";
 
+@import "./fonts";
+
 @include foundation-everything(true);
 
 @import "./components/elements/GeneratedPasswordInput";
 @import "./components/elements/LoadingIndicator";
+@import "./components/modules/Header";
 
 @import "./foundation-overrides";
 

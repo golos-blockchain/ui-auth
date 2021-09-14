@@ -1,0 +1,43 @@
+import React from 'react';
+import LocaleSelect from '../elements/LocaleSelect';
+
+class Header extends React.Component {
+    static propTypes = {
+    };
+
+    onLogoClick = (e) => {
+        const { logoUrl, } = this.props;
+        window.location.href = logoUrl;
+    }
+
+    render() {
+        const { logo, title, subtitle, logoUrl, } = this.props;
+
+        return (
+            <header className='Header noPrint'>
+                <div className='Header__top header'>
+                    <div className='row align-middle'>
+                        <div className='columns'>
+                            <ul className='menu'>
+                                <li className='Header__top-logo'>
+                                    <img src={logo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />
+                                </li>
+                                <li className='Header__top-title show-for-large noPrint'>
+                                    <a href={logoUrl}>
+                                        {title}
+                                        <span className='subtitle'>{subtitle}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className='columns shrink'>
+                            <LocaleSelect/>
+                        </div>
+                    </div>
+                </div>
+            </header>
+        );
+    }
+}
+
+export default Header;
