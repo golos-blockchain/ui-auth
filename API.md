@@ -38,8 +38,8 @@ HTTP-статус дублируется также в поле `"httpStatus"`, 
 Хранение состояния авторизации осуществляется в заголовке `X-Auth-Session` (который играет роль cookies), поэтому при каждом запросе следует сохранять в localStorage значение данного заголовка ответа (но если заголовка в ответе нет, то очищать НЕ следует), а при каждом запросе добавлять сохраненное значение к запросу.
 
 Примеры работы с API (используя Fetch и async-await) можно найти в тестах:  
-https://github.com/golos-blockchain/ui-auth/blob/dev/cypress/integration/login.spec.js  
-https://github.com/golos-blockchain/ui-auth/blob/dev/cypress/support/index.js  
+https://github.com/golos-blockchain/ui-auth/blob/master/cypress/integration/login.spec.js  
+https://github.com/golos-blockchain/ui-auth/blob/master/cypress/support/index.js  
 
 #### `POST /login_account` - авторизация аккаунта пользователя.
 
@@ -60,7 +60,7 @@ https://github.com/golos-blockchain/ui-auth/blob/dev/cypress/support/index.js
 #### Проверка на вашем сервере, что аккаунт авторизован
 
 У нас по такому принципу работает авторизация в Golos Notify Service (написано на Koa, использует библиотеку axios, но можно использовать любой другой способ отправлять HTTP-запросы из Node.js):
-https://github.com/golos-blockchain/notify/blob/dev/dataserver/api/auth.js
+https://github.com/golos-blockchain/notify/blob/master/dataserver/api/auth.js
 
 ## Регистрация 
 
