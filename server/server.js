@@ -1,20 +1,22 @@
 const path = require('path');
 const fs = require('fs');
 const golos = require('golos-classic-js');
+const tt = require('counterpart');
 const Koa = require('koa');
-const mount = require('koa-mount');
+const csrf = require('koa-csrf');
+const cors = require('@koa/cors');
+//const favicon = require('koa-favicon');
+//const isBot = require('koa-isbot');
 //const koa_logger = require('koa-logger');
 //const prod_logger = require('./prod_logger');
-//const favicon = require('koa-favicon');
+const mount = require('koa-mount');
 const static = require('koa-static');
+const error = require('koa-json-error');
 const useGeneralApi = require('./api/general');
 const useRegistrationApi = require('./api/registration');
 const useUtilsApi = require('./api/utils');
 const useAuthApi = require('./api/auth');
-//const isBot = require('koa-isbot');
 const session = require('./utils/cryptoSession');
-const csrf = require('koa-csrf');
-const cors = require('@koa/cors');
 const config = require('config');
 
 console.log('application server starting, please wait.');
@@ -24,6 +26,13 @@ const CHAIN_ID = config.get('chain_id');
 if (CHAIN_ID) {
     golos.config.set('chain_id', CHAIN_ID);
 }
+
+tt.registerTranslations('en', require('../src/locales/en.json'));
+tt.registerTranslations('ru', require('../src/locales/ru-RU.json'));
+
+tt.setLocale('ru');
+tt.setFallbackLocale('en');
+tt.setMissingEntryGenerator(key => key);
 
 const app = new Koa();
 app.name = 'Golos Register app';
@@ -59,6 +68,20 @@ if (env === 'production') {
 } else {
     app.use(koa_logger());
 }*/
+
+app.use(error(err => {
+    return {
+        status: 'err',
+        httpStatus: err.status,
+        error: err.message,
+        error_str: tt('server_errors.' + err.message, {
+            locale: err.messageLocale,
+            ...err.messageStrData,
+        }),
+        error_exception: err.exception,
+        ...err.bodyProps,
+    };
+}));
 
 useRegistrationApi(app);
 useGeneralApi(app);

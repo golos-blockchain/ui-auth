@@ -33,6 +33,7 @@
     "telegram": "our Telegram",
     "enter_email": "Enter your Google e-mail (create it ",
     "here": "here",
+    "thank_you_for_email_confirmation": "Thank you for e-mail confirmation.",
     "i_have_invite_code": "I have an invite code",
     "i_have_not_invite_code": "I have no invite code",
     "enter_invite_code": "Enter invite code",
@@ -52,7 +53,6 @@
     "sent_sms": "I sent sms",
     "sent_sms_descriptio": "Дождитесь подтверждения вашего номера телефона (процесс может занять несколько минут), после чего поля регистрации станут активны для заполнения.",
     "sent_sms_description": "Wait until your phone number will be confirmed (it may take several minutes).",
-    "check_code": "Please, check the code and sent number. If all is ok but registration doesn't continue write to us on",
     "get_code": "Get confirmation code",
     "will_be_send_to_phone_number": "Number: +",
     "our_records_indicate_you_already_have_account": "Our records indicate that you already have %(APP_NAME)s account",
@@ -92,8 +92,7 @@
     "re_send": "Re-send",
     "phone_number_has_been_verified": "E-mail has been verified, please continue the registration.",
     "authorizing_with": "Authorizing with ",
-    "authorized_with_": "Аuthorized with ",
-    "this_phone_number_has_already_been_used": "This phone number has already been used"
+    "authorized_with_": "Аuthorized with "
   },
   "header_jsx": {
   },
@@ -179,6 +178,21 @@
     "waiting_from_you_line_2": "Golos.id interested in registration real people, not robots. We ask you to send SMS.",
     "attempts_10": "Confirmation was attempted a moment ago. You can try again only in 10 seconds",
     "attempts_300": "Confirmation was attempted a moment ago. You can try again only in 5 minutes"
+  },
+  "server_errors": {
+    "too_many_requests": "Too many requests. Please wait a moment and try again.",
+    "registration_with_email_disabled": "Registering with e-mail is temporarily disabled.",
+    "email_already_used": "This e-mail has already been used.",
+    "wrong_mail_service": "E-mail should be Google Mail (gmail.com).",
+    "cannot_send_email": "Cannot send e-mail. Please contact us and we will solve the problem.",
+    "not_verified": "Cannot register, not verified, or browser does not stores cookies.",
+    "recaptcha_v2_failed": "You didn't solved the \"I'm not a robot\" captcha.",
+    "already_registered": "Only one Golos account per user is allowed in order to prevent abuse.",
+    "ip_account_rate_limit_LIMIT": "Only one Golos account allowed per IP address every %(LIMIT)s min.",
+    "no_such_invite": "No such invite code. Please sure you are correctly typed its code.",
+    "blockchain_not_available_for_invite": "We sorry but blockchain is not available now. Wait a moment and try again, please.",
+    "blockchain_not_available": "We sorry but blockchain is not available now. Wait a moment and try again, please.",
+    "wrong_confirmation": "Wrong confirmation code."
   },
   "suggestpassword_jsx": {
     "APP_NAME_cannot_recover_passwords_keep_this_page_in_a_secure_location": "%(APP_NAME)s cannot recover passwords. Keep this page in a secure location, such as a fireproof safe or safety deposit box.",
