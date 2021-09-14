@@ -23,7 +23,7 @@ module.exports = function useAuthApi(app) {
             return returnError(ctx, 'account is required');
         }
         let { login_challenge } = ctx.session;
-        if (!signatures) { // step 1
+        if (!signatures) { // step 1 or checking auth
             let originErr = checkOrigin(ctx);
             if (originErr) {
                 return returnError(ctx, originErr);

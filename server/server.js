@@ -40,7 +40,7 @@ const env = process.env.NODE_ENV || 'development';
 const cacheOpts = { maxage: 0, gzip: true };
 
 app.use(cors({ credentials: true,
-    expose: ['X-Auth-Session', 'Retry-After'],
+    exposeHeaders: ['X-Auth-Session', 'Retry-After'],
 }));
 
 app.keys = [config.get('session_key')];
