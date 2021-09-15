@@ -3,9 +3,8 @@ services:
 
   web:
     image: golosblockchain/ui-auth:latest
-    build: .
     restart: always
-    command: bash -c "yarn run production"
+    build: .    
     volumes:
       - ./config/default.json:/var/app/config/default.json
       - ./themes:/var/app/themes
@@ -21,7 +20,7 @@ services:
   # other parameters in config/custom-environment-variables.json
 
   db:
-    image: golosblockchain/ui-auth:db
+    image: golosblockchain/ui-auth:tarantool
     restart: always
     build:
       context: .
