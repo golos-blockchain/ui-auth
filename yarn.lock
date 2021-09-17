@@ -4132,10 +4132,15 @@ core-js@^3.6.0, core-js@^3.6.5:
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.16.4.tgz#0fb1029a554fc2688c0963d7c900e188188a78e0"
   integrity sha512-Tq4GVE6XCjE+hcyW6hPy0ofN3hwtLudz5ZRdrlCnsnD/xkm/PWQRudzYHiKgZKUcefV6Q57fhDHjZHJP5dpfSg==
 
-core-util-is@1.0.2, core-util-is@^1.0.2, core-util-is@~1.0.0:
+core-util-is@1.0.2, core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
+
+core-util-is@^1.0.2:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.3.tgz#a6042d3634c2b27e9328f837b965fac83808db85"
+  integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
 
 cosmiconfig@^5.0.0:
   version "5.2.1"
@@ -4180,7 +4185,7 @@ counterpart@^0.18.6:
     pluralizers "^0.1.7"
     sprintf-js "^1.0.3"
 
-crc@^3.4.4, crc@^3.8.0:
+crc@^3.4.4:
   version "3.8.0"
   resolved "https://registry.yarnpkg.com/crc/-/crc-3.8.0.tgz#ad60269c2c856f8c299e2c4cc0de4556914056c6"
   integrity sha512-iX3mfgcTMIq3ZKLIsVFAbv7+Mc10kxabAGQb8HvjA1o3T1PIYprbakQ65d3I+2HGHt6nSKkM9PYjgoJO2KcFBQ==
@@ -7269,7 +7274,7 @@ is-symbol@^1.0.2, is-symbol@^1.0.3:
   dependencies:
     has-symbols "^1.0.2"
 
-is-type-of@^1.0.0, is-type-of@^1.2.0:
+is-type-of@^1.0.0:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/is-type-of/-/is-type-of-1.2.1.tgz#e263ec3857aceb4f28c47130ec78db09a920f8c5"
   integrity sha512-uK0kyX9LZYhSDS7H2sVJQJop1UnWPWmo5RvR3q2kFH6AUHYs7sOrVg0b4nyBHw29kRRNFofYN/JbHZDlHiItTA==
@@ -8167,16 +8172,6 @@ koa-send@^5.0.0:
     http-errors "^1.7.3"
     resolve-path "^1.4.0"
 
-koa-session-auth@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/koa-session-auth/-/koa-session-auth-1.0.3.tgz#125cf9f1ac25e1003024f22fdde7b3a12dd85d2a"
-  integrity sha512-e222yEyKHjzsVV65+qbhaVhU/ihzoOIm8r8LPU1Oi4DKm1PHLQm1acI8hFzgNO93Op6GAYPCu9548znocnr9QQ==
-  dependencies:
-    crc "^3.8.0"
-    is-type-of "^1.2.0"
-    koa "^2.5.3"
-    uid-safe "^2.1.5"
-
 koa-session@^6.2.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/koa-session/-/koa-session-6.2.0.tgz#c0da2a808b520f62a25dac9f2914b580b2402078"
@@ -8204,7 +8199,7 @@ koa2-ratelimit@^0.9.0:
     promise-redis "0.0.5"
     sequelize "^5.8.7"
 
-koa@^2.0.0, koa@^2.13.0, koa@^2.5.3:
+koa@^2.0.0, koa@^2.13.0:
   version "2.13.1"
   resolved "https://registry.yarnpkg.com/koa/-/koa-2.13.1.tgz#6275172875b27bcfe1d454356a5b6b9f5a9b1051"
   integrity sha512-Lb2Dloc72auj5vK4X4qqL7B5jyDPQaZucc9sR/71byg7ryoD1NCaCm63CShk9ID9quQvDEi1bGR/iGjCG7As3w==
@@ -13053,7 +13048,7 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-uid-safe@2.1.5, uid-safe@^2.1.5:
+uid-safe@2.1.5:
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/uid-safe/-/uid-safe-2.1.5.tgz#2b3d5c7240e8fc2e58f8aa269e5ee49c0857bd3a"
   integrity sha512-KPHm4VL5dDXKz01UuEd88Df+KzynaohSL9fBh096KWAxSKZQDI2uBrVqtvRM4rwrIrRRKsdLNML/lnaaVSRioA==

@@ -50,7 +50,8 @@ const crypto_key = config.get('server_session_secret');
 session(app, {
     maxAge: 1000 * 3600 * 24 * 60,
     crypto_key,
-    key: config.get('session_cookie_key')
+    key: config.get('session_cookie_key'),
+    sameSite: (env === 'production') ? 'none' : null,
 });
 //csrf(app);
 // app.use(csrf.middleware);
@@ -96,11 +97,11 @@ useAuthApi(app);
 // Proxy asset folder to webpack development server in development mode
 if (env === 'production') {
     app.use(async (ctx, next) => {
-        const pathParts = ctx.path.split('/');
-        if (!ctx.url.includes('static/') &&
-            !ctx.url.includes('images/') &&
-            !ctx.url.includes('icons/') &&
-            !ctx.url.includes('themes/')) {
+        if (!ctx.path.startsWith('/static/') &&
+            !ctx.path.startsWith('/images/') &&
+            !ctx.path.startsWith('/icons/') &&
+            !ctx.path.startsWith('/themes/') &&
+            !ctx.path.startsWith('/api/')) {
             ctx.url = '/';
         }
         await next();

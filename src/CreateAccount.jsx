@@ -13,6 +13,7 @@ import KeyFile from './utils/KeyFile';
 import GeneratedPasswordInput from './components/elements/GeneratedPasswordInput';
 import { APP_DOMAIN, SUPPORT_EMAIL } from './client_config';
 import './CreateAccount.scss';
+import { getHost, callApi, } from './utils/RegApiClient';
 
 function formatAsset(val) {
     return val;
@@ -1064,24 +1065,6 @@ class CreateAccount extends React.Component {
     };
 }
 
-function getHost() {
-    const { location, } = window;
-    if (process.env.NODE_ENV === 'development') {
-        return location.protocol + '//'+ location.hostname + ':8080';
-    }
-    return location.origin;
-}
 
-function callApi(apiName, data) {
-    return fetch(getHost() + apiName, {
-        method: data ? 'post' : 'get',
-        credentials: 'include',
-        headers: {
-            Accept: 'application/json',
-            'Content-type': data ? 'application/json' : undefined,
-        },
-        body: data ? JSON.stringify(data) : undefined,
-    });
-}
 
 export default CreateAccount;
