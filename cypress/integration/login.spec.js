@@ -72,6 +72,22 @@ it('/login_account - good', async function() {
     expect(json.guid.length).to.be.above(0);
 
     global.log('account tarantool guid:', json.guid);
+
+    global.log('step 3: check already_authorized');
+
+    var body = {
+        account: 'alice',
+    };
+    var request = {...getRequestBase(),
+        body: JSON.stringify(body),
+    };
+
+    var resp = await fetch(global.API_HOST + '/api/login_account', request);
+
+    var json = await resp.json();
+    expect(json.error).to.equal(undefined);
+    expect(json.status).to.equal('ok');
+    expect(json.already_authorized).to.equal(ACC);
 });
 
 it('/logout_account', async function() {

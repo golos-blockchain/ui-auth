@@ -33,6 +33,9 @@ module.exports = function useAuthApi(app) {
             if (originErr) {
                 return returnError(ctx, originErr);
             }
+
+            const alreadyAuthorized = sessions.get(authSession);
+
             if (!login_challenge) {
                 authSession = secureRandom.randomBuffer(16).toString('hex')
                 login_challenge = secureRandom.randomBuffer(16).toString('hex');
@@ -42,7 +45,7 @@ module.exports = function useAuthApi(app) {
             ctx.set('X-Auth-Session', authSession);
             ctx.body = {
                 login_challenge,
-                already_authorized: sessions.get(authSession),
+                already_authorized: alreadyAuthorized,
                 status: 'ok',
             }
         } else { // step 2
