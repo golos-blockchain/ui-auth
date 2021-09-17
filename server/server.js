@@ -9,6 +9,7 @@ const cors = require('@koa/cors');
 //const isBot = require('koa-isbot');
 //const koa_logger = require('koa-logger');
 //const prod_logger = require('./prod_logger');
+const helmet = require('koa-helmet');
 const mount = require('koa-mount');
 const static = require('koa-static');
 const error = require('koa-json-error');
@@ -17,6 +18,7 @@ const useRegistrationApi = require('./api/registration');
 const useUtilsApi = require('./api/utils');
 const useAuthApi = require('./api/auth');
 const session = require('./utils/cryptoSession');
+const { convertEntriesToArrays, } = require('./utils/misc');
 const config = require('config');
 
 console.log('application server starting, please wait.');
@@ -54,6 +56,18 @@ session(app, {
 });
 //csrf(app);
 // app.use(csrf.middleware);
+app.use(helmet());
+
+// helmet wants some things as bools and some as lists, makes config difficult.
+// our config uses strings, this splits them to lists on whitespace.
+if (env === 'production') {
+    const helmetConfig = {
+        directives: convertEntriesToArrays(config.get('helmet.directives')),
+        reportOnly: false,
+    };
+    helmetConfig.directives.reportUri = '/api/csp_violation';
+    app.use(helmet.contentSecurityPolicy(helmetConfig));
+}
 
 // load production middleware
 if (env === 'production') {
