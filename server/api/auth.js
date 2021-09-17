@@ -13,6 +13,7 @@ module.exports = function useAuthApi(app) {
 
     const koaBody = koa_body();
 
+    let challenges = new Map();
     let sessions = new Map();
 
     router.post('/login_account', koaBody, async (ctx) => {
@@ -22,22 +23,29 @@ module.exports = function useAuthApi(app) {
         if (!account) {
             return returnError(ctx, 'account is required');
         }
-        let { login_challenge } = ctx.session;
+
+        let authSession = ctx.get('X-Auth-Session');
+
+        let login_challenge = authSession && challenges.get(authSession);
+
         if (!signatures) { // step 1 or checking auth
             let originErr = checkOrigin(ctx);
             if (originErr) {
                 return returnError(ctx, originErr);
             }
+
+            const alreadyAuthorized = sessions.get(authSession);
+
             if (!login_challenge) {
+                authSession = secureRandom.randomBuffer(16).toString('hex')
                 login_challenge = secureRandom.randomBuffer(16).toString('hex');
-                ctx.session.login_challenge = login_challenge;
+                challenges.set(authSession, login_challenge);
             }
 
-            const auth_session = ctx.get('X-Auth-Session');
-
+            ctx.set('X-Auth-Session', authSession);
             ctx.body = {
                 login_challenge,
-                already_authorized: sessions.get(auth_session),
+                already_authorized: alreadyAuthorized,
                 status: 'ok',
             }
         } else { // step 2
@@ -76,14 +84,13 @@ module.exports = function useAuthApi(app) {
                 return returnError(ctx, 'wrong signatures');
             }
 
-            const authSession = secureRandom.randomBuffer(16).toString('hex');
-
+            challenges.delete(authSession);
             sessions.set(authSession, account);
 
+            ctx.set('X-Auth-Session', authSession)
             ctx.body = {
                 status: 'ok',
             };
-            ctx.set('X-Auth-Session', authSession)
 
             try {
                 const res = await Tarantool.instance('tarantool').call('get_guid', account);
@@ -94,9 +101,9 @@ module.exports = function useAuthApi(app) {
     });
 
     router.get('/logout_account', koaBody, (ctx) => {
-        const auth_session = ctx.get('X-Auth-Session');
-        const was_logged_in = !!auth_session;
-        sessions.delete(auth_session);
+        const authSession = ctx.get('X-Auth-Session');
+        const was_logged_in = sessions.delete(authSession);
+        challenges.delete(authSession);
         ctx.body = {
             status: 'ok',
             was_logged_in,

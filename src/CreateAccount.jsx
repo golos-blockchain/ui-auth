@@ -13,6 +13,7 @@ import KeyFile from './utils/KeyFile';
 import GeneratedPasswordInput from './components/elements/GeneratedPasswordInput';
 import { APP_DOMAIN, SUPPORT_EMAIL } from './client_config';
 import './CreateAccount.scss';
+import { getHost, callApi, } from './utils/RegApiClient';
 
 function formatAsset(val) {
     return val;
@@ -24,12 +25,10 @@ class CreateAccount extends React.Component {
     };
 
     state = {
-        apiState: {
-            fetching: false,
-            step: 'sending',
-            verificationWay: 'email',
-            message: '',
-        },
+        fetching: false,
+        step: 'sending',
+        verificationWay: 'email',
+        message: '',
 
         name: '',
         email: '',
@@ -137,7 +136,7 @@ class CreateAccount extends React.Component {
     };
 
     startSocialLoading = (socName) => {
-        let apiState = {
+        this.setState({
             fetching: true,
             step: 'sending',
             verificationWay: 'social-' + socName,
@@ -146,23 +145,25 @@ class CreateAccount extends React.Component {
                 {tt('createaccount_jsx.authorizing_with') + socName + '...'}
                 {this._renderSocialButtons()}
             </div>),
-        };
-        this.setState({ apiState, email: '', });
+
+            email: '',
+        });
 
         this.checkSocAuth();
     };
 
     useSocialLogin = (result, socName) => {
         this.updateApiState(result, () => {
-            let apiState = {
-                ...this.state.apiState,
+            this.setState({
                 fetching: false,
                 message: (<div>
                     {tt('createaccount_jsx.authorized_with_') + this.state.authType + '.'}
                     {this._renderSocialButtons()}
                 </div>),
-            };
-            this.setState({ apiState, email: '', verificationWay: 'social-' + socName });
+                verificationWay: 'social-' + socName,
+
+                email: '',
+            });
         });
     };
 
@@ -261,10 +262,9 @@ class CreateAccount extends React.Component {
         const { title, favicon, logo_title, logo_subtitle, logo, origin, } = this._getConfig();
 
         const { loggedIn, offchainUser, serverBusy } = this.props;
+        const { state, } = this;
         const {
-            apiState,
             email,
-            invite_enabled,
             name,
             passwordValid,
             nameError,
@@ -275,7 +275,7 @@ class CreateAccount extends React.Component {
             submitting,
             cryptographyFailure,
             allBoxChecked,
-        } = this.state;
+        } = state;
 
         if (serverBusy) {
             return this._renderInvitationError();
@@ -295,27 +295,29 @@ class CreateAccount extends React.Component {
 
         let emailConfirmStep = null;
         let showMailForm =
-            apiState.step === 'sending'
-            && !apiState.verificationWay.startsWith('social-');
+            state.step === 'sending'
+            && !state.verificationWay.startsWith('social-');
 
-        if (apiState.step === 'sent' && apiState.verificationWay === 'email') {
+        let isInviteWay = state.verificationWay === 'invite_code';
+
+        if (state.step === 'sent' && state.verificationWay === 'email') {
             emailConfirmStep = this._renderCodeWaiting();
-        } else if (apiState.message) {
+        } else if (state.message) {
             emailConfirmStep = (
                 <div
                     className={cn('callout', {
-                        success: apiState.step === 'verified',
-                        alert: apiState.status === 'err',
-                    })}
+                        success: state.step === 'verified',
+                        alert: state.status === 'err',
+                    })} style={{ marginTop: '1rem', marginBottom: '1rem', }}
                 >
-                    {apiState.message}
+                    {state.message}
                 </div>
             );
         }
 
         let nextStep = null;
 
-        if (apiState.step === 'verified' && apiState.status === 'err') {
+        if (state.step === 'verified' && state.status === 'err') {
             nextStep = (
                 <div className='callout alert'>
                     <strong>
@@ -323,12 +325,12 @@ class CreateAccount extends React.Component {
                             'createaccount_jsx.couldnt_create_account_server_returned_error'
                         )}:
                     </strong>
-                    <p>{apiState.message}</p>
+                    <p>{state.message}</p>
                 </div>
             );
         }
 
-        const okStatus = apiState.step === 'verified';
+        const okStatus = state.step === 'verified';
 
         const submitDisabled =
             submitting ||
@@ -339,7 +341,7 @@ class CreateAccount extends React.Component {
             !allBoxChecked ||
             !okStatus;
 
-        const disableGetCode = okStatus || !emailHint || apiState.fetching;
+        const disableGetCode = okStatus || !emailHint || state.fetching;
         const disableContinueInvite = !inviteHint;
 
         return (
@@ -370,18 +372,18 @@ class CreateAccount extends React.Component {
                             noValidate
                             method='post'
                         >
-                            {(showMailForm || invite_enabled) && (
+                            {(showMailForm) && (
                                 <div>
                                     {showMailForm && <div>
-                                        <a onClick={this.onInviteEnabledChange}>{tt(invite_enabled ? 'createaccount_jsx.i_have_not_invite_code' : 'createaccount_jsx.i_have_invite_code')}
+                                        <a onClick={this.onInviteEnabledChange}>{tt(isInviteWay ? 'createaccount_jsx.i_have_not_invite_code' : 'createaccount_jsx.i_have_invite_code')}
                                         </a>
                                     </div>}
-                                    {invite_enabled && <div>
+                                    {isInviteWay && <div>
                                         <label>
                                             {this._renderInviteCodeField(true)}
                                         </label>
                                     </div>}
-                                    {!invite_enabled && <div>
+                                    {!isInviteWay && <div>
                                         <label>
                                             <span style={{ color: 'red' }}>
                                                 *
@@ -391,7 +393,7 @@ class CreateAccount extends React.Component {
                                                 type='text'
                                                 name='email'
                                                 autoComplete='off'
-                                                disabled={apiState.fetching}
+                                                disabled={state.fetching}
                                                 onChange={this.onEmailChange}
                                                 value={email}
                                             />
@@ -409,9 +411,9 @@ class CreateAccount extends React.Component {
                                 </div>
                             )}
                             {emailConfirmStep}
-                            {showMailForm && !invite_enabled && (
+                            {showMailForm && !isInviteWay && (
                                 <div>
-                                    {apiState.fetching
+                                    {state.fetching
                                         && <LoadingIndicator type='circle' size='20px' inline />}
                                     <p className='CreateAccount__send-code-block'>
                                         <a
@@ -429,7 +431,7 @@ class CreateAccount extends React.Component {
                                     </p>
                                 </div>
                             )}
-                            {showMailForm && invite_enabled && (
+                            {showMailForm && isInviteWay && (
                                 <div>
                                     <p>
                                         <a
@@ -497,6 +499,7 @@ class CreateAccount extends React.Component {
                                 className={cn('button action uppercase', {
                                     disabled: submitDisabled,
                                 })}
+                                style={{ marginBottom: '2rem', }}
                             >
                                 {tt('createaccount_jsx.create_account')}
                             </button>
@@ -549,7 +552,7 @@ class CreateAccount extends React.Component {
     }
 
     _renderCodeWaiting() {
-        const { apiState, } = this.state;
+        const { state, } = this;
 
         return (
             <div className='callout'>
@@ -577,9 +580,9 @@ class CreateAccount extends React.Component {
 
 
                 <div className={cn({
-                        error: apiState.status === 'err',
-                        success: apiState.status === 'ok' })}>
-                    <p>{apiState.message}</p>
+                        error: state.status === 'err',
+                        success: state.status === 'ok' })}>
+                    <p>{state.message}</p>
                 </div>
 
                 <a
@@ -710,12 +713,12 @@ class CreateAccount extends React.Component {
     }
 
     _renderInviteCodeField = (required) => {
+        const { state, } = this;
         const {
-            apiState,
             invite_code,
             inviteHint,
             inviteError,
-        } = this.state;
+        } = state;
         return (
             <div>
                 {required ? (<span style={{ color: 'red' }}>
@@ -727,7 +730,7 @@ class CreateAccount extends React.Component {
                     type='text'
                     name='invite_code'
                     autoComplete='off'
-                    disabled={required ? apiState.fetching : false}
+                    disabled={required ? state.fetching : false}
                     onChange={this.onInviteCodeChange}
                     value={invite_code}
                 />
@@ -825,10 +828,9 @@ class CreateAccount extends React.Component {
         } catch (err) {
             console.error('Caught CreateAccount server error', err);
             this.setState({
-                apiState: {
-                    status: 'err',
-                    error_str: err.message ? err.message : err,
-                },
+                status: 'err',
+                error_str: err.message ? err.message : err,
+
                 submitting: false,
             });
         }
@@ -872,7 +874,7 @@ class CreateAccount extends React.Component {
         let inviteHint = null;
 
         if (!value) {
-            if (this.state.invite_enabled) inviteError = tt('createaccount_jsx.invite_secret_cannot_be_empty');
+            if (this.state.verificationWay === 'invite_code') inviteError = tt('createaccount_jsx.invite_secret_cannot_be_empty');
         } else {
             let pk;
             try {
@@ -904,43 +906,41 @@ class CreateAccount extends React.Component {
     updateApiState(res, after) {
         const { step, verification_way, error_str, } = res;
 
-        let apiState = { ...this.state.apiState, };
+        let newState = {};
 
-        apiState.fetching = false;
-        apiState.status = res.status;
+        newState.fetching = false;
+        newState.status = res.status;
 
         if (step)
-            apiState.step = step;
+            newState.step = step;
         if (verification_way)
-            apiState.verificationWay = verification_way;
+            newState.verificationWay = verification_way;
 
-        apiState.message = '';
+        newState.message = '';
         if (error_str) {
-            apiState.message = error_str;
+            newState.message = error_str;
         }
         if (verification_way === 'email' && step === 'verified') {
-            apiState.message = tt(
+            newState.message = tt(
                 'createaccount_jsx.phone_number_has_been_verified'
             );
         }
 
-        this.setState({
-            apiState,
-        }, after);
+        this.setState(newState, after);
     }
 
     onClickSelectAnotherPhone = () => {
-        this.setState({ apiState: {
+        this.setState({
             fetching: false,
             step: 'sending',
-        } });
+        });
     };
 
     onClickSendCode = async () => {
         const { email } = this.state;
 
         this.setState({
-            apiState: { fetching: true },
+            fetching: true,
         });
 
         try {
@@ -962,11 +962,12 @@ class CreateAccount extends React.Component {
     };
 
     onClickContinueInvite = async () => {
-        let apiState = {
+        this.setState({ 
             fetching: true,
             message: '',
-        };
-        this.setState({ email: '', apiState, });
+
+            email: '',
+        });
 
         const res = await callApi('/api/reg/use_invite', {
             invite_key: PrivateKey.fromWif(this.state.invite_code).toPublicKey().toString()
@@ -1038,13 +1039,9 @@ class CreateAccount extends React.Component {
     };
 
     onInviteEnabledChange = e => {
-        const invite = !this.state.invite_enabled;
+        const isInvite = this.state.verificationWay === 'invite_code';
         this.setState({
-            invite_enabled: !this.state.invite_enabled,
-            apiState: {
-                ...this.state.apiState,
-                verificationWay: invite ? 'invite_code' : 'email',
-            },
+            verificationWay: isInvite ? 'email' : 'invite_code',
         });
     };
 
@@ -1064,24 +1061,6 @@ class CreateAccount extends React.Component {
     };
 }
 
-function getHost() {
-    const { location, } = window;
-    if (process.env.NODE_ENV === 'development') {
-        return location.protocol + '//'+ location.hostname + ':8080';
-    }
-    return location.origin;
-}
 
-function callApi(apiName, data) {
-    return fetch(getHost() + apiName, {
-        method: data ? 'post' : 'get',
-        credentials: 'include',
-        headers: {
-            Accept: 'application/json',
-            'Content-type': data ? 'application/json' : undefined,
-        },
-        body: data ? JSON.stringify(data) : undefined,
-    });
-}
 
 export default CreateAccount;
