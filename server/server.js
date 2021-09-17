@@ -51,7 +51,6 @@ session(app, {
     maxAge: 1000 * 3600 * 24 * 60,
     crypto_key,
     key: config.get('session_cookie_key'),
-    sameSite: (env === 'production') ? 'none' : null,
 });
 //csrf(app);
 // app.use(csrf.middleware);
