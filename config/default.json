@@ -1,5 +1,19 @@
 {
   "REST_API": "http://37.18.27.45:8080",
+  "helmet": {
+    "directives": {
+      "defaultSrc": "'self'",
+      "childSrc": "'self'",
+      "scriptSrc": "'self' 'unsafe-inline'",
+      "styleSrc": "'self' 'unsafe-inline' fonts.googleapis.com",
+      "imgSrc": "* data:",
+      "fontSrc": "data: fonts.gstatic.com",
+      "connectSrc": "'self' wss://*.golos.id *.golos.today",
+      "reportUri": "/api/csp_violation",
+      "objectSrc": "'self'",
+      "frameAncestors": "'none'"
+    }
+  },
   "allowed_clients": [
     "golos.id",
     "golostalk.com",

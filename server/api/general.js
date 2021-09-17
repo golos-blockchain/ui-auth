@@ -7,6 +7,7 @@ const {PublicKey, Signature, hash} = require('golos-classic-js/lib/auth/ecc');
 const {api, broadcast} = require('golos-classic-js');
 const axios = require('axios');
 const querystring = require('querystring');
+const coBody = require('co-body');
 
 module.exports = function useGeneralApi(app) {
     const router = koa_router({prefix: '/api'});
@@ -21,6 +22,14 @@ module.exports = function useGeneralApi(app) {
             date: new Date(),
         };
     })
+
+    router.post('/csp_violation', async (ctx) => {
+        rateLimitReq(ctx, ctx.req, {});
+
+        const params = await coBody.json(ctx);
+        console.log('-- /csp_violation -->', ctx.req.headers['user-agent'], params);
+        ctx.body = {};
+    });
 
     router.get('/set_locale/:locale', koaBody, async (ctx) => {
         const { locale, } = ctx.params;
