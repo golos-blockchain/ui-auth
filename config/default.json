@@ -3,8 +3,8 @@
   "helmet": {
     "directives": {
       "defaultSrc": "'self'",
-      "childSrc": "'self'",
-      "scriptSrc": "'self' 'unsafe-inline'",
+      "childSrc": "'self' www.google.com",
+      "scriptSrc": "'self' 'unsafe-inline' 'unsafe-eval' www.google.com www.gstatic.com",
       "styleSrc": "'self' 'unsafe-inline' fonts.googleapis.com",
       "imgSrc": "* data:",
       "fontSrc": "data: fonts.gstatic.com",
