@@ -239,8 +239,6 @@
     "please": "Please",    
     "active": "Active key",    
     "owner": "Owner key",
-    "read_only_mode_notify": "Server under maintenance",
-    "read_only_mode": "Due to server maintenance, the site is running in read mode.",
     "are_you_sure": "Are you sure?",
     "ask": "Ask",
     "auto": "auto",
