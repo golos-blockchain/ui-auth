@@ -8,8 +8,6 @@ const { checkOrigin, getRemoteIp, slowDownLimitReq, returnError } = require('../
 
 module.exports = function useAuthApi(app) {
     const router = koa_router({ prefix: '/api' });
-    app.use(router.routes());
-    app.use(router.allowedMethods({ throw: true, }));
 
     const koaBody = koa_body();
 
@@ -109,4 +107,7 @@ module.exports = function useAuthApi(app) {
             was_logged_in,
         };
     });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods({ throw: true, }));
 };

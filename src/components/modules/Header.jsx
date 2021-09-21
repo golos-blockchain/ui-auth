@@ -11,7 +11,7 @@ class Header extends React.Component {
     }
 
     render() {
-        const { logo, title, subtitle, logoUrl, } = this.props;
+        const { logo, title, titleUppercase, subtitle, logoUrl, } = this.props;
 
         return (
             <header className='Header noPrint'>
@@ -22,7 +22,7 @@ class Header extends React.Component {
                                 <li className='Header__top-logo'>
                                     <img src={logo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />
                                 </li>
-                                <li className='Header__top-title show-for-large noPrint'>
+                                <li className={'Header__top-title show-for-large noPrint ' + (titleUppercase === false ? '': 'uppercase')}>
                                     <a href={logoUrl}>
                                         {title}
                                         <span className='subtitle'>{subtitle}</span>

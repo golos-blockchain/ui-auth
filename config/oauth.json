@@ -1,0 +1,12 @@
+{
+  "oauth": {
+    "server_session_secret": "W5iQUifBxQHCebzwn4i0IvulwDMT5N591CI6feYd69g=",
+    "ws_connection_client": "ws://37.18.27.45:8091",
+    "chain_id": "5876894a41e6361bde2e73278f07340f2eb8b41c2facd29099de9deef6cdb679",
+    "service_account": {
+      "name": "oauth",
+      "posting": "5J...",
+      "active": "5J..."
+    }
+  }
+}

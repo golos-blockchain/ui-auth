@@ -223,7 +223,6 @@ ul > li.Header__top-logo > a {
 
   a {
     position: relative;
-    text-transform: uppercase;
     color: #2572ba;
     font-family: "Source Serif Pro";
     font-size: 34px !important;
@@ -241,6 +240,11 @@ ul > li.Header__top-logo > a {
     color: #2578be;
     text-transform: none;
     margin-left: 3px;
+  }
+}
+.Header__top-title.uppercase {
+  a {
+    text-transform: uppercase;
   }
 }
 

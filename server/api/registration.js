@@ -30,9 +30,7 @@ module.exports = function useRegistrationApi(app) {
         done(null, user);
     });
 
-    const router = koa_router({ prefix: '/api/reg' });
-    app.use(router.routes());
-    app.use(router.allowedMethods({ throw: true, }));
+    const router = koa_router({ prefix: '/reg', });
 
     const koaBody = koa_body();
 
@@ -488,4 +486,7 @@ module.exports = function useRegistrationApi(app) {
             ...state,
         };
     });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods({ throw: true, }));
 }

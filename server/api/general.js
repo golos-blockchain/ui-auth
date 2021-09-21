@@ -8,11 +8,20 @@ const {api, broadcast} = require('golos-classic-js');
 const axios = require('axios');
 const querystring = require('querystring');
 const coBody = require('co-body');
+const session = require('../utils/cryptoSession');
+const useRegistrationApi = require('./registration');
 
 module.exports = function useGeneralApi(app) {
     const router = koa_router({prefix: '/api'});
-    app.use(router.routes());
-    app.use(router.allowedMethods({ throw: true, }));
+
+    const crypto_key = config.get('server_session_secret');
+    session(router, {
+        maxAge: 1000 * 3600 * 24 * 60,
+        crypto_key,
+        key: config.get('session_cookie_key'),
+    });
+
+    useRegistrationApi(router);
 
     const koaBody = koa_body();
 
@@ -247,6 +256,9 @@ module.exports = function useGeneralApi(app) {
 
         await Tarantool.instance('tarantool').call('unlock_entity', user_id.toString());
     });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods({ throw: true, }));
 }
 
 /**

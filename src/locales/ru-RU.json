@@ -496,7 +496,7 @@
     "to_obtaion_a_more_secure_set_of_keys": "Например, для получения безопасного набора ключей",
     "update_your_password": "обновить ваш пароль",
     "enter_username": "Введите имя пользователя",
-    "password_or_wif": "Пароль или соответствующий ключ",
+    "password_or_wif": "Пароль или active ключ",
     "requires_auth_key": "Эта операция требует вашего %(authType)s ключа (или используйте главный пароль)",
     "keep_me_logged_in": "Оставить меня залогиненным",
     "donate": "Отблагодарить",
