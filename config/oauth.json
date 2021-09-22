@@ -1,5 +1,19 @@
 {
   "oauth": {
+    "allowed_clients": {
+      "localfile": {
+        "origins": ["null"],
+        "logo": "localfile.svg",
+        "ru": {
+          "title": "Тест file:///",
+          "description": "Только для тестов! Не давайте доступ к реальным аккаунтам."
+        },
+        "en": {
+          "title": "file:/// Tester",
+          "description": "Tests only! Do not give access to real accounts."
+        }
+      }
+    },
     "rest_api": "http://37.18.27.45:8080",
     "server_session_secret": "W5iQUifBxQHCebzwn4i0IvulwDMT5N591CI6feYd69g=",
     "ws_connection_client": "ws://37.18.27.45:8091",
