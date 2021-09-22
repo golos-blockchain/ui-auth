@@ -46,7 +46,7 @@ module.exports = function useRegistrationApi(app) {
                 {
                     clientID: grant.key,
                     clientSecret: grant.secret,
-                    callbackURL: `${config.REST_API}/api/reg/modal/${grantId}/callback`,
+                    callbackURL: `${config.rest_api}/api/reg/modal/${grantId}/callback`,
                     passReqToCallback: true
                 },
                 async (req, accessToken, refreshToken, params, profile, done) => {

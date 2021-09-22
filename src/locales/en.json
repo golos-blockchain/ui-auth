@@ -200,6 +200,25 @@
     "APP_NAME_password_backup_required": "%(APP_NAME)s Password Backup (required)",
     "after_printing_write_down_your_user_name": "After printing, write down your user name"
   },
+  "oauth_main_jsx": {
+    "trx_title": "Send a transaction",
+    "transfer": "Transfer tokens",
+    "donate": "Donate to user",
+    "delegate_vesting_shares": "Delegate vesting shares",
+    "apps_title": "Apps",
+    "apps_empty": "You are not authorized in any app.",
+    "link": "Link: "
+  },
+  "oauth_transfer": {
+    "from": "From",
+    "to": "To Account",
+    "amount": "Amount",
+    "balance": "Balance: ",
+    "insufficient": "Insufficient funds",
+    "memo": "Memo",
+    "memo_is_public": "This memo is public.",
+    "submit": "Transfer"
+  },
   "tips_js": {
     "tip_balance_hint": "Balance that you use to reward users and that you use to earn rewards for yourself. Tokens from it can also be sent to increase the Golos Power.",
     "claim_balance_hint": "Balance of your share of the emission of Golos blockchain tokens, which you can use to top up your TIP balance or increase the Golos Power.",

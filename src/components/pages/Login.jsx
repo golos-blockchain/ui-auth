@@ -3,8 +3,9 @@ import { Helmet } from 'react-helmet';
 import tt from 'counterpart';
 import Header from '../modules/Header';
 import './Login.scss';
-import { callApi, } from '../../utils/OAuthClient';
+import { callApi, getSession, } from '../../utils/OAuthClient';
 import golos from 'golos-classic-js';
+import {Signature, hash} from 'golos-classic-js/lib/auth/ecc'
 
 class Login extends React.Component {
     static propTypes = {
@@ -17,6 +18,10 @@ class Login extends React.Component {
     };
 
     async componentDidMount() {
+        const session = await getSession();
+        if (session.account)
+            window.location.href = '/';
+
         const res = await callApi('/api/oauth/get_config');
         const config = await res.json();
         golos.config.set('websocket', config.ws_connection_client)
@@ -48,7 +53,7 @@ class Login extends React.Component {
         e.preventDefault();
 
         const { state, } = this;
-        const { name, password, service_account, } = state;
+        const { name, password, } = state;
 
         let auths = [];
         try {
@@ -57,42 +62,95 @@ class Login extends React.Component {
             alert(err);
             return;
         }
-        if (!auths.active && auths.posting) {
-            alert('posting_key_cannot_be_used');
-            return;
-        }
-        if (!auths.active && auths.owner) {
-            alert('owner_key_cannot_be_used');
-            return;
-        }
         if (!auths.active) {
-            alert('wrong_password');
+            if (auths.posting)
+                alert('posting_key_cannot_be_used');
+            else if (auths.owner)
+                alert('owner_key_cannot_be_used');
+            else alert('wrong_password');
             return;
+        }
+        this.serverLogin(name, auths);
+    };
+
+    setAuthority = async (name, activeWif) => {
+        console.log('Setting authority to', name, '...');
+        const { service_account, } = this.state;
+        if (!service_account) {
+            throw new Error('Wrong service_account');
         }
         let acc = (await golos.api.getAccountsAsync([name]))[0];
         if (!acc) {
-            alert('no_such_account');
-            return;
-        }
-        alert(JSON.stringify(acc, null, 2));
-
-        if (!service_account) {
-            alert('Wrong service_account');
-            return;
+            throw new Error('no_such_account');
         }
         let active = {...acc.active};
         active.account_auths.push([service_account, 1]);
         let posting = {...acc.posting};
         posting.account_auths.push([service_account, 1]);
-        golos.broadcast.accountUpdate(auths.active,
+        await golos.broadcast.accountUpdateAsync(activeWif,
             name, undefined, active, posting,
-            acc.memo_key, acc.json_metadata, (err, res) => {
-            if (err) {
-                alert(err);
-                return;
-            }
+            acc.memo_key, acc.json_metadata);
+    };
 
+    serverLogin = async (name, auths) => {
+        let res = await callApi('/api/oauth/authorize', {
+            account: name,
         });
+        res = await res.json();
+        if (!res.already_authorized) {
+            console.log('login_challenge', res.login_challenge);
+
+            const signatures = {};
+            const challenge = {token: res.login_challenge};
+            const bufSha = hash.sha256(JSON.stringify(challenge, null, 0));
+            const sign = (role, d) => {
+                if (!d) return;
+                const sig = Signature.signBufferSha256(bufSha, d);
+                signatures[role] = sig.toHex();
+            };
+            sign('active', auths.active);
+
+            res = await callApi('/api/oauth/authorize', {
+                account: name,
+                signatures,
+            });
+            res = await res.json();
+            if (res.status !== 'ok') {
+                alert('Cannot authorize');
+                return;
+            } else if (!res.has_authority) {
+                await this.setAuthority(name, auths.active);
+                res = await callApi('/api/oauth/authorize', {
+                    account: name,
+                    signatures,
+                });
+                res = await res.json();
+                if (!res.status === 'ok') {
+                    alert('Cannot authorize');
+                    return;
+                } else if (!res.has_authority) {
+                    alert('Cannot set authority');
+                    return;
+                }
+            }
+            window.location.reload();
+        } else {
+            if (!res.has_authority) {
+                await this.setAuthority(name, auths.active);
+                res = await callApi('/api/oauth/authorize', {
+                    account: name,
+                });
+                res = await res.json();
+                if (!res.already_authorized) {
+                    alert('Cannot authorize');
+                    return;
+                } else if (!res.has_authority) {
+                    alert('Cannot set authority');
+                    return;
+                }
+            }
+            window.location.reload();
+        }
     };
 
     _onCancel = (e) => {
@@ -128,15 +186,19 @@ class Login extends React.Component {
                             noValidate
                             method='post'
                         >
-                            <input
-                                type='text'
-                                name='name'
-                                placeholder={tt('g.enter_username')}
-                                autoComplete='off'
-                                disabled={state.submitting}
-                                onChange={this.onNameChange}
-                                value={name}
-                            />
+                            <div className='input-group'>
+                                <span className='input-group-label'>@</span>
+                                <input
+                                    type='text'
+                                    className='input-group-field'
+                                    name='name'
+                                    placeholder={tt('g.enter_username')}
+                                    autoComplete='off'
+                                    disabled={state.submitting}
+                                    onChange={this.onNameChange}
+                                    value={name}
+                                />
+                            </div>
                             <input
                                 type='password'
                                 name='password'

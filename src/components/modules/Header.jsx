@@ -11,7 +11,8 @@ class Header extends React.Component {
     }
 
     render() {
-        const { logo, title, titleUppercase, subtitle, logoUrl, } = this.props;
+        const { logo, title, titleUppercase, subtitle, logoUrl, 
+            topRight, } = this.props;
 
         return (
             <header className='Header noPrint'>
@@ -32,6 +33,7 @@ class Header extends React.Component {
                         </div>
                         <div className='columns shrink'>
                             <LocaleSelect/>
+                            {topRight}
                         </div>
                     </div>
                 </div>

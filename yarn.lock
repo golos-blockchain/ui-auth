@@ -6299,9 +6299,9 @@ gmail-send@^1.8.10:
     nodemailer "^6.3.0"
 
 golos-classic-js@^0.8.8:
-  version "0.8.8"
-  resolved "https://registry.yarnpkg.com/golos-classic-js/-/golos-classic-js-0.8.8.tgz#f0bc8e579778eada736386f4f0a24ba932f728f4"
-  integrity sha512-nIzF+KiYcT3O0/lzFuUA53CVh71tUYS64x19D4LYWqEps5MfaZKn3ae8yAEvCGdqPORo8PaGtVdbNxLlmQZdog==
+  version "0.8.10"
+  resolved "https://registry.yarnpkg.com/golos-classic-js/-/golos-classic-js-0.8.10.tgz#4f54ebd015d97e26a1be5a420dba3a500f5cdf23"
+  integrity sha512-Cb75hVnRx0f5TCh+u5uy7eP4kwjoTxZS1wB2wYpCZpb6j/IiOQJ8Xkf25f9nQh147x0R7sd68Olk/8LzfVXZ/g==
   dependencies:
     bigi "^1.4.2"
     bluebird "^3.4.6"

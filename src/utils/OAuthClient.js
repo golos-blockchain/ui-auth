@@ -19,3 +19,9 @@ export async function callApi(apiName, data) {
     let res = await fetch(getHost() + apiName, request);
     return res;
 }
+
+export async function getSession(apiName, data) {
+    let res = await callApi('/api/oauth/get_session');
+    res = await res.json();
+    return res;
+}
