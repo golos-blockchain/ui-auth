@@ -33,8 +33,8 @@ class Header extends React.Component {
                         </div>
                         <div className='columns shrink'>
                             <LocaleSelect/>
-                            {topRight}
                         </div>
+                        {topRight}
                     </div>
                 </div>
             </header>

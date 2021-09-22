@@ -3206,7 +3206,7 @@ bluebird@3.5.1:
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.5.1.tgz#d9551f9de98f1fcda1e683d17ee91a0602ee2eb9"
   integrity sha512-MKiLiV+I1AA596t9w1sQJ8jkiSr5+ZKi0WKrYGUn6d1Fx+Ij4tIj+m2WMQSGczs5jZVxV339chE8iwk6F64wjA==
 
-bluebird@^3.4.6, bluebird@^3.5.0, bluebird@^3.5.5, bluebird@^3.7.2:
+bluebird@^3.5.0, bluebird@^3.5.5, bluebird@^3.7.2:
   version "3.7.2"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.7.2.tgz#9f229c15be272454ffa973ace0dbee79a1b0c36f"
   integrity sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==
@@ -4148,6 +4148,11 @@ core-js@^2.4.0:
   version "2.6.12"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.6.12.tgz#d9333dfa7b065e347cc5682219d6f690859cc2ec"
   integrity sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==
+
+core-js@^3.17.3:
+  version "3.18.0"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.18.0.tgz#9af3f4a6df9ba3428a3fb1b171f1503b3f40cc49"
+  integrity sha512-WJeQqq6jOYgVgg4NrXKL0KLQhi0CT4ZOCvFL+3CQ5o7I6J8HkT5wd53EadMfqTDp1so/MT1J+w2ujhWcCJtN7w==
 
 core-js@^3.6.0, core-js@^3.6.5:
   version "3.16.4"
@@ -6298,17 +6303,18 @@ gmail-send@^1.8.10:
     lodash "^4.17.15"
     nodemailer "^6.3.0"
 
-golos-classic-js@^0.8.8:
-  version "0.8.10"
-  resolved "https://registry.yarnpkg.com/golos-classic-js/-/golos-classic-js-0.8.10.tgz#4f54ebd015d97e26a1be5a420dba3a500f5cdf23"
-  integrity sha512-Cb75hVnRx0f5TCh+u5uy7eP4kwjoTxZS1wB2wYpCZpb6j/IiOQJ8Xkf25f9nQh147x0R7sd68Olk/8LzfVXZ/g==
+golos-lib-js@^0.9.5:
+  version "0.9.5"
+  resolved "https://registry.yarnpkg.com/golos-lib-js/-/golos-lib-js-0.9.5.tgz#ff12539d8b9dfe9c2dc19b17a889e41ed6af4dbb"
+  integrity sha512-+mtXKiPoXq0wZ2UYGPHagc4THz9hhlRGvgFUgJTa7HMVlegeVRDe0Vg49ehfG4706qriqpBLWdVNMLwvcsoSqA==
   dependencies:
     bigi "^1.4.2"
-    bluebird "^3.4.6"
+    bluebird "^3.7.2"
     browserify-aes "^1.0.6"
     bs58 "^4.0.0"
     buffer "^5.0.6"
     bytebuffer "^5.0.1"
+    core-js "^3.17.3"
     create-hash "^1.1.2"
     create-hmac "^1.1.4"
     cross-env "^5.0.0"
@@ -6317,6 +6323,7 @@ golos-classic-js@^0.8.8:
     detect-node "^2.0.3"
     ecurve "^1.0.5"
     lodash "^4.16.4"
+    regenerator-runtime "^0.13.9"
     secure-random "^1.1.1"
     ws "^1.1.1"
 
@@ -11292,7 +11299,7 @@ regenerator-runtime@^0.11.0:
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.11.1.tgz#be05ad7f9bf7d22e056f9726cee5017fbf19e2e9"
   integrity sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==
 
-regenerator-runtime@^0.13.4, regenerator-runtime@^0.13.7:
+regenerator-runtime@^0.13.4, regenerator-runtime@^0.13.7, regenerator-runtime@^0.13.9:
   version "0.13.9"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.9.tgz#8925742a98ffd90814988d7566ad30ca3b263b52"
   integrity sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==
@@ -12041,6 +12048,11 @@ signal-exit@^3.0.0, signal-exit@^3.0.2:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.3.tgz#a1410c2edd8f077b08b4e253c8eacfcaf057461c"
   integrity sha512-VUJ49FC8U1OxwZLxIbTTrDvLnf/6TDgxZcK8wxR8zs13xpx7xbG60ndBlhNrFi2EMuFRoeDoJO7wthSLq42EjA==
+
+simple-jsonrpc-js@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/simple-jsonrpc-js/-/simple-jsonrpc-js-1.2.0.tgz#f958b9c28016f3da47c0a6e3c0b6586b3c10ba34"
+  integrity sha512-owkAmh7fjSYBUZVestTPCZMKYQvNiDejqZ/iGfVaKs1nrC1ZBDA3qGraf94+JNFJmu536Tb8oPe8PSPuq7GO6Q==
 
 simple-swizzle@^0.2.2:
   version "0.2.2"

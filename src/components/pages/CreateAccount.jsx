@@ -4,7 +4,7 @@ import { withRouter, } from 'react-router';
 import PropTypes from 'prop-types';
 import tt from 'counterpart';
 import cn from 'classnames';
-import { PrivateKey } from 'golos-classic-js/lib/auth/ecc';
+import { PrivateKey } from 'golos-lib-js/lib/auth/ecc';
 import ReCAPTCHA from 'react-google-recaptcha';
 import LoadingIndicator from '../elements/LoadingIndicator';
 import Tooltip from '../elements/Tooltip';

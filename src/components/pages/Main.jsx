@@ -15,8 +15,6 @@ class Main extends React.Component {
 
     async componentDidMount() {
         const session = await getSession();
-        if (!session.account)
-            window.location.href = '/login';
         this.setState({
             account: session.account,
         });

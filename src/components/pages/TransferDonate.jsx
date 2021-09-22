@@ -3,12 +3,13 @@ import { Helmet } from 'react-helmet';
 import { withRouter, } from 'react-router';
 import tt from 'counterpart';
 import Header from '../modules/Header';
+import LoginForm from '../modules/LoginForm';
 import { callApi, getSession, } from '../../utils/OAuthClient';
 import LoadingIndicator from '../elements/LoadingIndicator';
 import AccountMenu from '../elements/AccountMenu';
 import validate_account_name from '../../utils/validate_account_name';
 import './TransferDonate.scss';
-import golos from 'golos-classic-js';
+import golos from 'golos-lib-js';
 
 function formatAmount(amount){
     amount = amount.replace(/[^\d.,]/g,"").replace(/,/, '.');
@@ -31,9 +32,9 @@ class TransferDonate extends React.Component {
     };
 
     async componentDidMount() {
+        await golos.importNativeLib()
         const session = await getSession();
         if (!session.account) {
-            window.location.href = '/login';
             return;
         }
         let res = await callApi('/api/oauth/balances/' + session.account + '/transfer');
@@ -123,11 +124,18 @@ class TransferDonate extends React.Component {
     _onSubmit = (e) => {
         e.preventDefault();
         const { sign_endpoint,
-            from, to, amount, sym, memo, } = this.state;
+            from, to, sym, balances, memo, } = this.state;
+        
+        let amount = new Asset()
+
         golos.config.set('websocket', sign_endpoint);
         golos.broadcast.transfer('', from, to,
             amount + ' ' + sym, memo, (err, res) => {
-                console.log(err, res);
+                if (err) {
+                    alert(err);
+                    return;
+                }
+                window.close();
             });
     };
 
@@ -147,10 +155,23 @@ class TransferDonate extends React.Component {
         const {state} = this;
         const {account, balances, sym,
             from, to, toError, amount, amountError, memo,} = this.state;
-        let topRight = null;
-        if (account) {
-            topRight = <AccountMenu account={account} />;
+        
+        if (!account) {
+            return (<div className='Login_theme'>
+                <Helmet>
+                    <meta charSet='utf-8' />
+                    <title>{tt('oauth_main_jsx.transfer')}</title>
+                </Helmet>
+                <Header logo={'/icons/golos.svg'}
+                    title={'GOLOS signer'}
+                    titleUppercase={false}
+                    logoUrl={'/'}
+                    topRight={<AccountMenu />} />
+                <LoginForm />
+            </div>);
         }
+
+        let topRight = <AccountMenu account={account} />;
 
         let balance = balances && sym && balances[sym];
         if (!balance) balance = '0.000 GOLOS';
@@ -180,7 +201,7 @@ class TransferDonate extends React.Component {
                         style={{ maxWidth: '30rem', margin: '0 auto' }}
                     >
                         <h3>{tt('oauth_main_jsx.transfer')}</h3>
-                        {!account && <LoadingIndicator />}
+                        {!account && <LoadingIndicator type='circle' />}
                         {account ? <form
                             onSubmit={this._onSubmit}
                             autoComplete='off'

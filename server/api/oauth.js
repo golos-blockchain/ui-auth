@@ -1,9 +1,10 @@
 const koa_router = require('koa-router');
 const koa_body = require('koa-body');
 const config = require('config');
-const golos = require('golos-classic-js');
-const { Signature, hash, PublicKey } = require('golos-classic-js/lib/auth/ecc');
+const golos = require('golos-lib-js');
+const { Signature, hash, PublicKey } = require('golos-lib-js/lib/auth/ecc');
 const secureRandom = require('secure-random');
+const JsonRPC = require('simple-jsonrpc-js');
 const session = require('../utils/cryptoSession');
 const { throwErr, } = require('../utils/misc');
 
@@ -136,28 +137,10 @@ module.exports = function useOAuthApi(app) {
 
             const hasAuth = hasAuthority(chainAccount, config.get('oauth.service_account.name'));
 
-            const auth = { posting: false };
-            const bufSha = hash.sha256(JSON.stringify({token: login_challenge}, null, 0));
-            const verify = (type, sigHex, pubkey, weight, weight_threshold) => {
-                if (!sigHex) return
-                if (weight !== 1 || weight_threshold !== 1) {
-                    console.error(`/authorize login_challenge unsupported ${type} auth configuration: ${account}`);
-                } else {
-                    const parseSig = hexSig => {
-                        try {
-                            return Signature.fromHex(hexSig);
-                        } catch(e) {
-                            return null;
-                        }
-                    };
-                    const sig = parseSig(sigHex)
-                    const public_key = PublicKey.fromString(pubkey)
-                    const verified = sig.verifyHash(bufSha, public_key)
-                    auth[type] = verified
-                }
-            }
-            const { active: { key_auths: [[active_pubkey, weight]], weight_threshold } } = chainAccount;
-            verify('active', signatures.active, active_pubkey, weight, weight_threshold);
+            const auth = golos.auth.verifySignedData(
+                JSON.stringify({token: login_challenge}, null, 0),
+                signatures, chainAccount, ['active']);
+
             if (!auth.active) {
                 throwErr(ctx, 400, ['wrong signatures']);
             }
@@ -177,8 +160,89 @@ module.exports = function useOAuthApi(app) {
         delete ctx.session.account;
     });
 
-    router.post('/sign', koaBody, async (ctx) => {
-        console.log(ctx.request.body);
+    router.post('/sign', koa_body({ includeUnparsed: true, }), async (ctx) => {
+        ctx.set('Content-Type', 'application/json');
+
+        let jrpc = new JsonRPC();
+
+        const INVALID_REQUEST = -32600;
+
+        jrpc.on('call', 'pass', async (params) =>{
+            if (params.length < 2 || params.length > 3) {
+                throw jrpc.customException(INVALID_REQUEST, 'A member "params" should be ["api", "method", "args"]');
+            }
+
+            const [ api, method, args ] = params;
+            if (!Array.isArray(args)) {
+                throw jrpc.customException(INVALID_REQUEST, 'A member "args" should be array');
+            }
+
+            const isBroadcast = 
+                (api == 'network_broadcast_api') &&
+                (method === 'broadcast_transaction');
+
+            let sendAsync = null;
+            if (isBroadcast) {
+                const postingKey = config.get('oauth.service_account.posting');
+                const activeKey = config.get('oauth.service_account.active');
+
+                let keys = new Set();
+
+                for (const op of args[0].operations) {
+                    const roles = golos.broadcast._operations[op[0]].roles;
+                    if (roles[0]) {
+                        if (roles[0] === 'posting') {
+                            keys.add(postingKey);
+                        } else if (roles[0] === 'active') {
+                            keys.add(activeKey);
+                        } else {
+                            throw jrpc.customException(INVALID_REQUEST, 'Operations with owner roles not supported');
+                        }
+                    }
+                }
+
+                sendAsync = async () => {
+                    return await golos.broadcast.sendAsync(
+                        args[0], [...keys]);
+                };
+            } else {
+                sendAsync = async () => {
+                    return await golos.api.sendAsync(
+                        api,
+                        {
+                            method,
+                            params: args,
+                        });
+                };
+            }
+
+            let result;
+            try {
+                result = await sendAsync();
+            } catch (error) {
+                if (error.payload) {
+                    const { code, message, data } = error.payload.error;
+                    throw jrpc.customException(code, message, data);
+                } else { // http
+                    const { code, message, data } = error;
+                    throw jrpc.customException(code, message, data);
+                }
+            }
+
+            return result;
+        });
+
+        jrpc.toStream = (message) => {
+            ctx.body = message;
+        };
+
+        try {
+            const rawBody = ctx.request.body[Symbol.for('unparsedBody')];
+
+            await jrpc.messageHandler(rawBody);
+        } catch (err) {
+            console.error('/sign', rawBody);
+        }
     });
 
     router.get('/balances/:account/:action', koaBody, async (ctx) => {

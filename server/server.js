@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const golos = require('golos-classic-js');
+const golos = require('golos-lib-js');
 const tt = require('counterpart');
 const Koa = require('koa');
 const csrf = require('koa-csrf');
