@@ -129,7 +129,7 @@ https://github.com/golos-blockchain/ui-auth/blob/master/src/CreateAccount.jsx
 
 Пример:
 ```js
-window.open(`https://auth.golos.today/api/reg/modal/vk`, '_blank');
+window.open(`https://golos.app/api/reg/modal/vk`, '_blank');
 ```
 
 При успешной авторизации вкладка закроется автоматически.
