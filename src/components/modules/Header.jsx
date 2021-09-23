@@ -1,5 +1,6 @@
 import React from 'react';
 import LocaleSelect from '../elements/LocaleSelect';
+import AccountMenu from '../elements/AccountMenu';
 
 class Header extends React.Component {
     static propTypes = {
@@ -12,7 +13,7 @@ class Header extends React.Component {
 
     render() {
         const { logo, title, titleUppercase, subtitle, logoUrl, 
-            topRight, } = this.props;
+            topRight, account, } = this.props;
 
         return (
             <header className='Header noPrint'>
@@ -34,7 +35,7 @@ class Header extends React.Component {
                         <div className='columns shrink'>
                             <LocaleSelect/>
                         </div>
-                        {topRight}
+                        {topRight || <AccountMenu account={account} />}
                     </div>
                 </div>
             </header>

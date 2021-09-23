@@ -22,14 +22,10 @@ class Main extends React.Component {
 
     render() {
         const {account} = this.state;
-        let topRight = null;
-        if (account) {
-            topRight = <AccountMenu account={account} />;
-        }
         let actions = [];
         for (let action of [
-            'transfer', 'donate', 'delegate_vesting_shares']) {
-            actions.push(<a href={`/sign/${action}?compose=true`}>
+            'transfer', 'donate', 'delegate_vs']) {
+            actions.push(<a href={`/sign/${action}`}>
                 <button className='button hollow' style={{ marginRight: '10px', }}>
                     {tt(`oauth_main_jsx.${action}`)}
                 </button>
@@ -39,13 +35,13 @@ class Main extends React.Component {
             <div className='Login_theme'>
                 <Helmet>
                     <meta charSet='utf-8' />
-                    <title>{tt('g.sign_in')}</title>
+                    <title>{tt('oauth_main_jsx.title')}</title>
                 </Helmet>
                 <Header logo={'/icons/golos.svg'}
                     title={'GOLOS signer'}
                     titleUppercase={false}
                     logoUrl={'/'}
-                    topRight={topRight} />
+                    account={account} />
                 <div className='Login row'>
                     <div
                         className='column'

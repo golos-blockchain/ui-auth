@@ -131,7 +131,7 @@ class LoginForm extends React.Component {
                     throw new Error('Cannot set authority');
                 }
             }
-            window.location.reload();
+            window.location.href = '/';
         } else {
             if (!res.has_authority) {
                 await this.setAuthority(name, auths.active);
@@ -145,7 +145,7 @@ class LoginForm extends React.Component {
                     throw new Error('Cannot set authority');
                 }
             }
-            window.location.reload();
+            window.location.href = '/';
         }
     };
 

@@ -7,7 +7,7 @@ import LoginForm from '../modules/LoginForm';
 import { callApi, getSession, } from '../../utils/OAuthClient';
 import LoadingIndicator from '../elements/LoadingIndicator';
 import validate_account_name from '../../utils/validate_account_name';
-import './TransferDonate.scss';
+import './Delegate.scss';
 import golos from 'golos-lib-js';
 import { Asset } from 'golos-lib-js/lib/utils';
 
@@ -16,7 +16,19 @@ function formatAmount(amount){
     return amount
 }
 
-class TransferDonate extends React.Component {
+function calcMaxInterest(cprops) {
+    let maxInterestRate = 100;
+    if (cprops) {
+        maxInterestRate = Math.min(90, cprops.max_delegated_vesting_interest_rate / 100);
+    }
+    return maxInterestRate;
+}
+
+function calcDefaultInterest(cprops) {
+    return Math.min(50, calcMaxInterest(cprops));
+}
+
+class Delegate extends React.Component {
     static propTypes = {
     };
 
@@ -27,8 +39,9 @@ class TransferDonate extends React.Component {
         toError: '',
         amount: '',
         amountError: '',
-        memo: '',
         sym: 'GOLOS',
+        interest: '50',
+        interestError: '',
     };
 
     async componentDidMount() {
@@ -49,6 +62,8 @@ class TransferDonate extends React.Component {
             from: session.account,
             balances: res.balances,
             sym: Object.keys(res.balances)[0],
+            cprops: res.cprops,
+            interest: calcDefaultInterest(res.cprops),
         }, () => {
             this.uncompose();
         });
@@ -119,11 +134,22 @@ class TransferDonate extends React.Component {
         this.updateAmount(balance.amountFloat.toString());
     };
 
-    onMemoChange = e => {
-        let memo = e.target.value.trim();
+    onInterestChange = e => {
+        let { value } = e.target;
+        value = formatAmount(value);
+        if (!value) value = '0';
+
+        let interestError = '';
+        const { cprops, } = this.state;
+        if (cprops) {
+            if (parseFloat(value) > calcMaxInterest(cprops)) {
+                interestError = 'Too big percent';
+            }
+        }
 
         this.setState({
-            memo,
+            interest: value,
+            interestError,
         });
     };
 
@@ -135,7 +161,6 @@ class TransferDonate extends React.Component {
             done: false,
         })
 
-        const { action, } = this.props;
         const { sign_endpoint,
             from, to, sym, balances, } = this.state;
         
@@ -143,17 +168,8 @@ class TransferDonate extends React.Component {
         amount.amountFloat = parseFloat(this.state.amount);
         amount = amount.toString();
 
-        let memo = this.state.memo;
-        if (action === 'donate') {
-            memo = {};
-            memo.app = "golos-blog";
-            memo.version = 1;
-            memo.comment = this.state.memo;
-            memo.target = {
-                author: to,
-                permlink: ""
-            };
-        }
+        let interest = parseFloat(this.state.interest);
+        interest = Math.trunc(interest * 100);
 
         golos.config.set('websocket', sign_endpoint);
         const callback = (err, res) => {
@@ -169,12 +185,8 @@ class TransferDonate extends React.Component {
                 done: true,
             })
         };
-        if (action === 'transfer')
-            golos.broadcast[action]('', from, to,
-                amount, memo, callback);
-        else
-            golos.broadcast[action]('', from, to,
-                amount, memo, [], callback);
+        golos.broadcast.delegateVestingSharesWithInterest('', from, to,
+            amount, interest, [], callback);
     };
 
     uncompose = () => {
@@ -191,13 +203,13 @@ class TransferDonate extends React.Component {
                 sym,
             });
         }
-    };
+    }
 
     compose = () => {
         let url = window.location.href.split('?')[0];
         
         const {
-            balances, sym, to, memo, } = this.state;
+            balances, sym, to, } = this.state;
 
         if (!golos.isNativeLibLoaded() || !balances || !balances[sym])
             return '...';
@@ -208,7 +220,6 @@ class TransferDonate extends React.Component {
         url += '?';
         url += 'to=' + to;
         url += '&amount=' + amount.toString();
-        url += '&memo=' + memo;
 
         return (<span>
                 {tt('oauth_main_jsx.link')}
@@ -219,10 +230,10 @@ class TransferDonate extends React.Component {
     render() {
         const {state} = this;
         const { done, account, balances, sym,
-            from, to, toError, amount, amountError, memo,} = this.state;
+            from, to, toError, amount, amountError,
+            interest, interestError, } = this.state;
 
         const { action, } = this.props;
-        const donate = action === 'donate';
 
         if (!account) {
             return (<div className='Login_theme'>
@@ -314,27 +325,31 @@ class TransferDonate extends React.Component {
                                     value={amount}
                                 />
                                 <span className='input-group-label AssetSelect'>
-                                    <select value={sym} onChange={this.onSymChange}>
+                                    <select onChange={this.onSymChange}>
                                         {balanceOptions}
                                     </select>
                                 </span>
                             </div>
-                            <a className='Balance' onClick={this.useAllBalance}>{tt((donate ? 'oauth_donate' : 'oauth_transfer') + '.balance') + balance}</a>
+                            <a className='Balance' onClick={this.useAllBalance}>{tt('oauth_transfer.balance') + balance}</a>
                             <div className='error'>
                                 {amountError}
                             </div>
+                            {tt('oauth_delegate.interest')}
                             <input
                                 type='text'
-                                name='memo'
-                                placeholder={tt('oauth_transfer.memo')}
+                                name='interest'
+                                className='input-group-field'
                                 autoComplete='off'
                                 disabled={state.submitting}
-                                onChange={this.onMemoChange}
-                                value={memo}
+                                onChange={this.onInterestChange}
+                                value={interest}
                             />
+                            <div className='error'>
+                                {interestError}
+                            </div>
                             {state.submitting && <LoadingIndicator type='circle' />}
                             <button className={'button ' + (valid ? '' : ' disabled')}>
-                                {tt((donate ? 'oauth_donate' : 'oauth_transfer') + '.submit')}
+                                {tt('oauth_delegate.submit')}
                             </button>
                             {done ? <span className='success done'>
                                 {tt('g.done')}
@@ -350,4 +365,4 @@ class TransferDonate extends React.Component {
     }
 };
 
-export default withRouter(TransferDonate);
+export default withRouter(Delegate);

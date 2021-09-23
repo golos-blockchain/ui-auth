@@ -14,14 +14,15 @@ class AccountMenu extends React.Component {
 
     render() {
         const { account, } = this.props;
+        const isRegister = window.location.pathname.includes('/register');
         if (!account)
-            return (<div class='AccountMenu columns shrink'>
-                <a href='/register'>
+            return (<div className='AccountMenu columns shrink'>
+                {!isRegister && <a href='/register'>
                     <button
                         className='button hollow'>
                         {tt('g.sign_up')}
                     </button>
-                </a>
+                </a>}
                 <a href='/login'>
                     <button
                         className='button hollow'>
@@ -29,7 +30,7 @@ class AccountMenu extends React.Component {
                     </button>
                 </a>
             </div>);
-        return (<div class='AccountMenu columns shrink'>
+        return (<div className='AccountMenu columns shrink'>
                 <a href='/'>{account}</a>
                 <button
                     className='button hollow'

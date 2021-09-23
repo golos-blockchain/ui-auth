@@ -252,7 +252,7 @@ module.exports = function useOAuthApi(app) {
                 'GOLOS': '0.000 GOLOS',
             },
         };
-        if (action !== 'donate') {
+        if (action === 'transfer') {
             ctx.body.balances['GBG'] = '0.000 GBG';
         }
 
@@ -262,9 +262,25 @@ module.exports = function useOAuthApi(app) {
         }
         acc = acc[0];
 
+        if (action === 'delegate_vs') {
+            let gprops = await golos.api.getDynamicGlobalProperties();
+            ctx.body.balances['GOLOS'] = golos.formatter.vestingGolos(acc, gprops).toFixed(3) + ' GOLOS';
+            ctx.body.cprops = await golos.api.getChainPropertiesAsync();
+            return;
+        }
+
         ctx.body.balances['GOLOS'] = (action === 'donate') ? acc.tip_balance : acc.balance;
         if (ctx.body.balances['GBG'])
             ctx.body.balances['GBG'] = acc.sbd_balance;
+
+        let uia = await golos.api.getAccountsBalancesAsync([account]);
+        if (!uia[0]) {
+            return;
+        }
+        uia = uia[0];
+        for (const sym in uia) {
+            ctx.body.balances[sym] = (action === 'donate') ? uia[sym].tip_balance : uia[sym].balance;
+        }
     });
 
     app.use(router.routes());

@@ -2,6 +2,11 @@ header {
     background-color: #2185d0 !important;
 }
 
+header > * .button.hollow {
+    border-color: #fff !important;
+    color: #fff !important;
+}
+
 .Locale_current:not(.open) {
     color: #fff !important;
 }

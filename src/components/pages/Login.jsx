@@ -21,7 +21,7 @@ class Login extends React.Component {
             <div className='Login_theme'>
                 <Helmet>
                     <meta charSet='utf-8' />
-                    <title>{tt('g.sign_in')}</title>
+                    <title>{tt('g.sign_in')} | {tt('oauth_main_jsx.title')}</title>
                 </Helmet>
                 <Header logo={'/icons/golos.svg'}
                     title={'GOLOS signer'}
