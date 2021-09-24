@@ -1,0 +1,28 @@
+.Signer_page {
+    .Header__top-logo > img {
+        height: 70px;
+    }
+    form {
+        .callout {
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+
+            .LoadingIndicator {
+                float: left;
+            }
+        }
+        .success {
+            color: #268c4c;
+        }
+        .error {
+            color: #f00;
+        }
+        label {
+            text-transform: none;
+        }
+    }
+}
+
+.Signer_content {
+	padding-top: 6rem;
+}

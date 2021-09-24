@@ -62,8 +62,7 @@ module.exports = function useOAuthApi(app) {
 
     const koaBody = koa_body();
 
-    router.get('/get_client/:client/:locale?', koaBody, async (ctx) => {
-        const { client, locale, } = ctx.params;
+    const clientFromConfig = (client, locale) => {
         const clientCfg = config.get('oauth.allowed_clients.' + client);
 
         let clientMeta = null;
@@ -78,6 +77,12 @@ module.exports = function useOAuthApi(app) {
             clientMeta.title = clientCfg[loc].title;
             clientMeta.description = clientCfg[loc].description;
         }
+        return clientMeta;
+    };
+
+    router.get('/get_client/:client/:locale?', koaBody, async (ctx) => {
+        const { client, locale, } = ctx.params;
+        let clientMeta = clientFromConfig(client, locale);
         if (ctx.session.clients && clientMeta) {
             const clientS = ctx.session.clients[client];
             if (clientS) {
@@ -100,7 +105,8 @@ module.exports = function useOAuthApi(app) {
         };
     });
 
-    router.get('/get_session', koaBody, async (ctx) => {
+    router.get('/get_session/:with_clients/:locale', koaBody, async (ctx) => {
+        const { with_clients, locale, } = ctx.params;
         if (!ctx.session.account) {
             ctx.body = {
                 account: null,
@@ -111,6 +117,18 @@ module.exports = function useOAuthApi(app) {
             account: ctx.session.account,
             sign_endpoint: new URL('/api/oauth/sign', config.get('oauth.rest_api')).toString(),
         };
+        if (with_clients === 'true') {
+            ctx.body.clients = {};
+            for (const client in ctx.session.clients) {
+                let clientMeta = clientFromConfig(client, locale);
+                if (clientMeta) {
+                    const clientS = ctx.session.clients[client];
+                    clientMeta.allowActive = clientS.allowActive;
+                    clientMeta.allowPosting = clientS.allowPosting;
+                    ctx.body.clients[client] = clientMeta;
+                }
+            }
+        }
     });
 
     router.post('/permissions', koaBody, async (ctx) => {
@@ -327,8 +345,10 @@ module.exports = function useOAuthApi(app) {
 
         if (action === 'delegate_vs') {
             let gprops = await golos.api.getDynamicGlobalProperties();
+            acc.vesting_shares = (parseFloat(acc.vesting_shares) - parseFloat(acc.delegated_vesting_shares)).toFixed(6) + ' GESTS';
             ctx.body.balances['GOLOS'] = golos.formatter.vestingGolos(acc, gprops).toFixed(3) + ' GOLOS';
             ctx.body.cprops = await golos.api.getChainPropertiesAsync();
+            ctx.body.gprops = gprops;
             return;
         }
 

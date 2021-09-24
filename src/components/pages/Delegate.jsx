@@ -10,6 +10,7 @@ import validate_account_name from '../../utils/validate_account_name';
 import './Delegate.scss';
 import golos from 'golos-lib-js';
 import { Asset } from 'golos-lib-js/lib/utils';
+import { steemToVests } from '../../utils/State';
 
 function formatAmount(amount){
     amount = amount.replace(/[^\d.,]/g,"").replace(/,/, '.');
@@ -33,7 +34,7 @@ class Delegate extends React.Component {
     };
 
     state = {
-        account: null,
+        account: undefined,
         from: '',
         to: '',
         toError: '',
@@ -48,6 +49,9 @@ class Delegate extends React.Component {
         await golos.importNativeLib()
         const session = await getSession();
         if (!session.account) {
+            this.setState({
+                account: null,
+            });
             return;
         }
         const { action, } = this.props;
@@ -63,6 +67,7 @@ class Delegate extends React.Component {
             balances: res.balances,
             sym: Object.keys(res.balances)[0],
             cprops: res.cprops,
+            gprops: res.gprops,
             interest: calcDefaultInterest(res.cprops),
         }, () => {
             this.uncompose();
@@ -166,7 +171,7 @@ class Delegate extends React.Component {
         
         let amount = Asset(0, balances[sym].precision, sym);
         amount.amountFloat = parseFloat(this.state.amount);
-        amount = amount.toString();
+        amount = steemToVests(amount.amountFloat, this.state.gprops) + ' GESTS';
 
         let interest = parseFloat(this.state.interest);
         interest = Math.trunc(interest * 100);
@@ -235,15 +240,13 @@ class Delegate extends React.Component {
 
         const { action, } = this.props;
 
-        if (!account) {
-            return (<div className='Login_theme'>
+        if (account === null) {
+            return (<div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
                 </Helmet>
-                <Header logo={'/icons/golos.svg'}
-                    title={'GOLOS signer'}
-                    titleUppercase={false}
+                <Header
                     logoUrl={'/'} />
                 <LoginForm />
             </div>);
@@ -261,17 +264,15 @@ class Delegate extends React.Component {
         const valid = from && to && !toError && amount && !amountError;
 
         return (
-            <div className='Login_theme'>
+            <div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
                 </Helmet>
-                <Header logo={'/icons/golos.svg'}
-                    title={'GOLOS signer'}
-                    titleUppercase={false}
+                <Header
                     logoUrl={'/'}
                     account={account} />
-                <div className='Login TransferDonate row'>
+                <div className='Signer_content TransferDonate row'>
                     <div
                         className='column'
                         style={{ maxWidth: '30rem', margin: '0 auto' }}

@@ -3,7 +3,6 @@ import tt from 'counterpart';
 import LoadingIndicator from '../elements/LoadingIndicator';
 import { callApi, } from '../../utils/OAuthClient';
 import golos from 'golos-lib-js';
-import { Signature, hash, } from 'golos-lib-js/lib/auth/ecc';
 
 class LoginForm extends React.Component {
     static propTypes = {
@@ -171,8 +170,12 @@ class LoginForm extends React.Component {
 
         return (<div className='Login row'>
             <div
+                className='column'>
+                <img src='/images/signer_lock.png' alt='' />
+            </div>
+            <div
                 className='column'
-                style={{ maxWidth: '30rem', margin: '0 auto' }}
+                style={{ maxWidth: '30rem', margin: '0 auto', paddingTop: '8rem', }}
             >
                 <center>
                     <h2>{tt('g.sign_in')}</h2>

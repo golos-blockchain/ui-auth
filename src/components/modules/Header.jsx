@@ -12,9 +12,13 @@ class Header extends React.Component {
     }
 
     render() {
-        const { logo, title, titleUppercase, subtitle, logoUrl, 
+        const { title, titleUppercase, subtitle, logoUrl, 
             topRight, account, } = this.props;
 
+        let logo = this.props.logo;
+        if (!logo && !title && !subtitle) {
+            logo = '/images/signer.png';
+        }
         return (
             <header className='Header noPrint'>
                 <div className='Header__top header'>

@@ -20,8 +20,8 @@ export async function callApi(apiName, data) {
     return res;
 }
 
-export async function getSession(apiName, data) {
-    let res = await callApi('/api/oauth/get_session');
+export async function getSession(withClients = false) {
+    let res = await callApi('/api/oauth/get_session/' + withClients + '/ru');
     res = await res.json();
     return res;
 }

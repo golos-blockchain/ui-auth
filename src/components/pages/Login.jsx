@@ -18,14 +18,12 @@ class Login extends React.Component {
 
     render() {
         return (
-            <div className='Login_theme'>
+            <div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{tt('g.sign_in')} | {tt('oauth_main_jsx.title')}</title>
                 </Helmet>
-                <Header logo={'/icons/golos.svg'}
-                    title={'GOLOS signer'}
-                    titleUppercase={false}
+                <Header
                     logoUrl={'/'} />
                 {<LoginForm />}
             </div>

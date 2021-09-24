@@ -6,9 +6,6 @@ import Header from '../modules/Header';
 import LoginForm from '../modules/LoginForm';
 import { getHost, callApi, getSession, } from '../../utils/OAuthClient';
 import LoadingIndicator from '../elements/LoadingIndicator';
-import validate_account_name from '../../utils/validate_account_name';
-import golos from 'golos-lib-js';
-import { Asset } from 'golos-lib-js/lib/utils';
 import './OAuth.scss';
 
 class OAuth extends React.Component {
@@ -79,14 +76,12 @@ class OAuth extends React.Component {
             allowPosting, allowPostingForcely, allowActive, } = state;
 
         if (!account || client === undefined || submitting) {
-            return (<div className='Login_theme'>
+            return (<div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_request.title')} | {tt('oauth_main_jsx.title')}</title>
                 </Helmet>
-                <Header logo={'/icons/golos.svg'}
-                    title={'GOLOS signer'}
-                    titleUppercase={false}
+                <Header 
                     logoUrl={'/'} />
                 {(account === null) && <LoginForm />}
                 {(account !== null) && <center style={{ paddingTop: '10rem', }}>
@@ -96,17 +91,15 @@ class OAuth extends React.Component {
         }
 
         return (
-            <div className='Login_theme'>
+            <div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_request.title')} | {tt('oauth_main_jsx.title')}</title>
                 </Helmet>
-                <Header logo={'/icons/golos.svg'}
-                    title={'GOLOS signer'}
-                    titleUppercase={false}
+                <Header
                     logoUrl={'/'}
                     account={account} />
-                <div className='Login TransferDonate row'>
+                <div className='Signer_content TransferDonate row'>
                     <div
                         className='column'
                         style={{ maxWidth: '40rem', margin: '0 auto' }}
@@ -121,7 +114,7 @@ class OAuth extends React.Component {
                                 APP: client.title,
                             })}</h3>
                             <div style={{ marginTop: '1rem', marginBottom: '1rem', }}>
-                                <img className='OAuth-App-Logo' src={getHost() + client.logo} />
+                                <img className='OAuth-App-Logo' src={getHost() + client.logo} alt={client.title} />
                                 <h5>{client.title}</h5>
                                 <div>{client.description}</div>
                             </div>

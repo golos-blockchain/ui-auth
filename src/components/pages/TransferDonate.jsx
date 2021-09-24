@@ -21,7 +21,7 @@ class TransferDonate extends React.Component {
     };
 
     state = {
-        account: null,
+        account: undefined,
         from: '',
         to: '',
         toError: '',
@@ -35,6 +35,9 @@ class TransferDonate extends React.Component {
         await golos.importNativeLib()
         const session = await getSession();
         if (!session.account) {
+            this.setState({
+                account: null,
+            });
             return;
         }
         const { action, } = this.props;
@@ -224,15 +227,13 @@ class TransferDonate extends React.Component {
         const { action, } = this.props;
         const donate = action === 'donate';
 
-        if (!account) {
-            return (<div className='Login_theme'>
+        if (account === null) {
+            return (<div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
                 </Helmet>
-                <Header logo={'/icons/golos.svg'}
-                    title={'GOLOS signer'}
-                    titleUppercase={false}
+                <Header
                     logoUrl={'/'} />
                 <LoginForm />
             </div>);
@@ -250,17 +251,15 @@ class TransferDonate extends React.Component {
         const valid = from && to && !toError && amount && !amountError;
 
         return (
-            <div className='Login_theme'>
+            <div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
                 </Helmet>
-                <Header logo={'/icons/golos.svg'}
-                    title={'GOLOS signer'}
-                    titleUppercase={false}
+                <Header
                     logoUrl={'/'}
                     account={account} />
-                <div className='Login TransferDonate row'>
+                <div className='Signer_content TransferDonate row'>
                     <div
                         className='column'
                         style={{ maxWidth: '30rem', margin: '0 auto' }}

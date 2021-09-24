@@ -2,8 +2,8 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import tt from 'counterpart';
 import Header from '../modules/Header';
-import { getSession, } from '../../utils/OAuthClient';
-import AccountMenu from '../elements/AccountMenu';
+import { getHost, getSession, } from '../../utils/OAuthClient';
+import './Main.scss';
 
 class Main extends React.Component {
     static propTypes = {
@@ -11,17 +11,19 @@ class Main extends React.Component {
 
     state = {
         account: null,
+        clients: {},
     };
 
     async componentDidMount() {
-        const session = await getSession();
+        const session = await getSession(true);
         this.setState({
             account: session.account,
+            clients: session.clients,
         });
     }
 
     render() {
-        const {account} = this.state;
+        const { account, clients, } = this.state;
         let actions = [];
         for (let action of [
             'transfer', 'donate', 'delegate_vs']) {
@@ -31,24 +33,55 @@ class Main extends React.Component {
                 </button>
             </a>);
         }
+        let clientList = [];
+        for (const [key, obj] of Object.entries(clients)) {
+            clientList.push(<tr key={key}>
+                    <td>
+                        <img src={getHost() + obj.logo} alt={obj.title} />
+                    </td>
+                    <td>
+                        {obj.title}
+                    </td>
+                    <td>
+                        {obj.allowPosting ? <b className='posting'>posting</b> : null}
+                        {obj.allowActive ? <b className='active'>active</b> : null}
+                    </td>
+                    <td>
+                        <a href={'/oauth/' + key}>
+                            <button className='button hollow'>
+                                {tt('g.edit')}
+                            </button>
+                        </a>
+                        {/*<button className='button hollow'>
+                            {tt('oauth_request.forbid')}
+                        </button>*/}
+                    </td>
+                </tr>);
+        }
+        if (clientList.length) {
+            clientList = (<table className='client-list'><tbody>{clientList}</tbody></table>);
+        } else {
+            clientList = <div className='callout'>{tt('oauth_main_jsx.apps_empty')}</div>
+        }
         return (
-            <div className='Login_theme'>
+            <div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.title')}</title>
                 </Helmet>
-                <Header logo={'/icons/golos.svg'}
-                    title={'GOLOS signer'}
-                    titleUppercase={false}
+                <Header
                     logoUrl={'/'}
                     account={account} />
-                <div className='Login row'>
+                <div className='Signer_content Main row'>
                     <div
                         className='column'
                         style={{ maxWidth: '40rem', margin: '0 auto' }}
                     >
                         <h3>{tt('oauth_main_jsx.trx_title')}</h3>
                         {actions}
+                        <hr/>
+                        <h3>{tt('oauth_main_jsx.apps_title')}</h3>
+                        {clientList}
                     </div>
                 </div>
             </div>

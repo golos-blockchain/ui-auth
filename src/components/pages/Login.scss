@@ -1,30 +1,6 @@
-.Login_theme {
-    .Header__top-logo > img {
-        width: 30px;
-        height: 30px;
+.Signer_page {
+    .Login {
+        padding-top: 6rem !important;
     }
 }
 
-.Login {
-    margin-top: 6rem;
-
-    form {
-        .callout {
-            padding: 0.6rem 1rem;
-            border-radius: 6px;
-
-            .LoadingIndicator {
-                float: left;
-            }
-        }
-        .success {
-            color: #268c4c;
-        }
-        .error {
-            color: #f00;
-        }
-        label {
-            text-transform: none;
-        }
-    }
-}
