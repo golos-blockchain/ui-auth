@@ -62,8 +62,33 @@ module.exports = function useOAuthApi(app) {
 
     const koaBody = koa_body();
 
-    router.get('/get_client/:client', koaBody, async (ctx) => {
+    router.get('/get_client/:client/:locale?', koaBody, async (ctx) => {
+        const { client, locale, } = ctx.params;
+        const clientCfg = config.get('oauth.allowed_clients.' + client);
+
+        let clientMeta = null;
+        if (clientCfg) {
+            clientMeta = {};
+            clientMeta.logo = '/oauth_clients/' + clientCfg.logo;
+            let loc = 'ru';
+            if (locale && clientCfg[locale])
+                loc = locale;
+            if (!clientCfg[loc])
+                loc = 'en';
+            clientMeta.title = clientCfg[loc].title;
+            clientMeta.description = clientCfg[loc].description;
+        }
+        if (ctx.session.clients && clientMeta) {
+            const clientS = ctx.session.clients[client];
+            if (clientS) {
+                clientMeta.authorized = true;
+                clientMeta.allowActive = clientS.allowActive;
+                clientMeta.allowPosting = clientS.allowPosting;
+            }
+        }
+
         ctx.body = {
+            client: clientMeta,
         };
     });
 
@@ -88,7 +113,45 @@ module.exports = function useOAuthApi(app) {
         };
     });
 
-    router.post('/check_auth', koaBody, async (ctx) => {
+    router.post('/permissions', koaBody, async (ctx) => {
+        let params = ctx.request.body;
+        if (typeof(params) === 'string') params = JSON.parse(params);
+        const { client, allowPosting, allowActive, } = params;
+        if (!client)
+            throwErr(ctx, 400, ['client is required']);
+
+        if (!ctx.session.account)
+            throwErr(ctx, 403, ['Not authorized in account']);
+
+        // client cannot permit it by itself :)
+        let originErr = checkCrossOrigin(ctx);
+        if (originErr)
+            throwErr(ctx, 403, [originErr]);
+
+        if (!ctx.session.clients)
+            ctx.session.clients = {};
+        if (!allowPosting && !allowActive) {
+            delete ctx.session.clients[client];
+            return;
+        }
+        ctx.session.clients[client] = {
+            allowPosting,
+            allowActive,
+        };
+    });
+
+    router.get('/check_permissions/:client', koaBody, async (ctx) => {
+        const { client, } = ctx.params;
+
+        ctx.body = {
+            authorized: false,
+        };
+        if (ctx.session.clients && ctx.session.clients[client]) {
+            ctx.body.authorized = true;
+            const {allowActive, allowPosting,} = ctx.session.clients[client];
+            ctx.body.allowPosting = allowPosting;
+            ctx.body.allowActive = allowActive;
+        }
     });
 
     router.post('/authorize', koaBody, async (ctx) => {

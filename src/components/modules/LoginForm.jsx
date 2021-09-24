@@ -45,8 +45,16 @@ class LoginForm extends React.Component {
     };
 
     setError = (errMsg) => {
+        const [ msg, cause, ] = errMsg.split('|');
+        let error = tt('loginform_jsx.' + msg);
+        if (cause) {
+            console.error(msg + ', cause:', cause);
+            error += ' Error: ' + cause;
+        } else {
+            console.error(msg);
+        }
         this.setState({
-            error: tt('loginform_jsx.' + errMsg),
+            error,
             submitting: false,
         });
     };
@@ -73,7 +81,7 @@ class LoginForm extends React.Component {
                     throw new Error('owner_key_cannot_be_used');
                 else throw new Error('wrong_password');
             }
-            this.serverLogin(name, auths);
+            await this.serverLogin(name, auths);
         } catch (error) {
             this.setError(error.message);
         }
@@ -103,6 +111,9 @@ class LoginForm extends React.Component {
             account: name,
         });
         res = await res.json();
+        if (res.status !== 'ok') {
+            throw new Error('Cannot authorize|' + res.error);
+        }
         if (!res.already_authorized) {
             console.log('login_challenge', res.login_challenge);
 
@@ -117,7 +128,7 @@ class LoginForm extends React.Component {
             });
             res = await res.json();
             if (res.status !== 'ok') {
-                throw new('Cannot authorize');
+                throw new Error('Cannot authorize|' + res.error);
             } else if (!res.has_authority) {
                 await this.setAuthority(name, auths.active);
                 res = await callApi('/api/oauth/authorize', {
@@ -125,13 +136,13 @@ class LoginForm extends React.Component {
                     signatures,
                 });
                 res = await res.json();
-                if (!res.status === 'ok') {
-                    throw new Error('Cannot authorize');
+                if (res.status !== 'ok') {
+                    throw new Error('Cannot authorize|' + res.error);
                 } else if (!res.has_authority) {
-                    throw new Error('Cannot set authority');
+                    throw new Error('Cannot set authority|' + res.error);
                 }
             }
-            window.location.href = '/';
+            window.location.reload();
         } else {
             if (!res.has_authority) {
                 await this.setAuthority(name, auths.active);
@@ -140,12 +151,12 @@ class LoginForm extends React.Component {
                 });
                 res = await res.json();
                 if (!res.already_authorized) {
-                    throw new Error('Cannot authorize');
+                    throw new Error('Cannot authorize|' + res.error);
                 } else if (!res.has_authority) {
-                    throw new Error('Cannot set authority');
+                    throw new Error('Cannot set authority|' + res.error);
                 }
             }
-            window.location.href = '/';
+            window.location.reload();
         }
     };
 

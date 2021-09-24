@@ -1,0 +1,29 @@
+.checkbox-multiline {
+    input[type='checkbox'] {
+        position: absolute;
+        margin-bottom: 0px;
+    }
+    label {
+        position: relative;
+        margin-left: 30px;
+        margin-top: -5px;
+    }
+    margin-bottom: 1rem;
+}
+
+.checkbox-multiline.posting_active {
+    label {
+        color: #960000;
+    }
+}
+
+.close_tab {
+    font-size: 0.875rem;    
+}
+
+.OAuth-App-Logo {
+    width: 64px;
+    height: 64px;
+    float: left;
+    margin-right: 1rem;
+}

@@ -108,6 +108,7 @@ if (env === 'production') {
             !ctx.path.startsWith('/images/') &&
             !ctx.path.startsWith('/icons/') &&
             !ctx.path.startsWith('/themes/') &&
+            !ctx.path.startsWith('/oauth_clients/') &&
             !ctx.path.startsWith('/api/')) {
             ctx.url = '/';
         }
@@ -118,6 +119,7 @@ if (env === 'production') {
 }
 
 app.use(mount('/themes', static(path.join(__dirname, '../themes'), cacheOpts)));
+app.use(mount('/oauth_clients', static(path.join(__dirname, '../oauth_clients'), cacheOpts)));
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 

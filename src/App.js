@@ -6,6 +6,7 @@ import Login from './components/pages/Login.jsx';
 import Main from './components/pages/Main.jsx';
 import TransferDonate from './components/pages/TransferDonate.jsx';
 import Delegate from './components/pages/Delegate.jsx';
+import OAuth from './components/pages/OAuth.jsx';
 
 tt.registerTranslations('en', require('./locales/en.json'));
 tt.registerTranslations('ru', require('./locales/ru-RU.json'));
@@ -32,6 +33,9 @@ function App() {
                     </Route>
                     <Route path='/sign/delegate_vs'>
                         <Delegate action='delegate_vs' />
+                    </Route>
+                    <Route path='/oauth/:client'>
+                        <OAuth />
                     </Route>
                     <Route path='/:client?'>
                         <CreateAccount />
