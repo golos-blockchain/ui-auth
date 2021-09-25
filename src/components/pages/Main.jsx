@@ -18,7 +18,7 @@ class Main extends React.Component {
         const session = await getSession(true);
         this.setState({
             account: session.account,
-            clients: session.clients,
+            clients: session.clients || this.state.clients,
         });
     }
 
@@ -47,7 +47,7 @@ class Main extends React.Component {
                         {obj.allowActive ? <b className='active'>active</b> : null}
                     </td>
                     <td>
-                        <a href={'/oauth/' + key}>
+                        <a href={'/oauth/' + key + '?from_main=1'}>
                             <button className='button hollow'>
                                 {tt('g.edit')}
                             </button>

@@ -28,7 +28,7 @@ class LoginForm extends React.Component {
     }
 
     onNameChange = e => {
-        let name = e.target.value.trim().toLowerCase();
+        let name = e.target.value.trim();
 
         this.setState({
             name,
@@ -36,7 +36,7 @@ class LoginForm extends React.Component {
     };
 
     onPasswordChange = e => {
-        let password = e.target.value.trim().toLowerCase();
+        let password = e.target.value.trim();
 
         this.setState({
             password,

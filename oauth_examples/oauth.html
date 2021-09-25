@@ -1,0 +1,58 @@
+<html>
+<head>
+    <!--<script src='https://unpkg.com/golos-lib-js@latest/dist/golos.min.js'></script>-->
+    <script src='/home/my/libs/golos-lib-js/dist/golos.min.js'></script>
+</head>
+<body>
+    <button class='login'>Login</button>
+    <hr/>
+    <h4>Transfer (test active)</h4>
+    <form>
+        <input type='text' name='from' value='cyberfounder' /><br/>
+        <input type='text' name='to' value='null' /><br/>
+        <input type='text' name='amount' value='0.001 GOLOS' /><br/>
+    </form>
+    <button class='transfer'>Transfer</button>
+    <hr/>
+    <h4>Account metadata (test posting)</h4>
+    <button class='meta'>Update metadata</button>
+    <script>
+        golos.config.set('websocket', 'http://37.18.27.45:8080/api/oauth/sign');
+        golos.config.set('chain_id', '5876894a41e6361bde2e73278f07340f2eb8b41c2facd29099de9deef6cdb679');
+
+        document.getElementsByClassName('login')[0].onclick = (e) => {
+            window.open('http://37.18.27.45:3000/oauth/localfile');
+        };
+
+        document.getElementsByClassName('transfer')[0].onclick = (e) => {
+            const { from, to, amount } = document.forms[0];
+            golos.broadcast.transfer('', from.value, to.value, amount.value, '', (err, res) => {
+                if (err) {
+                    console.error(err);
+                    alert(err);
+                } else {
+                    alert('Success!');
+                }
+            });
+        };
+
+        document.getElementsByClassName('meta')[0].onclick = (e) => {
+            const { from, } = document.forms[0];
+            golos.api.getAccounts([from.value], (err0, res0) => {
+                if (err0 || res0[0].json_metadata === undefined) {
+                    console.error(err0, res0);
+                    return;
+                }
+                golos.broadcast.accountMetadata('', from.value, res0[0].json_metadata || '{}', (err, res) => {
+                    if (err) {
+                        console.error(err);
+                        alert(err);
+                    } else {
+                        alert('Success!');
+                    }
+                });
+            })
+        };
+    </script>
+</body>
+</html>

@@ -8,16 +8,29 @@ const JsonRPC = require('simple-jsonrpc-js');
 const session = require('../utils/cryptoSession');
 const { throwErr, } = require('../utils/misc');
 
-const checkCrossOrigin = (ctx) => {
-    let originHost = null;
+const getOrigin = (ctx) => {
+    let originHost = ctx.get('origin');
+    if (originHost === 'null') {
+        return originHost;
+    }
     try {
-        originHost = new URL(ctx.get('origin'));
+        originHost = new URL(originHost);
     } catch (err) {
-        return 'Origin cannot be parsed: ' + origin;
+        throw new Error('Origin cannot be parsed: ' + originHost);
     }
     originHost = originHost.hostname;
     if (!originHost) {
-        return 'Origin is wrong: ' + origin;
+        throw new Error('Origin is wrong: ' + originHost);
+    }
+    return originHost;
+};
+
+const checkCrossOrigin = (ctx) => {
+    let originHost = null;
+    try {
+        originHost = getOrigin(ctx);
+    } catch (err) {
+        return err.message;
     }
     let ownHost = null;
     try {
@@ -54,16 +67,25 @@ module.exports = function useOAuthApi(app) {
 
     const crypto_key = config.get('oauth.server_session_secret');
 
+    if (process.env.NODE_ENV === 'production') {
+        router.use(async (ctx, next) => {
+            ctx.cookies.secure = true;
+            await next();
+        });
+    }
     session(router, {
         maxAge: 1000 * 3600 * 24 * 60,
         crypto_key,
         key: 'X-OAuth-Session',
+        sameSite: 'none',
+        secure: process.env.NODE_ENV === 'production',
     });
 
     const koaBody = koa_body();
 
     const clientFromConfig = (client, locale) => {
-        const clientCfg = config.get('oauth.allowed_clients.' + client);
+        const cfgKey = 'oauth.allowed_clients.' + client;
+        const clientCfg = config.has(cfgKey) && config.get(cfgKey);
 
         let clientMeta = null;
         if (clientCfg) {
@@ -110,6 +132,7 @@ module.exports = function useOAuthApi(app) {
         if (!ctx.session.account) {
             ctx.body = {
                 account: null,
+                client: {},
             };
             return;
         }
@@ -146,15 +169,25 @@ module.exports = function useOAuthApi(app) {
         if (originErr)
             throwErr(ctx, 403, [originErr]);
 
+        let cfgClient = 'oauth.allowed_clients.' + client;
+        if (!config.has(cfgClient))
+            throwErr(ctx, 400, ['Such client is not exist']);
+
         if (!ctx.session.clients)
             ctx.session.clients = {};
         if (!allowPosting && !allowActive) {
             delete ctx.session.clients[client];
+            ctx.body = {
+                status: 'ok',
+            };
             return;
-        }
+        } 
         ctx.session.clients[client] = {
             allowPosting,
             allowActive,
+        };
+        ctx.body = {
+            status: 'ok',
         };
     });
 
@@ -283,6 +316,26 @@ module.exports = function useOAuthApi(app) {
                 }
 
                 sendAsync = async () => {
+                    if (checkCrossOrigin(ctx)) {
+                        let originFound = false;
+                        const origin = getOrigin(ctx);
+                        if (ctx.session.clients) {
+                            for (const client in ctx.session.clients) {
+                                let cfgClient = 'oauth.allowed_clients.' + client;
+                                if (!config.has(cfgClient))
+                                    continue;
+                                cfgClient = config.get(cfgClient);
+                                if (cfgClient.origins && cfgClient.origins.includes(origin)) {
+                                    originFound = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!originFound) {
+                            throw new Error(`Origin '${origin}' is not allowed, authorize please`);
+                        }
+                    }
+
                     return await golos.broadcast.sendAsync(
                         args[0], [...keys]);
                 };

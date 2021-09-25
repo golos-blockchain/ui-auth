@@ -45,20 +45,35 @@ class OAuth extends React.Component {
         });
     };
 
-    _onSubmit = async (e) => {
+    _onAllow = async (e) => {
         e.preventDefault();
 
         this.setState({
             submitting: false,
+            done: false,
         });
 
         try {
             const { allowPosting, allowActive, clientId, } = this.state;
-            const res = await callApi('/api/oauth/permissions', {
+            let res = await callApi('/api/oauth/permissions', {
                 client: clientId,
                 allowPosting,
                 allowActive,
             });
+            res = await res.json();
+            if (res.status === 'err') {
+                throw new Error(res.error);
+            }
+            this.setState({
+                submitting: false,
+                done: true,
+            });
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('from_main')) {
+                window.location.href = '/';
+            } else {
+                window.close();
+            }
         }
         catch (error) {
             console.error(error);
@@ -70,9 +85,20 @@ class OAuth extends React.Component {
         });
     };
 
+    _onForbid = async (e) => {
+        e.preventDefault();
+
+        this.setState({
+            allowPosting: false,
+            allowActive: false,
+        }, () => {
+            this._onAllow(e);
+        });
+    };
+
     render() {
         const { state, } = this;
-        const { account, client, clientId, submitting,
+        const { account, client, clientId, submitting, done,
             allowPosting, allowPostingForcely, allowActive, } = state;
 
         if (!account || client === undefined || submitting) {
@@ -109,7 +135,7 @@ class OAuth extends React.Component {
                                 ID: clientId,
                             })}
                         </div>}
-                        {client && <div>
+                        {client && <form>
                             <h3>{tt('oauth_request.application_requests_access_APP', {
                                 APP: client.title,
                             })}</h3>
@@ -125,7 +151,7 @@ class OAuth extends React.Component {
                             <div className='checkbox-multiline posting'>
                                 <input type='checkbox' id='posting' checked={allowPosting} disabled={allowPostingForcely}
                                     onChange={this.postingChange}/>
-                                <label for='posting'>
+                                <label htmlFor='posting'>
                                     <b>{tt('oauth_request.posting')}</b>
                                     {tt('oauth_request.posting_descr')}
                                 </label>
@@ -133,7 +159,7 @@ class OAuth extends React.Component {
                             <div className='checkbox-multiline posting_active'>
                                 <input type='checkbox' id='posting_active' checked={allowActive}
                                     onChange={this.postingActiveChange} />
-                                <label for='posting_active'>
+                                <label htmlFor='posting_active'>
                                     <b>{tt('oauth_request.posting_active')}</b>
                                     {tt('oauth_request.posting_active_descr')}
                                 </label>
@@ -142,14 +168,17 @@ class OAuth extends React.Component {
                             <div className='close_tab'>{tt('oauth_request.close_tab')}</div>
                             <hr />
                             <center>
-                                <button className='button' onClick={this._onSubmit}>
+                                <button className='button' onClick={this._onAllow}>
                                     {tt('oauth_request.allow')}
                                 </button>
-                                <button className='button hollow' style={{ marginLeft: '10px', }}>
+                                <button className='button hollow' onClick={this._onForbid} style={{ marginLeft: '10px', }}>
                                     {tt('oauth_request.forbid')}
                                 </button>
+                                {done ? <span className='success done'>
+                                    {tt('g.done')}
+                                </span> : null}
                             </center>
-                        </div>}
+                        </form>}
                     </div>
                 </div>
             </div>
