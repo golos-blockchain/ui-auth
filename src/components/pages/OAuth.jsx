@@ -23,6 +23,7 @@ class OAuth extends React.Component {
         clientObj = clientObj.client;
 
         const session = await getSession();
+        const params = new URLSearchParams(window.location.search);
         this.setState({
             account: session.account || null,
             client: clientObj || null,
@@ -30,6 +31,7 @@ class OAuth extends React.Component {
             allowPosting: (clientObj && clientObj.authorized) ? clientObj.allowPosting : true,
             allowPostingForcely: clientObj && !clientObj.allowPosting,
             allowActive: clientObj && clientObj.allowActive,
+            once: params.get('role'),
         });
     }
 
@@ -45,7 +47,7 @@ class OAuth extends React.Component {
         });
     };
 
-    _onAllow = async (e) => {
+    _onAllow = async (e, onlyOnce = false) => {
         e.preventDefault();
 
         this.setState({
@@ -59,6 +61,7 @@ class OAuth extends React.Component {
                 client: clientId,
                 allowPosting,
                 allowActive,
+                onlyOnce,
             });
             res = await res.json();
             if (res.status === 'err') {
@@ -85,6 +88,12 @@ class OAuth extends React.Component {
         });
     };
 
+    _onAllowOnce = async (e) => {
+        e.preventDefault();
+
+        this._onAllow(e, true);
+    };
+
     _onForbid = async (e) => {
         e.preventDefault();
 
@@ -96,10 +105,18 @@ class OAuth extends React.Component {
         });
     };
 
+    _onForbidOnce = async (e) => {
+        e.preventDefault();
+        window.close();
+        this.setState({
+            done: true,
+        });
+    };
+
     render() {
         const { state, } = this;
         const { account, client, clientId, submitting, done,
-            allowPosting, allowPostingForcely, allowActive, } = state;
+            allowPosting, allowPostingForcely, allowActive, once, } = state;
 
         if (!account || client === undefined || submitting) {
             return (<div className='Signer_page'>
@@ -148,22 +165,22 @@ class OAuth extends React.Component {
                                 {tt('oauth_request.choise_permissions')}
                             </div>
                             <hr />
-                            <div className='checkbox-multiline posting'>
+                            {(!once || once === 'posting') && <div className='checkbox-multiline posting'>
                                 <input type='checkbox' id='posting' checked={allowPosting} disabled={allowPostingForcely}
                                     onChange={this.postingChange}/>
                                 <label htmlFor='posting'>
                                     <b>{tt('oauth_request.posting')}</b>
                                     {tt('oauth_request.posting_descr')}
                                 </label>
-                            </div>
-                            <div className='checkbox-multiline posting_active'>
+                            </div>}
+                            {(!once || once === 'active') &&<div className='checkbox-multiline posting_active'>
                                 <input type='checkbox' id='posting_active' checked={allowActive}
                                     onChange={this.postingActiveChange} />
                                 <label htmlFor='posting_active'>
                                     <b>{tt('oauth_request.posting_active')}</b>
                                     {tt('oauth_request.posting_active_descr')}
                                 </label>
-                            </div>
+                            </div>}
                             <hr />
                             <div className='close_tab'>{tt('oauth_request.close_tab')}</div>
                             <hr />
@@ -171,9 +188,15 @@ class OAuth extends React.Component {
                                 <button className='button' onClick={this._onAllow}>
                                     {tt('oauth_request.allow')}
                                 </button>
-                                <button className='button hollow' onClick={this._onForbid} style={{ marginLeft: '10px', }}>
+                                {state.once && <button className='button hollow' onClick={this._onAllowOnce} style={{ marginLeft: '10px', }}>
+                                    {tt('oauth_request.allow_once')}
+                                </button>}
+                                {!once && <button className='button hollow' onClick={this._onForbid} style={{ marginLeft: '10px', }}>
                                     {tt('oauth_request.forbid')}
-                                </button>
+                                </button>}
+                                {once && <button className='button hollow' onClick={this._onForbidOnce} style={{ marginLeft: '10px', }}>
+                                    {tt('oauth_request.forbid_once')}
+                                </button>}
                                 {done ? <span className='success done'>
                                     {tt('g.done')}
                                 </span> : null}

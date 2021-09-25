@@ -1,7 +1,6 @@
 <html>
 <head>
-    <!--<script src='https://unpkg.com/golos-lib-js@latest/dist/golos.min.js'></script>-->
-    <script src='/home/my/libs/golos-lib-js/dist/golos.min.js'></script>
+    <script src='https://unpkg.com/golos-lib-js@latest/dist/golos.min.js'></script>
 </head>
 <body>
     <button class='login'>Login</button>
@@ -18,7 +17,7 @@
     <button class='meta'>Update metadata</button>
     <script>
         golos.config.set('websocket', 'http://37.18.27.45:8080/api/oauth/sign');
-        golos.config.set('chain_id', '5876894a41e6361bde2e73278f07340f2eb8b41c2facd29099de9deef6cdb679');
+        golos.config.set('credentials', 'include');
 
         document.getElementsByClassName('login')[0].onclick = (e) => {
             window.open('http://37.18.27.45:3000/oauth/localfile');

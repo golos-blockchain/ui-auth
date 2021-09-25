@@ -157,7 +157,7 @@ module.exports = function useOAuthApi(app) {
     router.post('/permissions', koaBody, async (ctx) => {
         let params = ctx.request.body;
         if (typeof(params) === 'string') params = JSON.parse(params);
-        const { client, allowPosting, allowActive, } = params;
+        const { client, allowPosting, allowActive, onlyOnce,} = params;
         if (!client)
             throwErr(ctx, 400, ['client is required']);
 
@@ -185,6 +185,7 @@ module.exports = function useOAuthApi(app) {
         ctx.session.clients[client] = {
             allowPosting,
             allowActive,
+            onlyOnce,
         };
         ctx.body = {
             status: 'ok',
@@ -199,9 +200,10 @@ module.exports = function useOAuthApi(app) {
         };
         if (ctx.session.clients && ctx.session.clients[client]) {
             ctx.body.authorized = true;
-            const {allowActive, allowPosting,} = ctx.session.clients[client];
+            const { allowActive, allowPosting, onlyOnce, } = ctx.session.clients[client];
             ctx.body.allowPosting = allowPosting;
             ctx.body.allowActive = allowActive;
+            ctx.body.onlyOnce = onlyOnce;
         }
     });
 
@@ -301,6 +303,7 @@ module.exports = function useOAuthApi(app) {
                 const activeKey = config.get('oauth.service_account.active');
 
                 let keys = new Set();
+                let usedRoles = new Set();
 
                 for (const op of args[0].operations) {
                     const roles = golos.broadcast._operations[op[0]].roles;
@@ -312,12 +315,13 @@ module.exports = function useOAuthApi(app) {
                         } else {
                             throw jrpc.customException(INVALID_REQUEST, 'Operations with owner roles not supported');
                         }
+                        usedRoles.add(roles[0]);
                     }
                 }
 
                 sendAsync = async () => {
                     if (checkCrossOrigin(ctx)) {
-                        let originFound = false;
+                        let originFound = null;
                         const origin = getOrigin(ctx);
                         if (ctx.session.clients) {
                             for (const client in ctx.session.clients) {
@@ -326,13 +330,19 @@ module.exports = function useOAuthApi(app) {
                                     continue;
                                 cfgClient = config.get(cfgClient);
                                 if (cfgClient.origins && cfgClient.origins.includes(origin)) {
-                                    originFound = true;
+                                    originFound = client;
                                     break;
                                 }
                             }
                         }
                         if (!originFound) {
                             throw new Error(`Origin '${origin}' is not allowed, authorize please`);
+                        }
+                        if (usedRoles.has('active') && !ctx.session.clients[originFound].allowActive) {
+                            throw new Error(`active is not allowed for '${originFound}' client`)
+                        }
+                        if (ctx.session.clients[originFound].onlyOnce) {
+                            delete ctx.session.clients[originFound];
                         }
                     }
 
