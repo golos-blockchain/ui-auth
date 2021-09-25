@@ -3,6 +3,7 @@ import tt from 'counterpart';
 import LoadingIndicator from '../elements/LoadingIndicator';
 import { callApi, } from '../../utils/OAuthClient';
 import golos from 'golos-lib-js';
+import './LoginForm.scss';
 
 class LoginForm extends React.Component {
     static propTypes = {
@@ -168,9 +169,9 @@ class LoginForm extends React.Component {
         const { state, } = this;
         const { name, password, } = state;
 
-        return (<div className='Login row'>
+        return (<div className='Login LoginForm row'>
             <div
-                className='column'>
+                className='column lock-image'>
                 <img src='/images/signer_lock.png' alt='' />
             </div>
             <div

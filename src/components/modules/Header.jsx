@@ -16,8 +16,10 @@ class Header extends React.Component {
             topRight, account, } = this.props;
 
         let logo = this.props.logo;
-        if (!logo && !title && !subtitle) {
-            logo = '/images/signer.png';
+        let sublogo = this.props.sublogo;
+        if (!logo && !sublogo && !title && !subtitle) {
+            logo = '/images/signer1.png';
+            sublogo = '/images/signer2.png';
         }
         return (
             <header className='Header noPrint'>
@@ -27,6 +29,7 @@ class Header extends React.Component {
                             <ul className='menu'>
                                 <li className='Header__top-logo'>
                                     <img src={logo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />
+                                    {sublogo && <img className='sublogo' src={sublogo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />}
                                 </li>
                                 <li className={'Header__top-title show-for-large noPrint ' + (titleUppercase === false ? '': 'uppercase')}>
                                     <a href={logoUrl}>
