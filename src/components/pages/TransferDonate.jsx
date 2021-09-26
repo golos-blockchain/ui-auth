@@ -41,7 +41,7 @@ class TransferDonate extends React.Component {
             return;
         }
         const { action, } = this.props;
-        let res = await callApi('/api/oauth/balances/' + session.account + '/' + action);
+        let res = await callApi('/api/oauth/_/balances/' + session.account + '/' + action);
         res = await res.json();
         for (const sym in res.balances) {
             res.balances[sym] = Asset(res.balances[sym]);

@@ -8,7 +8,7 @@ class AccountMenu extends React.Component {
     };
 
     onLogout = async () => {
-        await callApi('/api/oauth/logout');
+        await callApi('/api/oauth/_/logout');
         window.location.reload();
     };
 

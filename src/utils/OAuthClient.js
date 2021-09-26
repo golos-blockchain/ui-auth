@@ -21,7 +21,7 @@ export async function callApi(apiName, data) {
 }
 
 export async function getSession(withClients = false) {
-    let res = await callApi('/api/oauth/get_session/' + withClients + '/ru');
+    let res = await callApi('/api/oauth/_/get_session/' + withClients + '/ru');
     res = await res.json();
     return res;
 }

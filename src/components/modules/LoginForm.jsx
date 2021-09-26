@@ -17,7 +17,7 @@ class LoginForm extends React.Component {
     };
 
     async componentDidMount() {
-        const res = await callApi('/api/oauth/get_config');
+        const res = await callApi('/api/oauth/_/get_config');
         const config = await res.json();
         golos.config.set('websocket', config.ws_connection_client)
         if (config.chain_id) {
@@ -107,7 +107,7 @@ class LoginForm extends React.Component {
     };
 
     serverLogin = async (name, auths) => {
-        let res = await callApi('/api/oauth/authorize', {
+        let res = await callApi('/api/oauth/_/authorize', {
             account: name,
         });
         res = await res.json();
@@ -122,7 +122,7 @@ class LoginForm extends React.Component {
                 active: auths.active,
             });
 
-            res = await callApi('/api/oauth/authorize', {
+            res = await callApi('/api/oauth/_/authorize', {
                 account: name,
                 signatures,
             });
@@ -131,7 +131,7 @@ class LoginForm extends React.Component {
                 throw new Error('Cannot authorize|' + res.error);
             } else if (!res.has_authority) {
                 await this.setAuthority(name, auths.active);
-                res = await callApi('/api/oauth/authorize', {
+                res = await callApi('/api/oauth/_/authorize', {
                     account: name,
                     signatures,
                 });
@@ -146,7 +146,7 @@ class LoginForm extends React.Component {
         } else {
             if (!res.has_authority) {
                 await this.setAuthority(name, auths.active);
-                res = await callApi('/api/oauth/authorize', {
+                res = await callApi('/api/oauth/_/authorize', {
                     account: name,
                 });
                 res = await res.json();

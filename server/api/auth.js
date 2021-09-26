@@ -4,7 +4,8 @@ const Tarantool = require('../../db/tarantool');
 const golos = require('golos-lib-js');
 const { Signature, hash, PublicKey } = require('golos-lib-js/lib/auth/ecc');
 const secureRandom = require('secure-random');
-const { checkOrigin, getRemoteIp, slowDownLimitReq, returnError } = require('../utils/misc');
+const { getRemoteIp, slowDownLimitReq, returnError, } = require('../utils/misc');
+const { checkOrigin, } = require('../utils/origin');
 
 module.exports = function useAuthApi(app) {
     const router = koa_router({ prefix: '/api' });

@@ -18,7 +18,7 @@ class OAuth extends React.Component {
 
     async componentDidMount() {
         const { client, } = this.props.match.params;
-        const res = await callApi('/api/oauth/get_client/' + client + '/' + tt.getLocale());
+        const res = await callApi('/api/oauth/_/get_client/' + client + '/' + tt.getLocale());
         let clientObj = await res.json();
         clientObj = clientObj.client;
 
@@ -57,7 +57,7 @@ class OAuth extends React.Component {
 
         try {
             const { allowPosting, allowActive, clientId, } = this.state;
-            let res = await callApi('/api/oauth/permissions', {
+            let res = await callApi('/api/oauth/_/permissions', {
                 client: clientId,
                 allowPosting,
                 allowActive,

@@ -7,44 +7,7 @@ const secureRandom = require('secure-random');
 const JsonRPC = require('simple-jsonrpc-js');
 const session = require('../utils/cryptoSession');
 const { throwErr, } = require('../utils/misc');
-
-const getOrigin = (ctx) => {
-    let originHost = ctx.get('origin');
-    if (originHost === 'null') {
-        return originHost;
-    }
-    try {
-        originHost = new URL(originHost);
-    } catch (err) {
-        throw new Error('Origin cannot be parsed: ' + originHost);
-    }
-    originHost = originHost.hostname;
-    if (!originHost) {
-        throw new Error('Origin is wrong: ' + originHost);
-    }
-    return originHost;
-};
-
-const checkCrossOrigin = (ctx) => {
-    let originHost = null;
-    try {
-        originHost = getOrigin(ctx);
-    } catch (err) {
-        return err.message;
-    }
-    let ownHost = null;
-    try {
-        ownHost = new URL(config.get('oauth.rest_api')).hostname;
-    } catch (err) {
-        console.error('oauth.rest_api cannot be parsed as URL');
-        return 'oauth.rest_api cannot be parsed as URL';
-    }
-    const same = ownHost === originHost;
-    if (same) {
-        return false;
-    }
-    return ownHost + ' !== ' + originHost;
-};
+const { getOrigin, checkCrossOrigin, forbidCorsOnProd, } = require('../utils/origin');
 
 const hasAuthority = (acc, serviceAccountName) => {
     if (!acc)
@@ -102,7 +65,8 @@ module.exports = function useOAuthApi(app) {
         return clientMeta;
     };
 
-    router.get('/get_client/:client/:locale?', koaBody, async (ctx) => {
+    router.get('/_/get_client/:client/:locale?', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
         const { client, locale, } = ctx.params;
         let clientMeta = clientFromConfig(client, locale);
         if (ctx.session.clients && clientMeta) {
@@ -119,7 +83,8 @@ module.exports = function useOAuthApi(app) {
         };
     });
 
-    router.get('/get_config', koaBody, async (ctx) => {
+    router.get('/_/get_config', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
         ctx.body = {
             ws_connection_client: config.get('oauth.ws_connection_client'),
             chain_id: config.has('chain_id') && config.get('oauth.chain_id'),
@@ -127,7 +92,8 @@ module.exports = function useOAuthApi(app) {
         };
     });
 
-    router.get('/get_session/:with_clients/:locale', koaBody, async (ctx) => {
+    router.get('/_/get_session/:with_clients/:locale', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
         const { with_clients, locale, } = ctx.params;
         if (!ctx.session.account) {
             ctx.body = {
@@ -154,7 +120,7 @@ module.exports = function useOAuthApi(app) {
         }
     });
 
-    router.post('/permissions', koaBody, async (ctx) => {
+    router.post('/_/permissions', koaBody, async (ctx) => {
         let params = ctx.request.body;
         if (typeof(params) === 'string') params = JSON.parse(params);
         const { client, allowPosting, allowActive, onlyOnce,} = params;
@@ -192,7 +158,7 @@ module.exports = function useOAuthApi(app) {
         };
     });
 
-    router.get('/check_permissions/:client', koaBody, async (ctx) => {
+    router.get('/check/:client', koaBody, async (ctx) => {
         const { client, } = ctx.params;
 
         ctx.body = {
@@ -204,10 +170,11 @@ module.exports = function useOAuthApi(app) {
             ctx.body.allowPosting = allowPosting;
             ctx.body.allowActive = allowActive;
             ctx.body.onlyOnce = onlyOnce;
+            ctx.body.account = ctx.session.account;
         }
     });
 
-    router.post('/authorize', koaBody, async (ctx) => {
+    router.post('/_/authorize', koaBody, async (ctx) => {
         let params = ctx.request.body;
         if (typeof(params) === 'string') params = JSON.parse(params);
         const { account, signatures } = params;
@@ -272,8 +239,40 @@ module.exports = function useOAuthApi(app) {
         }
     });
 
-    router.get('/logout', koaBody, async (ctx) => {
+    router.get('/_/logout', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
         delete ctx.session.account;
+        ctx.body = {
+            status: 'ok',
+        }
+    });
+
+    router.get('/logout/:client', koaBody, async (ctx) => {
+        const { client, } = ctx.params;
+        if (!ctx.session.account)
+            throwErr(ctx, 403, ['Not authorized in account']);
+
+        let originFound = null;
+        const origin = getOrigin(ctx);
+        if (ctx.session.clients) {
+            for (const client in ctx.session.clients) {
+                let cfgClient = 'oauth.allowed_clients.' + client;
+                if (!config.has(cfgClient))
+                    continue;
+                cfgClient = config.get(cfgClient);
+                if (cfgClient.origins && cfgClient.origins.includes(origin)) {
+                    originFound = client;
+                    break;
+                }
+            }
+        }
+        if (!originFound) {
+            throw new Error(`Origin '${origin}' is not allowed, authorize please`);
+        }
+        delete ctx.session.clients[originFound];
+        ctx.body = {
+            status: 'ok',
+        }
     });
 
     router.post('/sign', koa_body({ includeUnparsed: true, }), async (ctx) => {
@@ -389,7 +388,8 @@ module.exports = function useOAuthApi(app) {
         }
     });
 
-    router.get('/balances/:account/:action', koaBody, async (ctx) => {
+    router.get('/_/balances/:account/:action', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
         const { action, account, } = ctx.params;
         ctx.body = {
             balances: {
