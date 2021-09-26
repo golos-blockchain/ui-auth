@@ -186,7 +186,8 @@
     "delegate_vs": "Delegate vesting shares",
     "apps_title": "Apps",
     "apps_empty": "You are not authorized in any app.",
-    "link": "Link: "
+    "link": "Link: ",
+    "edit": "Edit"
   },
   "oauth_transfer": {
     "from": "From",

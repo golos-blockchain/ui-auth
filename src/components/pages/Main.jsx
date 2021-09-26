@@ -2,7 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import tt from 'counterpart';
 import Header from '../modules/Header';
-import { getHost, getSession, } from '../../utils/OAuthClient';
+import { getHost, getSession, callApi, } from '../../utils/OAuthClient';
 import './Main.scss';
 
 class Main extends React.Component {
@@ -21,6 +21,12 @@ class Main extends React.Component {
             clients: session.clients || this.state.clients,
         });
     }
+
+    async forbid(client) {
+        let res = await callApi('/api/oauth/logout/' + client);
+        await res.json();
+        window.location.reload();
+    };
 
     render() {
         const { account, clients, } = this.state;
@@ -49,12 +55,12 @@ class Main extends React.Component {
                     <td>
                         <a href={'/oauth/' + key + '?from_main=1'}>
                             <button className='button hollow'>
-                                {tt('g.edit')}
+                                {tt('oauth_main_jsx.edit')}
                             </button>
                         </a>
-                        {/*<button className='button hollow'>
-                            {tt('oauth_request.forbid')}
-                        </button>*/}
+                        {<button className='button alert' onClick={() => this.forbid(key)}>
+                            {tt('g.logout')}
+                        </button>}
                     </td>
                 </tr>);
         }

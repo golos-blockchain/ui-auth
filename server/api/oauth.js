@@ -7,23 +7,9 @@ const secureRandom = require('secure-random');
 const JsonRPC = require('simple-jsonrpc-js');
 const session = require('../utils/cryptoSession');
 const { throwErr, } = require('../utils/misc');
-const { getOrigin, checkCrossOrigin, forbidCorsOnProd, } = require('../utils/origin');
-
-const hasAuthority = (acc, serviceAccountName) => {
-    if (!acc)
-        return false;
-    if (!acc.active || !acc.active.account_auths)
-        return false;
-    if (!acc.posting || !acc.posting.account_auths)
-        return false;
-    const hasActive = acc.active.account_auths.find(auth => {
-        return auth[1] === 1 && auth[0] === serviceAccountName;
-    });
-    const hasPosting = acc.posting.account_auths.find(auth => {
-        return auth[1] === 1 && auth[0] === serviceAccountName;
-    });
-    return hasActive && hasPosting;
-};
+const { checkCrossOrigin, forbidCorsOnProd, } = require('../utils/origin');
+const { getClientByOrigin, clientFromConfig,
+    hasAuthority, } = require('../utils/oauth');
 
 module.exports = function useOAuthApi(app) {
     const router = koa_router({ prefix: '/api/oauth' });
@@ -45,25 +31,6 @@ module.exports = function useOAuthApi(app) {
     });
 
     const koaBody = koa_body();
-
-    const clientFromConfig = (client, locale) => {
-        const cfgKey = 'oauth.allowed_clients.' + client;
-        const clientCfg = config.has(cfgKey) && config.get(cfgKey);
-
-        let clientMeta = null;
-        if (clientCfg) {
-            clientMeta = {};
-            clientMeta.logo = '/oauth_clients/' + clientCfg.logo;
-            let loc = 'ru';
-            if (locale && clientCfg[locale])
-                loc = locale;
-            if (!clientCfg[loc])
-                loc = 'en';
-            clientMeta.title = clientCfg[loc].title;
-            clientMeta.description = clientCfg[loc].description;
-        }
-        return clientMeta;
-    };
 
     router.get('/_/get_client/:client/:locale?', koaBody, async (ctx) => {
         forbidCorsOnProd(ctx);
@@ -252,27 +219,16 @@ module.exports = function useOAuthApi(app) {
         if (!ctx.session.account)
             throwErr(ctx, 403, ['Not authorized in account']);
 
-        let originFound = null;
-        const origin = getOrigin(ctx);
-        if (ctx.session.clients) {
-            for (const client in ctx.session.clients) {
-                let cfgClient = 'oauth.allowed_clients.' + client;
-                if (!config.has(cfgClient))
-                    continue;
-                cfgClient = config.get(cfgClient);
-                if (cfgClient.origins && cfgClient.origins.includes(origin)) {
-                    originFound = client;
-                    break;
-                }
+        if (checkCrossOrigin(ctx)) {
+            const originFound = getClientByOrigin(ctx);
+            if (client !== originFound) {
+                throwErr(ctx, 403, ['Cannot logout from another client']);
             }
         }
-        if (!originFound) {
-            throw new Error(`Origin '${origin}' is not allowed, authorize please`);
-        }
-        delete ctx.session.clients[originFound];
+        delete ctx.session.clients[client];
         ctx.body = {
             status: 'ok',
-        }
+        };
     });
 
     router.post('/sign', koa_body({ includeUnparsed: true, }), async (ctx) => {
@@ -320,23 +276,7 @@ module.exports = function useOAuthApi(app) {
 
                 sendAsync = async () => {
                     if (checkCrossOrigin(ctx)) {
-                        let originFound = null;
-                        const origin = getOrigin(ctx);
-                        if (ctx.session.clients) {
-                            for (const client in ctx.session.clients) {
-                                let cfgClient = 'oauth.allowed_clients.' + client;
-                                if (!config.has(cfgClient))
-                                    continue;
-                                cfgClient = config.get(cfgClient);
-                                if (cfgClient.origins && cfgClient.origins.includes(origin)) {
-                                    originFound = client;
-                                    break;
-                                }
-                            }
-                        }
-                        if (!originFound) {
-                            throw new Error(`Origin '${origin}' is not allowed, authorize please`);
-                        }
+                        let originFound = getClientByOrigin(ctx);
                         if (usedRoles.has('active') && !ctx.session.clients[originFound].allowActive) {
                             throw new Error(`active is not allowed for '${originFound}' client`)
                         }
