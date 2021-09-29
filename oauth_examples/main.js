@@ -2,11 +2,10 @@ const { api, } = golos;
 const { broadcast, } = golos;
 const { oauth, } = golos;
 
-const API_HOST = 'http://37.18.27.45:8080';
+const API_HOST = 'https://dev.golos.app';
 
 golos.config.set('oauth.client', 'localfile');
 golos.config.set('oauth.host', API_HOST);
-golos.config.set('oauth.ui_host', 'http://37.18.27.45:3000');
 golos.config.set('websocket', API_HOST + '/api/oauth/sign');
 golos.config.set('credentials', 'include');
 
