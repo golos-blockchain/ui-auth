@@ -7,7 +7,7 @@ if (CHAIN_ID) {
     golos.config.set('chain_id', CHAIN_ID);
 }
 
-global.API_HOST = 'https://devauth.golos.today';
+global.API_HOST = 'https://dev.golos.app';
 
 global.log = (msg) => {
     console.log(msg);
