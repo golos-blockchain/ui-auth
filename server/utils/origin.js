@@ -1,4 +1,5 @@
 const config = require('config');
+const { throwErr, } = require('./misc');
 
 let allowedClients = config.get('allowed_clients') || '';
 
