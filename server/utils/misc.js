@@ -60,8 +60,9 @@ const throwErr = (ctx, status, message, exception, bodyProps) => {
         msg = message[0];
         messageStrData = message[1];
     }
+    const locale = ctx.session ? ctx.session.locale : 'ru';
     ctx.throw(status, msg, {
-        messageLocale: ctx.session.locale,
+        messageLocale: locale,
         messageStrData,
         exception: exception || undefined,
         bodyProps,
@@ -72,7 +73,7 @@ const returnError = (ctx, error, errorException, errorStr, errorStrData = {}) =>
     if (ctx.status === 200 || ctx.status === 404) {
         ctx.status = 400;
     }
-    const locale = ctx.session.locale;
+    const locale = ctx.session ? ctx.session.locale : 'ru';
     ctx.body = {
         status: 'err',
         error,
