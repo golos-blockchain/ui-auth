@@ -33,8 +33,8 @@
     "chain_id": "5876894a41e6361bde2e73278f07340f2eb8b41c2facd29099de9deef6cdb679",
     "service_account": {
       "name": "oauth",
-      "posting": "5J...",
-      "active": "5J..."
+      "posting": "5K1aJ8JayUA7c2Ptg9Y2DetKxSvXGXa5GCcvYeHtn1Xh3v4egPS",
+      "active": "5JFZC7AtEe1wF2ce6vPAUxDeevzYkPgmtR14z9ZVgvCCtrFAaLw"
     },
     "img_proxy_prefix": "https://images.golos.today",
     "img_proxy_backup_prefix": "https://steemitimages.com"
