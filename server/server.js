@@ -19,6 +19,7 @@ const useGeneralApi = require('./api/general');
 const useUtilsApi = require('./api/utils');
 const useAuthApi = require('./api/auth');
 const useOAuthApi = require('./api/oauth');
+const clearDelegations = require('./clearDelegations');
 const { convertEntriesToArrays, } = require('./utils/misc');
 
 console.log('application server starting, please wait.');
@@ -126,5 +127,7 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 app.listen(port);
 
 console.log(`Application started on port ${port}`);
+
+clearDelegations();
 
 module.exports = app;
