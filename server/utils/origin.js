@@ -39,7 +39,7 @@ const checkOrigin = (ctx) => {
 
 const getOrigin = (ctx) => {
     let originHost = ctx.get('origin');
-    if (originHost === 'null') {
+    if (originHost === 'null' || !originHost) {
         return originHost;
     }
     try {
@@ -60,6 +60,9 @@ const checkCrossOrigin = (ctx) => {
         originHost = getOrigin(ctx);
     } catch (err) {
         return err.message;
+    }
+    if (!originHost) {
+        return null;
     }
     let ownHost = null;
     try {
