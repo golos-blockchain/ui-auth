@@ -1,4 +1,3 @@
-const config = require('config');
 const tt = require('counterpart');
 const emailRegex = /^([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22))*\x40([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d))*$/;
 
@@ -61,8 +60,9 @@ const throwErr = (ctx, status, message, exception, bodyProps) => {
         msg = message[0];
         messageStrData = message[1];
     }
+    const locale = ctx.session ? ctx.session.locale : 'ru';
     ctx.throw(status, msg, {
-        messageLocale: ctx.session.locale,
+        messageLocale: locale,
         messageStrData,
         exception: exception || undefined,
         bodyProps,
@@ -73,7 +73,7 @@ const returnError = (ctx, error, errorException, errorStr, errorStrData = {}) =>
     if (ctx.status === 200 || ctx.status === 404) {
         ctx.status = 400;
     }
-    const locale = ctx.session.locale;
+    const locale = ctx.session ? ctx.session.locale : 'ru';
     ctx.body = {
         status: 'err',
         error,
@@ -84,42 +84,6 @@ const returnError = (ctx, error, errorException, errorStr, errorStrData = {}) =>
                 locale, ...errorStrData, }),
         error_exception: errorException
     };
-};
-
-let allowedClients = config.get('allowed_clients') || '';
-
-const checkOrigin = (ctx) => {
-    if (!allowedClients.length) {
-        console.error(`allowed_clients in config not set, service is unavailable`);
-
-        return `allowed_clients in config not set, service is unavailable`;
-    }
-    let origin = ctx.get('origin');
-    if (!origin) {
-        console.warn(`Request without origin! User-Agent: ${ctx.get('user-agent')}`);
-
-        return 'Origin header required';
-    }
-    let originHost = null;
-    try {
-        originHost = new URL(origin);
-    } catch (err) {
-        console.warn(`Wrong origin! User-Agent: ${ctx.get('user-agent')}, Origin: ${origin}`);
-
-        return 'Origin cannot be parsed: ' + origin;
-    }
-    originHost = originHost.hostname;
-    if (!originHost) {
-        console.warn(`Wrong origin! User-Agent: ${ctx.get('user-agent')}, Origin: ${origin}`);
-
-        return 'Origin is wrong: ' + origin;
-    }
-    if (!allowedClients.includes(originHost))  {
-        console.error(`Origin forbidden, Origin: ${originHost}, Allowed: ${JSON.stringify(allowedClients)}, User-Agent: ${ctx.get('user-agent')}`)
-
-        return 'Auth service doesn\'t trust your client and not allows your Origin to use service';
-    }
-    return null;
 };
 
 function convertEntriesToArrays(obj) {
@@ -137,6 +101,5 @@ module.exports = {
     checkCSRF,
     returnError,
     throwErr,
-    checkOrigin,
     convertEntriesToArrays,
 };

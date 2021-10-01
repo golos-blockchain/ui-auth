@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const golos = require('golos-classic-js');
+const golos = require('golos-lib-js');
 const tt = require('counterpart');
 const Koa = require('koa');
 const csrf = require('koa-csrf');
@@ -13,13 +13,14 @@ const helmet = require('koa-helmet');
 const mount = require('koa-mount');
 const static = require('koa-static');
 const error = require('koa-json-error');
+process.env.NODE_CONFIG_ENV = 'oauth';
+const config = require('config');
 const useGeneralApi = require('./api/general');
-const useRegistrationApi = require('./api/registration');
 const useUtilsApi = require('./api/utils');
 const useAuthApi = require('./api/auth');
-const session = require('./utils/cryptoSession');
+const useOAuthApi = require('./api/oauth');
+const clearDelegations = require('./clearDelegations');
 const { convertEntriesToArrays, } = require('./utils/misc');
-const config = require('config');
 
 console.log('application server starting, please wait.');
 
@@ -38,7 +39,6 @@ tt.setMissingEntryGenerator(key => key);
 
 const app = new Koa();
 app.name = 'Golos Register app';
-const env = process.env.NODE_ENV || 'development';
 const cacheOpts = { maxage: 0, gzip: true };
 
 app.use(cors({ credentials: true,
@@ -47,16 +47,11 @@ app.use(cors({ credentials: true,
 
 app.keys = [config.get('session_key')];
 
-const crypto_key = config.get('server_session_secret');
-
-session(app, {
-    maxAge: 1000 * 3600 * 24 * 60,
-    crypto_key,
-    key: config.get('session_cookie_key'),
-});
 //csrf(app);
 // app.use(csrf.middleware);
 app.use(helmet());
+
+const env = process.env.NODE_ENV || 'development';
 
 // helmet wants some things as bools and some as lists, makes config difficult.
 // our config uses strings, this splits them to lists on whitespace.
@@ -97,10 +92,10 @@ app.use(error(err => {
     };
 }));
 
-useRegistrationApi(app);
 useGeneralApi(app);
 useUtilsApi(app);
 useAuthApi(app);
+useOAuthApi(app);
 
 //app.use(favicon(path.join(__dirname, '../app/assets/images/favicons/favicon.ico')));
 //app.use(mount('/favicons', staticCache(path.join(__dirname, '../app/assets/images/favicons'), cacheOpts)));
@@ -114,6 +109,7 @@ if (env === 'production') {
             !ctx.path.startsWith('/images/') &&
             !ctx.path.startsWith('/icons/') &&
             !ctx.path.startsWith('/themes/') &&
+            !ctx.path.startsWith('/oauth_clients/') &&
             !ctx.path.startsWith('/api/')) {
             ctx.url = '/';
         }
@@ -124,11 +120,14 @@ if (env === 'production') {
 }
 
 app.use(mount('/themes', static(path.join(__dirname, '../themes'), cacheOpts)));
+app.use(mount('/oauth_clients', static(path.join(__dirname, '../oauth_clients'), cacheOpts)));
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
 app.listen(port);
 
 console.log(`Application started on port ${port}`);
+
+clearDelegations();
 
 module.exports = app;

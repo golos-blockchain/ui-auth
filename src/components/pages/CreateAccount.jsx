@@ -1,19 +1,20 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
+import { withRouter, } from 'react-router';
 import PropTypes from 'prop-types';
 import tt from 'counterpart';
 import cn from 'classnames';
-import { PrivateKey } from 'golos-classic-js/lib/auth/ecc';
+import { PrivateKey } from 'golos-lib-js/lib/auth/ecc';
 import ReCAPTCHA from 'react-google-recaptcha';
-import LoadingIndicator from './components/elements/LoadingIndicator';
-import Tooltip from './components/elements/Tooltip';
-import Header from './components/modules/Header';
-import validate_account_name from './validate_account_name';
-import KeyFile from './utils/KeyFile';
-import GeneratedPasswordInput from './components/elements/GeneratedPasswordInput';
-import { APP_DOMAIN, SUPPORT_EMAIL } from './client_config';
+import LoadingIndicator from '../elements/LoadingIndicator';
+import Tooltip from '../elements/Tooltip';
+import Header from '../modules/Header';
+import validate_account_name from '../../utils/validate_account_name';
+import KeyFile from '../../utils/KeyFile';
+import GeneratedPasswordInput from '../elements/GeneratedPasswordInput';
+import { APP_DOMAIN, SUPPORT_EMAIL } from '../../client_config';
 import './CreateAccount.scss';
-import { getHost, callApi, } from './utils/RegApiClient';
+import { getHost, callApi, } from '../../utils/RegApiClient';
 
 function formatAsset(val) {
     return val;
@@ -73,13 +74,8 @@ class CreateAccount extends React.Component {
             }
         }
 
-        let client = '';
-        const pathnameParts = window.location.pathname.split('/');
-        if (pathnameParts.length >= 3 && pathnameParts[2] === 'register') {
-            client = pathnameParts[1];
-        } else if (pathnameParts.length >= 2 && pathnameParts[1] && pathnameParts[1] !== 'register') {
-            client = pathnameParts[1];
-        }
+        let client = this.props.match.params.client || '';
+        if (client === 'register') client = '';
 
         await callApi(`/api/reg/get_uid`);
 
@@ -1063,4 +1059,4 @@ class CreateAccount extends React.Component {
 
 
 
-export default CreateAccount;
+export default withRouter(CreateAccount);

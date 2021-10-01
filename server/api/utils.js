@@ -1,12 +1,10 @@
 const koa_router = require('koa-router');
 const koa_body = require('koa-body');
-const golos = require('golos-classic-js');
+const golos = require('golos-lib-js');
 const { getRemoteIp, slowDownLimitReq, returnError } = require('../utils/misc');
 
 module.exports = function useUtilsApi(app) {
     const router = koa_router({ prefix: '/api/utils' });
-    app.use(router.routes());
-    app.use(router.allowedMethods({ throw: true, }));
 
     const koaBody = koa_body();
 
@@ -74,4 +72,7 @@ module.exports = function useUtilsApi(app) {
             invite,
         }
     });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods({ throw: true, }));
 };

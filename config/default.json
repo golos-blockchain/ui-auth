@@ -1,5 +1,5 @@
 {
-  "REST_API": "http://37.18.27.45:8080",
+  "rest_api": "http://37.18.27.45:8080",
   "helmet": {
     "directives": {
       "defaultSrc": "'self'",

@@ -1,15 +1,14 @@
 const koa_router = require('koa-router');
 const koa_body = require('koa-body');
 const Tarantool = require('../../db/tarantool');
-const golos = require('golos-classic-js');
-const { Signature, hash, PublicKey } = require('golos-classic-js/lib/auth/ecc');
+const golos = require('golos-lib-js');
+const { Signature, hash, PublicKey } = require('golos-lib-js/lib/auth/ecc');
 const secureRandom = require('secure-random');
-const { checkOrigin, getRemoteIp, slowDownLimitReq, returnError } = require('../utils/misc');
+const { getRemoteIp, slowDownLimitReq, returnError, } = require('../utils/misc');
+const { checkOrigin, } = require('../utils/origin');
 
 module.exports = function useAuthApi(app) {
     const router = koa_router({ prefix: '/api' });
-    app.use(router.routes());
-    app.use(router.allowedMethods({ throw: true, }));
 
     const koaBody = koa_body();
 
@@ -109,4 +108,7 @@ module.exports = function useAuthApi(app) {
             was_logged_in,
         };
     });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods({ throw: true, }));
 };

@@ -6,6 +6,11 @@ header {
     height: 5rem;
 }
 
+header > * .button.hollow {
+    border-color: #fff !important;
+    color: #fff !important;
+}
+
 a:not(.button) {
     color: #9a33cc !important;
 }

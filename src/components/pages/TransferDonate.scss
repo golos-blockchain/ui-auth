@@ -1,0 +1,27 @@
+.TransferDonate {
+    .error {
+        margin-bottom: 1rem;
+    }
+    .Balance {
+        border-bottom: 1px dotted rgb(160, 159, 159);
+        cursor: pointer;
+    }
+    .AssetSelect {
+        padding: 0px;
+        select {
+            background-color: transparent;
+            margin: 0px;
+            cursor: pointer;
+            border: none;
+        }
+    }
+    .button {
+        margin-bottom: 0rem;
+    }
+    .done {
+        margin-left: 0.5rem;
+    }
+    .page-link {
+        margin-top: 1rem;
+    }
+}

@@ -111,6 +111,8 @@ https://github.com/golos-blockchain/ui-auth/blob/master/cypress/support/index.js
 
 Этап 2. Подписать `login_challenge` posting-ключом аккаунта (а если авторизация происходит по паролю, то сперва извлечь из пароля posting-ключ), и отправить новый POST-запрос: `{"account": "имя аккаунта", "signatures": {"posting":"<подпись>"}}`.
 
+Для подписи есть [специальная функция](https://github.com/golos-blockchain/libs/blob/master/golos-lib-js/docs/files/auth.md#%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%BD%D0%B0%D1%8F-%D0%B0%D0%B2%D1%82%D0%BE%D1%80%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F) в golos-lib-js.
+
 #### `GET /logout_account` - выход из аккаунта пользователя.
 
 В случае, если аккаунт и не был авторизован, ошибки НЕ выдает. Возвращает ответ с полем `was_logged_in`, которое равно `true`, если аккаунт действительно был авторизован.

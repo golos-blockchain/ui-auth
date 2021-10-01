@@ -3,8 +3,8 @@ const koa_body = require('koa-body');
 const config = require('config');
 const Tarantool = require('../../db/tarantool');
 const { checkCSRF, getRemoteIp, rateLimitReq, throwErr, } = require('../utils/misc');
-const { hash } = require('golos-classic-js/lib/auth/ecc');
-const { api } = require('golos-classic-js');
+const { hash } = require('golos-lib-js/lib/auth/ecc');
+const { api } = require('golos-lib-js');
 const secureRandom = require('secure-random');
 const gmailSend = require('gmail-send');
 const git = require('git-rev-sync');
@@ -30,9 +30,7 @@ module.exports = function useRegistrationApi(app) {
         done(null, user);
     });
 
-    const router = koa_router({ prefix: '/api/reg' });
-    app.use(router.routes());
-    app.use(router.allowedMethods({ throw: true, }));
+    const router = koa_router({ prefix: '/reg', });
 
     const koaBody = koa_body();
 
@@ -48,7 +46,7 @@ module.exports = function useRegistrationApi(app) {
                 {
                     clientID: grant.key,
                     clientSecret: grant.secret,
-                    callbackURL: `${config.REST_API}/api/reg/modal/${grantId}/callback`,
+                    callbackURL: `${config.rest_api}/api/reg/modal/${grantId}/callback`,
                     passReqToCallback: true
                 },
                 async (req, accessToken, refreshToken, params, profile, done) => {
@@ -488,4 +486,7 @@ module.exports = function useRegistrationApi(app) {
             ...state,
         };
     });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods({ throw: true, }));
 }

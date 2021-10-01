@@ -1,5 +1,5 @@
-global.golos = require('golos-classic-js');
-const { Signature, hash } = require('golos-classic-js/lib/auth/ecc');
+global.golos = require('golos-lib-js');
+const { Signature, hash } = require('golos-lib-js/lib/auth/ecc');
 
 let { NODE_URL, CHAIN_ID } = Cypress.env();
 golos.config.set('websocket', NODE_URL);

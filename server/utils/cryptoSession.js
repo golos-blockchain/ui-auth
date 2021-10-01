@@ -1,9 +1,9 @@
 'use strict';
 
 const sodium = require('libsodium-wrappers');
-const session = require('koa-session');
+const session = require('@goa/session');
 
-module.exports = function(app, opts) {
+module.exports = function(appOrRouter, opts) {
     opts = opts || {};
 
     if (opts.signed === undefined) {
@@ -22,7 +22,7 @@ module.exports = function(app, opts) {
     opts.encode = encode;
     opts.decode = decode;
 
-    app.use(session(opts, app));
+    appOrRouter.use(session(opts));
 
     function encode(body) {
         try {

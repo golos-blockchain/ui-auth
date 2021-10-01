@@ -1,0 +1,42 @@
+{
+  "oauth": {
+    "allowed_clients": {
+      "localfile": {
+        "origins": ["null"],
+        "logo": "localfile.svg",
+        "ru": {
+          "title": "Тест file:///",
+          "description": "Только для тестов! Не давайте доступ к реальным аккаунтам."
+        },
+        "en": {
+          "title": "file:/// Tester",
+          "description": "Tests only! Do not give access to real accounts."
+        }
+      },
+      "fakeorigin": {
+        "origins": ["fakeorigin.com"],
+        "logo": "fakeorigin.svg",
+        "ru": {
+          "title": "Тест file:///",
+          "description": "Только для тестов! Не давайте доступ к реальным аккаунтам."
+        },
+        "en": {
+          "title": "file:/// Tester",
+          "description": "Tests only! Do not give access to real accounts."
+        }
+      }
+    },
+    "rest_api": "http://37.18.27.45:8080",
+    "server_session_secret": "W5iQUifBxQHCebzwn4i0IvulwDMT5N591CI6feYd69g=",
+    "ws_connection_client": "ws://37.18.27.45:8091",
+    "ws_connection_server": "ws://37.18.27.45:8091",
+    "chain_id": "5876894a41e6361bde2e73278f07340f2eb8b41c2facd29099de9deef6cdb679",
+    "service_account": {
+      "name": "oauth",
+      "posting": "5K1aJ8JayUA7c2Ptg9Y2DetKxSvXGXa5GCcvYeHtn1Xh3v4egPS",
+      "active": "5JFZC7AtEe1wF2ce6vPAUxDeevzYkPgmtR14z9ZVgvCCtrFAaLw"
+    },
+    "img_proxy_prefix": "https://images.golos.today",
+    "img_proxy_backup_prefix": "https://steemitimages.com"
+  }
+}

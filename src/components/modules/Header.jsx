@@ -1,5 +1,6 @@
 import React from 'react';
 import LocaleSelect from '../elements/LocaleSelect';
+import AccountMenu from '../elements/AccountMenu';
 
 class Header extends React.Component {
     static propTypes = {
@@ -11,8 +12,15 @@ class Header extends React.Component {
     }
 
     render() {
-        const { logo, title, subtitle, logoUrl, } = this.props;
+        const { title, titleUppercase, subtitle, logoUrl, 
+            topRight, account, } = this.props;
 
+        let logo = this.props.logo;
+        let sublogo = this.props.sublogo;
+        if (!logo && !sublogo && !title && !subtitle) {
+            logo = '/images/signer1.png';
+            sublogo = '/images/signer2.png';
+        }
         return (
             <header className='Header noPrint'>
                 <div className='Header__top header'>
@@ -21,8 +29,9 @@ class Header extends React.Component {
                             <ul className='menu'>
                                 <li className='Header__top-logo'>
                                     <img src={logo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />
+                                    {sublogo && <img className='sublogo' src={sublogo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />}
                                 </li>
-                                <li className='Header__top-title show-for-large noPrint'>
+                                <li className={'Header__top-title show-for-large noPrint ' + (titleUppercase === false ? '': 'uppercase')}>
                                     <a href={logoUrl}>
                                         {title}
                                         <span className='subtitle'>{subtitle}</span>
@@ -33,6 +42,7 @@ class Header extends React.Component {
                         <div className='columns shrink'>
                             <LocaleSelect/>
                         </div>
+                        {topRight || <AccountMenu account={account} />}
                     </div>
                 </div>
             </header>
