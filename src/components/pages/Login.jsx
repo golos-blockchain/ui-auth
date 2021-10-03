@@ -12,6 +12,10 @@ class Login extends React.Component {
 
     async componentDidMount() {
         const session = await getSession();
+        if (session.oauth_disabled) {
+            window.location.href = '/register';
+            return;
+        }
         if (session.account)
             window.location.href = '/';
     }

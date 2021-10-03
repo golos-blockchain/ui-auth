@@ -19,6 +19,7 @@ const useGeneralApi = require('./api/general');
 const useUtilsApi = require('./api/utils');
 const useAuthApi = require('./api/auth');
 const useOAuthApi = require('./api/oauth');
+const useOAuthStub = require('./api/oauthStub');
 const clearDelegations = require('./clearDelegations');
 const { convertEntriesToArrays, } = require('./utils/misc');
 
@@ -95,7 +96,11 @@ app.use(error(err => {
 useGeneralApi(app);
 useUtilsApi(app);
 useAuthApi(app);
-useOAuthApi(app);
+if (config.has('oauth')) {
+    useOAuthApi(app);
+} else {
+    useOAuthStub(app);
+}
 
 //app.use(favicon(path.join(__dirname, '../app/assets/images/favicons/favicon.ico')));
 //app.use(mount('/favicons', staticCache(path.join(__dirname, '../app/assets/images/favicons'), cacheOpts)));
@@ -107,6 +112,9 @@ if (env === 'production') {
     app.use(async (ctx, next) => {
         if (!ctx.path.startsWith('/static/') &&
             !ctx.path.startsWith('/images/') &&
+            !ctx.path.startsWith('/favicon.') &&
+            !ctx.path.startsWith('/robots.txt') &&
+            !ctx.path.startsWith('/manifest.json') &&
             !ctx.path.startsWith('/icons/') &&
             !ctx.path.startsWith('/themes/') &&
             !ctx.path.startsWith('/oauth_clients/') &&
@@ -120,7 +128,9 @@ if (env === 'production') {
 }
 
 app.use(mount('/themes', static(path.join(__dirname, '../themes'), cacheOpts)));
-app.use(mount('/oauth_clients', static(path.join(__dirname, '../oauth_clients'), cacheOpts)));
+if (config.has('oauth')) {
+    app.use(mount('/oauth_clients', static(path.join(__dirname, '../oauth_clients'), cacheOpts)));
+}
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
