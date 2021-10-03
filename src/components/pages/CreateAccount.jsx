@@ -107,6 +107,7 @@ class CreateAccount extends React.Component {
         this.setState({
             loaded: true,
             config: data.config,
+            oauth_disabled: data.oauth_disabled,
             afterRedirect,
         }, () => {
             console.log('afterRedirect is', this.state.afterRedirect);
@@ -271,6 +272,7 @@ class CreateAccount extends React.Component {
             submitting,
             cryptographyFailure,
             allBoxChecked,
+            oauth_disabled,
         } = state;
 
         if (serverBusy) {
@@ -347,7 +349,7 @@ class CreateAccount extends React.Component {
                     <title>{title}</title>
                     <link rel='icon' type='image/png' href={favicon} sizes='16x16' />
                 </Helmet>
-                <Header logo={logo} title={logo_title} subtitle={logo_subtitle} logoUrl={origin} />
+                <Header logo={logo} title={logo_title} subtitle={logo_subtitle} logoUrl={origin} topRight={oauth_disabled ? <span></span> : undefined} />
                 <div className='CreateAccount row'>
                     <div
                         className='column'

@@ -12,11 +12,17 @@ class Main extends React.Component {
     state = {
         account: null,
         clients: {},
+        loading: true,
     };
 
     async componentDidMount() {
         const session = await getSession(true);
+        if (session.oauth_disabled) {
+            window.location.href = '/register';
+            return;
+        }
         this.setState({
+            loading: false,
             account: session.account,
             clients: session.clients || this.state.clients,
         });
@@ -29,7 +35,10 @@ class Main extends React.Component {
     };
 
     render() {
-        const { account, clients, } = this.state;
+        const { account, clients, loading, } = this.state;
+        if (loading) {
+            return null;
+        }
         let actions = [];
         for (let action of [
             'transfer', 'donate', 'delegate_vs']) {

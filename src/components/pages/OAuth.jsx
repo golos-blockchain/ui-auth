@@ -23,6 +23,10 @@ class OAuth extends React.Component {
         clientObj = clientObj.client;
 
         const session = await getSession();
+        if (session.oauth_disabled) {
+            window.location.href = '/register';
+            return;
+        }
         const params = new URLSearchParams(window.location.search);
         this.setState({
             account: session.account || null,

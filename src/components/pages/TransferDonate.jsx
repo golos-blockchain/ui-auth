@@ -34,6 +34,10 @@ class TransferDonate extends React.Component {
     async componentDidMount() {
         await golos.importNativeLib()
         const session = await getSession();
+        if (session.oauth_disabled) {
+            window.location.href = '/register';
+            return;
+        }
         if (!session.account) {
             this.setState({
                 account: null,
@@ -123,7 +127,7 @@ class TransferDonate extends React.Component {
     };
 
     onMemoChange = e => {
-        let memo = e.target.value.trim();
+        let memo = e.target.value;
 
         this.setState({
             memo,

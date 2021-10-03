@@ -48,6 +48,10 @@ class Delegate extends React.Component {
     async componentDidMount() {
         await golos.importNativeLib()
         const session = await getSession();
+        if (session.oauth_disabled) {
+            window.location.href = '/register';
+            return;
+        }
         if (!session.account) {
             this.setState({
                 account: null,

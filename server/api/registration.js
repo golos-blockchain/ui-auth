@@ -163,6 +163,7 @@ module.exports = function useRegistrationApi(app) {
             version: git.short(),
             locale_was_already_set: localeWasAlreadySet,
             config: cfg,
+            oauth_disabled: !config.has('oauth'),
         }
     });
 
