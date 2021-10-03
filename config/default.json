@@ -1,5 +1,35 @@
 {
-  "rest_api": "http://37.18.27.45:8080",
+  "rest_api": "https://dev.golos.app",
+  "allowed_clients": [
+    "dev.golos.app",
+    "devnotify.golos.app",
+    "beta.golos.today",
+    "dev.golostalk.com",
+    "localhost"
+  ],
+  "fake_emails_allowed": false,
+  "registrar": {
+    "account": "id-demiurge",
+    "fee": "1.000 GOLOS",
+    "signing_key": "5JFZC7AtEe1wF2ce6vPAUxDeevzYkPgmtR14z9ZVgvCCtrFAaLw",
+    "delegation": "75000.000000 GESTS"
+  },
+  "server_session_secret": "exiKdyF+IwRIXJDmtGIl4vWUz4i3eVSISpfZoeYc0s4=",
+  "session_cookie_key": "gls.session",
+  "session_key": "golos",
+  "ws_connection_client": "https://apibeta.golos.today",
+  "ws_connection_server": "wss://apibeta.golos.today/ws",
+  "chain_id": "782a3039b478c839e4cb0c941ff4eaeb7df40bdd68bd441afd444b9da763de12",
+  "tarantool": {
+    "host": "127.0.0.1",
+    "port": "3301",
+    "username": "guest",
+    "password": ""
+  },
+  "gmail_send": {
+    "user": "halfyearforwhat@gmail.com",
+    "pass": "yforlmawttbbczrv"
+  },
   "helmet": {
     "directives": {
       "defaultSrc": "'self'",
@@ -8,18 +38,41 @@
       "styleSrc": "'self' 'unsafe-inline' fonts.googleapis.com",
       "imgSrc": "* data:",
       "fontSrc": "data: fonts.gstatic.com",
-      "connectSrc": "'self' wss://*.golos.id *.golos.app",
+      "connectSrc": "'self' apibeta.golos.today wss://apibeta.golos.today",
       "reportUri": "/api/csp_violation",
       "objectSrc": "'self'",
       "frameAncestors": "'none'"
     }
   },
-  "allowed_clients": [
-    "golos.id",
-    "golostalk.com",
-    "localhost",
-    "37.18.27.45"
-  ],
+  "captcha": {
+    "recaptcha_v2": {
+      "enabled": true,
+      "site_key": "6LcDa08cAAAAAA7fZTpQ-7muLyqam8ui3U62S2Lh",
+      "secret_key": "6LcDa08cAAAAAME702LXqy3u7lq0zDn-3-W9nudS"
+    }
+  },
+  "grant": {
+    "vk": {
+      "enabled": true,
+      "key": "7729925",
+      "secret": "XDpHjeomxnZJOIwnp0SM"
+    },
+    "facebook": {
+      "enabled": true,
+      "key": "400946054546292",
+      "secret": "62fefc26e01cce7c56aed3e2b0c2f5bf"
+    },
+    "mailru": {
+      "enabled": true,
+      "key": "783069",
+      "secret": "61f78ffeb9411b6289150d46a93ee034"
+    },
+    "yandex": {
+      "enabled": true,
+      "key": "9e9787bd59204b95812bc7e438939616",
+      "secret": "ca10592646784980a11179cc72146344"
+    }
+  },
   "default_client": "blogs",
   "clients": {
     "blogs": {
@@ -28,21 +81,7 @@
       "ru": {
         "favicon": "favicon.ico", "logo": "logo.svg",
         "logo_title": "GOLOS", "logo_subtitle": "blockchain",
-        "page_title": "Регистрация Golos Blockchain"
-      },
-      "en": {
-        "favicon": "favicon.ico", "logo": "logo.svg",
-        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
-        "page_title": "Sign up for Golos Blockchain"
-      }
-    },
-    "blogs-dev": {
-      "origin": "https://dev.golos.id",
-      "after_redirect": "/login.html#account={account}&msg=accountcreated",
-      "ru": {
-        "favicon": "favicon.ico", "logo": "logo.svg",
-        "logo_title": "GOLOS", "logo_subtitle": "blockchain",
-        "page_title": "Регистрация Golos Blockchain"
+        "page_title": "Регистрация в Golos Blockchain"
       },
       "en": {
         "favicon": "favicon.ico", "logo": "logo.svg",
@@ -56,7 +95,7 @@
       "ru": {
         "favicon": "favicon.ico", "logo": "logo.svg",
         "logo_title": "GOLOS", "logo_subtitle": "blockchain",
-        "page_title": "Регистрация Golos Blockchain"
+        "page_title": "Регистрация в Golos Blockchain"
       },
       "en": {
         "favicon": "favicon.ico", "logo": "logo.svg",
@@ -70,7 +109,7 @@
       "ru": {
         "favicon": "favicon.ico", "logo": "logo.svg",
         "logo_title": "GOLOS", "logo_subtitle": "blockchain",
-        "page_title": "Регистрация Golos Blockchain"
+        "page_title": "Регистрация в Golos Blockchain"
       },
       "en": {
         "favicon": "favicon.ico", "logo": "logo.svg",
@@ -118,56 +157,5 @@
         "page_title": "Sign up for Graphene Forum"
       }
     }
-  },
-  "grant": {
-    "vk": {
-      "enabled": true,
-      "key": "7729925",
-      "secret": "XDpHjeomxnZJOIwnp0SM"
-    },
-    "facebook": {
-      "enabled": true,
-      "key": "400946054546292",
-      "secret": "62fefc26e01cce7c56aed3e2b0c2f5bf"
-    },
-    "mailru": {
-      "enabled": true,
-      "key": "783069",
-      "secret": "61f78ffeb9411b6289150d46a93ee034"
-    },
-    "yandex": {
-      "enabled": true,
-      "key": "9e9787bd59204b95812bc7e438939616",
-      "secret": "ca10592646784980a11179cc72146344"
-    }
-  },
-  "captcha": {
-    "recaptcha_v2": {
-      "enabled": true,
-      "site_key": "6LcDa08cAAAAAA7fZTpQ-7muLyqam8ui3U62S2Lh",
-      "secret_key": "6LcDa08cAAAAAME702LXqy3u7lq0zDn-3-W9nudS"
-    }
-  },
-  "registrar": {
-    "account": "cyberfounder",
-    "fee": "1.000 GOLOS",
-    "signing_key": "5JVFFWRLwz6JoP9kguuRFfytToGU6cLgBVTL9t6NB3D3BQLbUBS",
-    "delegation": "33060.000000 GESTS"
-  },
-  "server_session_secret": "exiKdyF+IwRIXJDmtGIl4vWUz4i3eVSISpfZoeYc0s4=",
-  "session_cookie_key": "gls.session",
-  "session_key": "golos",
-  "ws_connection_client": "ws://37.18.27.45:8091",
-  "ws_connection_server": "ws://37.18.27.45:8091",
-  "chain_id": "5876894a41e6361bde2e73278f07340f2eb8b41c2facd29099de9deef6cdb679",
-  "tarantool": {
-    "host": "37.18.27.45",
-    "port": "3301",
-    "username": "guest",
-    "password": ""
-  },
-  "gmail_send": {
-    "user": "halfyearforwhat@gmail.com",
-    "pass": "yforlmawttbbczrv"
   }
 }
