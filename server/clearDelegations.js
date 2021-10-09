@@ -2,7 +2,7 @@ const config = require('config');
 const golos = require('golos-lib-js');
 
 const isProd = (process.env.NODE_ENV === 'production');
-const CHECK_INTERVAL = isProd ? 300 : 15;
+const CHECK_INTERVAL = isProd ? 43200 : 15;
 
 const acc = config.get('registrar.account');
 const acc_active = config.get('registrar.signing_key');
