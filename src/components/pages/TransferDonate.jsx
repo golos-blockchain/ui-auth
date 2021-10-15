@@ -2,19 +2,15 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { withRouter, } from 'react-router';
 import tt from 'counterpart';
+import golos from 'golos-lib-js';
+import { Asset } from 'golos-lib-js/lib/utils';
+import { Formik, Field, ErrorMessage, } from 'formik';
 import Header from '../modules/Header';
 import LoginForm from '../modules/LoginForm';
 import { callApi, getSession, } from '../../utils/OAuthClient';
 import LoadingIndicator from '../elements/LoadingIndicator';
 import validate_account_name from '../../utils/validate_account_name';
 import './TransferDonate.scss';
-import golos from 'golos-lib-js';
-import { Asset } from 'golos-lib-js/lib/utils';
-
-function formatAmount(amount){
-    amount = amount.replace(/[^\d.,]/g,"").replace(/,/, '.');
-    return amount
-}
 
 class TransferDonate extends React.Component {
     static propTypes = {
@@ -22,13 +18,7 @@ class TransferDonate extends React.Component {
 
     state = {
         account: undefined,
-        from: '',
-        to: '',
-        toError: '',
-        amount: '',
-        amountError: '',
-        memo: '',
-        sym: 'GOLOS',
+        initial: undefined,
     };
 
     async componentDidMount() {
@@ -50,112 +40,91 @@ class TransferDonate extends React.Component {
         for (const sym in res.balances) {
             res.balances[sym] = Asset(res.balances[sym]);
         }
+        let initial = {
+            from: session.account,
+            to: '',
+            amount: '',
+            sym: Object.keys(res.balances)[0],
+        };
+        this.uncompose(initial);
         this.setState({
             sign_endpoint: session.sign_endpoint,
             account: session.account,
-            from: session.account,
             balances: res.balances,
-            sym: Object.keys(res.balances)[0],
-        }, () => {
-            this.uncompose();
+            initial,
         });
     }
 
-    onFromChange = e => {
-        let from = e.target.value.trim().toLowerCase();
-
-        let validate = validate_account_name(from);
-
-        this.setState({
-            from,
-            fromError: validate,
-        });
+    onToChange = (e, handle) => {
+        let value = e.target.value.trim().toLowerCase();
+        e.target.value = value;
+        return handle(e);
     };
 
-    onToChange = e => {
-        let to = e.target.value.trim().toLowerCase();
-
-        let validate = validate_account_name(to);
-
-        this.setState({
-            to,
-            toError: validate,
-        });
-    };
-
-    updateAmount = (amount) => {
-        amount = formatAmount(amount);
-        let amountError = '';
-
-        if (!amount || parseFloat(amount) === 0) {
-            amountError = tt('g.required');
+    onAmountChange = (e, values, handle) => {
+        let value = e.target.value.trim().toLowerCase();
+        if (isNaN(value) || parseFloat(value) < 0) {
+            e.target.value = values.amount || '';
+            return;
         }
-
-        const { balances, sym, } = this.state;
-        if (!isNaN(amount) && balances && sym && balances[sym]) {
-            let balance = balances[sym].amountFloat;
-            if (!isNaN(balance) && !amountError) {
-                amountError = (balance < parseFloat(amount)) ? tt('oauth_transfer.insufficient') : '';
-            }
-        }
-
-        this.setState({
-            amount: isNaN(amount) ? this.state.amount : amount,
-            amountError,
-        });
+        e.target.value = value;
+        return handle(e);
     };
 
-    onAmountChange = e => {
-        let amount = e.target.value.trim().toLowerCase();
-        this.updateAmount(amount);
-    };
-
-    onSymChange = e => {
-        this.setState({
-            sym: e.target.value,
-        }, () => {
-            this.updateAmount(this.state.amount);
-        })
-    };
-
-    useAllBalance = () => {
-        const { balances, sym, } = this.state;
+    useAllBalance = (e, sym, setFieldValue) => {
+        const { balances, } = this.state;
         let balance = balances && sym && balances[sym];
         if (!balance) balance = Asset(0, 3, 'GOLOS');
 
-        this.updateAmount(balance.amountFloat.toString());
+        setFieldValue('amount', balance.amountFloat.toString());
     };
 
-    onMemoChange = e => {
-        let memo = e.target.value;
+    validate = (values) => {
+        const errors = {};
+        if (!values.to) {
+            errors.to = tt('g.required');
+        } else {
+            const err = validate_account_name(values.to);
+            if (err) errors.to = err;
+        }
 
-        this.setState({
-            memo,
-        });
+        if (!values.amount) {
+            errors.amount = tt('g.required');
+        } else if (parseFloat(values.amount) === 0) {
+            errors.amount = tt('g.required');
+        } else {
+            const { balances, } = this.state;
+            const { amount, sym, } = values;
+            if (!isNaN(amount) && balances && sym && balances[sym]) {
+                let balance = balances[sym].amountFloat;
+                if (!isNaN(balance) && balance < parseFloat(amount)) {
+                    errors.amount = tt('oauth_transfer.insufficient');
+                }
+            }
+        }
+
+        return errors;
     };
 
-    _onSubmit = (e) => {
-        e.preventDefault();
-
+    _onSubmit = (values, { setSubmitting, }) => {
         this.setState({
-            submitting: true,
             done: false,
         })
 
         const { action, } = this.props;
-        const { sign_endpoint,
-            from, to, sym, balances, } = this.state;
-        
+        const { sign_endpoint, balances, } = this.state;
+        const { from, to, sym, } = values;
+
         let amount = Asset(0, balances[sym].precision, sym);
-        amount.amountFloat = parseFloat(this.state.amount);
+        amount.amountFloat = parseFloat(values.amount);
         amount = amount.toString();
 
-        let memo = this.state.memo;
+        let memo = values.memo || '';
         if (action === 'donate') {
             memo = {};
             memo.app = "golos-blog";
             memo.version = 1;
-            memo.comment = this.state.memo;
+            memo.comment = values.memo || '';
             memo.target = {
                 author: to,
                 permlink: ""
@@ -164,9 +133,7 @@ class TransferDonate extends React.Component {
 
         golos.config.set('websocket', sign_endpoint);
         const callback = (err, res) => {
-            this.setState({
-                submitting: false,
-            })
+            setSubmitting(false);
             if (err) {
                 alert(err);
                 return;
@@ -184,38 +151,34 @@ class TransferDonate extends React.Component {
                 amount, memo, [], callback);
     };
 
-    uncompose = () => {
+    uncompose = (initial) => {
         const params = new URLSearchParams(window.location.search);
-        this.setState({
-            to: params.get('to') || this.state.to,
-            memo: params.get('memo') || this.state.memo,
-        });
+        initial.to = params.get('to') || initial.to;
+        initial.memo = params.get('memo') || initial.memo;
         const amountSym = params.get('amount');
         if (amountSym) {
             const [ amount, sym, ] = amountSym.split(' ');
-            this.setState({
-                amount,
-                sym,
-            });
+            initial.amount = amount;
+            initial.sym = sym;
         }
     };
 
-    compose = () => {
+    compose = (values) => {
         let url = window.location.href.split('?')[0];
-        
-        const {
-            balances, sym, to, memo, } = this.state;
+
+        const { balances, } = this.state;
+        const { sym, to, memo, } = values;
 
         if (!golos.isNativeLibLoaded() || !balances || !balances[sym])
             return '...';
 
         let amount = Asset(0, balances[sym].precision, sym);
-        amount.amountFloat = parseFloat(this.state.amount || '0');
+        amount.amountFloat = parseFloat(values.amount || '0');
 
         url += '?';
-        url += 'to=' + to;
+        url += 'to=' + (to || '');
         url += '&amount=' + amount.toString();
-        url += '&memo=' + memo;
+        url += '&memo=' + (memo || '');
 
         return (<span>
                 {tt('oauth_main_jsx.link')}
@@ -224,9 +187,8 @@ class TransferDonate extends React.Component {
     };
 
     render() {
-        const {state} = this;
-        const { done, account, balances, sym,
-            from, to, toError, amount, amountError, memo,} = this.state;
+        const { state, } = this;
+        const { done, account, balances, initial, } = state;
 
         const { action, } = this.props;
         const donate = action === 'donate';
@@ -243,8 +205,11 @@ class TransferDonate extends React.Component {
             </div>);
         }
 
-        let balance = balances && sym && balances[sym];
-        if (!balance) balance = Asset(0, 3, 'GOLOS');
+        const getBalance = (sym) => {
+            let balance = balances && sym && balances[sym];
+            if (!balance) balance = Asset(0, 3, 'GOLOS');
+            return balance;
+        };
 
         let balanceOptions = [];
         if (balances)
@@ -252,104 +217,107 @@ class TransferDonate extends React.Component {
                 balanceOptions.push(<option key={bal} value={bal}>{bal}</option>);
             }
 
-        const valid = from && to && !toError && amount && !amountError;
-
-        return (
-            <div className='Signer_page'>
-                <Helmet>
-                    <meta charSet='utf-8' />
-                    <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
-                </Helmet>
-                <Header
-                    logoUrl={'/'}
-                    account={account} />
-                <div className='Signer_content TransferDonate row'>
-                    <div
-                        className='column'
-                        style={{ maxWidth: '30rem', margin: '0 auto' }}
-                    >
-                        <h3>{tt('oauth_main_jsx.' + action)}</h3>
-                        {!account && <LoadingIndicator type='circle' />}
-                        {account ? <form
-                            onSubmit={this._onSubmit}
+        let form = null;
+        if (initial) form = (<Formik
+                initialValues={initial}
+                validate={this.validate}
+                onSubmit={this._onSubmit}
+            >
+            {({
+                handleSubmit, isSubmitting, isValid, dirty, errors, touched, values, handleChange, setFieldValue,
+            }) => (
+                <form
+                    onSubmit={handleSubmit}
+                    autoComplete='off'
+                >
+                    <div className='input-group'>
+                        <span className='input-group-label'>@</span>
+                        <Field
+                            type='text'
+                            name='from'
+                            className='input-group-field'
+                            placeholder={tt('oauth_transfer.from')}
                             autoComplete='off'
-                            noValidate
-                            method='post'
-                        >
-                            <div className='input-group'>
-                                <span className='input-group-label'>@</span>
-                                <input
-                                    type='text'
-                                    name='from'
-                                    className='input-group-field'
-                                    placeholder={tt('oauth_transfer.from')}
-                                    autoComplete='off'
-                                    disabled={true}
-                                    onChange={this.onFromChange}
-                                    value={from}
-                                />
-                            </div>
-                            <div className='input-group'>
-                                <span className='input-group-label'>@</span>
-                                <input
-                                    type='text'
-                                    name='to'
-                                    className='input-group-field'
-                                    placeholder={tt('oauth_transfer.to')}
-                                    autoComplete='off'
-                                    disabled={state.submitting}
-                                    onChange={this.onToChange}
-                                    value={to}
-                                />
-                            </div>
-                            <div className='error'>
-                                {toError}
-                            </div>
-                            <div className='input-group'>
-                                <input
-                                    type='text'
-                                    className='input-group-field'
-                                    name='amount'
-                                    placeholder={tt('oauth_transfer.amount')}
-                                    autoComplete='off'
-                                    disabled={state.submitting}
-                                    onChange={this.onAmountChange}
-                                    value={amount}
-                                />
-                                <span className='input-group-label AssetSelect'>
-                                    <select value={sym} onChange={this.onSymChange}>
-                                        {balanceOptions}
-                                    </select>
-                                </span>
-                            </div>
-                            <a className='Balance' onClick={this.useAllBalance}>{tt((donate ? 'oauth_donate' : 'oauth_transfer') + '.balance') + balance}</a>
-                            <div className='error'>
-                                {amountError}
-                            </div>
-                            <input
-                                type='text'
-                                name='memo'
-                                placeholder={tt('oauth_transfer.memo')}
-                                autoComplete='off'
-                                disabled={state.submitting}
-                                onChange={this.onMemoChange}
-                                value={memo}
-                            />
-                            {state.submitting && <LoadingIndicator type='circle' />}
-                            <button className={'button ' + (valid ? '' : ' disabled')}>
-                                {tt((donate ? 'oauth_donate' : 'oauth_transfer') + '.submit')}
-                            </button>
-                            {done ? <span className='success done'>
-                                {tt('g.done')}
-                            </span> : null}
-                            <div className='callout secondary page-link'>
-                                {this.compose()}
-                            </div>
-                        </form> : null}
+                            disabled={true}
+                        />
                     </div>
+
+                    <div className='input-group'>
+                        <span className='input-group-label'>@</span>
+                        <Field
+                            type='text'
+                            name='to'
+                            className='input-group-field'
+                            placeholder={tt('oauth_transfer.to')}
+                            autoComplete='off'
+                            disabled={isSubmitting}
+                            onChange={e => this.onToChange(e, handleChange)}
+                        />
+                    </div>
+                    <ErrorMessage name='to' component='div' className='error' />
+
+                    <div className='input-group'>
+                        <Field
+                            type='text'
+                            className='input-group-field'
+                            name='amount'
+                            placeholder={tt('oauth_transfer.amount')}
+                            autoComplete='off'
+                            disabled={isSubmitting}
+                            onChange={e => this.onAmountChange(e, values, handleChange)}
+                        />
+                        <span className='input-group-label AssetSelect'>
+                            <Field as='select' name='sym'>
+                                {balanceOptions}
+                            </Field>
+                        </span>
+                    </div>
+                    <a className='Balance' onClick={e => this.useAllBalance(e, values.sym, setFieldValue)}>{tt((donate ? 'oauth_donate' : 'oauth_transfer') + '.balance') + getBalance(values.sym)}</a>
+                    <ErrorMessage name='amount' component='div' className='error' />
+
+                    <Field
+                        style={{ marginTop: '1rem', }}
+                        type='text'
+                        name='memo'
+                        placeholder={tt('oauth_transfer.memo')}
+                        autoComplete='off'
+                        disabled={isSubmitting}
+                    />
+
+                    {isSubmitting && <LoadingIndicator type='circle' />}
+                    <button className={'button ' + ((isSubmitting || errors.amount || !values.amount) ? ' disabled' : '')}
+                        type='submit' disabled={isSubmitting || errors.amount || !values.amount}>
+                        {tt((donate ? 'oauth_donate' : 'oauth_transfer') + '.submit')}
+                    </button>
+                    {done ? <span className='success done'>
+                        {tt('g.done')}
+                    </span> : null}
+                    <div className='callout secondary page-link'>
+                        {this.compose(values)}
+                    </div>
+                </form>
+            )}
+            </Formik>);
+
+        return (<div className='Signer_page'>
+            <Helmet>
+                <meta charSet='utf-8' />
+                <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
+            </Helmet>
+            <Header
+                logoUrl={'/'}
+                account={account} />
+            <div className='Signer_content TransferDonate row'>
+                <div
+                    className='column'
+                    style={{ maxWidth: '30rem', margin: '0 auto' }}
+                >
+                    <h3>{tt('oauth_main_jsx.' + action)}</h3>
+                    {!account && <LoadingIndicator type='circle' />}
+                    {form}
                 </div>
             </div>
-        );
+        </div>);
     }
 };
 

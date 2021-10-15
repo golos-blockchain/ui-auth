@@ -13,8 +13,8 @@ class LoginForm extends React.Component {
     state = {
         error: '',
         submitting: false,
-        name: '',
-        password: '',
+        name: 'cyberfounder',
+        password: '5JVFFWRLwz6JoP9kguuRFfytToGU6cLgBVTL9t6NB3D3BQLbUBS',
     };
 
     async componentDidMount() {
