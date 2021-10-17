@@ -1,5 +1,6 @@
 import React from 'react';
 import golos, { api, broadcast, oauth, } from 'golos-lib-js';
+import ByteBuffer from 'bytebuffer';
 
 class App extends React.Component {
     constructor(props) {
@@ -19,15 +20,17 @@ class App extends React.Component {
         const res = await oauth.checkReliable();
         this.setState({
             account: res.authorized ? res.account : null,
+            allowed: res.allowed,
         });
     }
 
     login = () => {
-        oauth.login();
+        oauth.login(['custom', 'custom_active', 'follow_or_reblog']);
         oauth.waitForLogin((res) => {
             if (res.authorized) {
                 this.setState({
                     account: res.account,
+                    allowed: res.allowed,
                 });
             }
         }, () => {
@@ -35,42 +38,67 @@ class App extends React.Component {
         });
     };
 
-    updateMetadata = async () => {
-        console.log('--- Update metadata... ---');
+    customJson = async () => {
+        console.log('--- Sending rawCustomJson... ---');
         const { account, } = this.state;
-        const accountName = account || 'cyberfounder';
-        let accs = null;
         try {
-            accs = await api.getAccountsAsync([accountName]);
-        } catch (err) {
-            console.error('getAccounts error', err);
-            return;
-        }
-        console.log('account is: ', accs);
-        try {
-            await broadcast.accountMetadataAsync('', accountName, accs[0].json_metadata || '{}');
+            let res = await broadcast.customJsonAsync(
+                '', [], [account], 'test', '{"alice":"bob"}');
         } catch (err) {
             console.error(err);
             alert(err);
             return;
         }
         alert('Success!');
-    };
+    }
 
-    transfer = async () => {
-        console.log('--- Transfer... ---');
+    activeCustomJson = async () => {
+        console.log('--- Sending activeCustomJson... ---');
         const { account, } = this.state;
-        const { to, amount } = document.forms[0];
         try {
-            let res = await broadcast.transferAsync('', account, to.value,
-                amount.value, 'Buy a coffee with caramel :)');
+            let res = await broadcast.customJsonAsync(
+                '(active)', [account], [], 'test_active', '{"alice":"bob"}');
         } catch (err) {
             console.error(err);
             alert(err);
             return;
         }
         alert('Success!');
-    };
+    }
+
+    customBinary = async () => {
+        console.log('--- Sending rawCustomBinary... ---');
+        const { account, } = this.state;
+        try {
+            let buf = Buffer.alloc(6);
+            buf.writeUInt8(5);
+            buf.write('GOLOS', 1);
+
+            let res = await broadcast.customBinaryAsync(
+                '', [], [], [account], [], 'test', buf.toString('hex'));
+        } catch (err) {
+            console.error(err);
+            alert(err);
+            return;
+        }
+        alert('Success!');
+    }
+
+    follow = async () => {
+        console.log('--- Sending follow... ---');
+        const { account, } = this.state;
+        try {
+            const json = ['follow', {follower: account,
+                following: 'null', what: ['blog']}];
+            let res = await broadcast.customJsonAsync(
+                '', [], [account], 'follow', JSON.stringify(json));
+        } catch (err) {
+            console.error(err);
+            alert(err);
+            return;
+        }
+        alert('Success!');
+    }
 
     tryWithoutLogin = async () => {
         await this.updateMetadata();
@@ -84,7 +112,7 @@ class App extends React.Component {
     };
 
     render() {
-        const { account, } = this.state;
+        const { account, allowed, } = this.state;
         return (
             <div className='App'>
                 {account === null && <div>
@@ -95,19 +123,16 @@ class App extends React.Component {
                     <div>
                         {account}
                         <button onClick={this.logout}>Logout</button>
+                        <p>Allowed operations:&nbsp;
+                            <span class='allowed'>{JSON.stringify(allowed)}</span></p>
                     </div>
-                    <h4>Transfer (test active)</h4>
-                    <form>
-                        From:<br/>current account<br/>
-                        To:<br/>
-                        <input type='text' name='to' value='null' /><br/>
-                        Amount:<br/>
-                        <input type='text' name='amount' value='0.001 GOLOS' /><br/>
-                    </form>
-                    <button onClick={this.transfer}>Transfer</button>
-                    <hr/>
-                    <h4>Account metadata (test posting)</h4>
-                    <button onClick={this.updateMetadata}>Update metadata for current account</button>
+                    <hr />
+                    <button onClick={this.customJson}>Custom json</button>
+                    <button onClick={this.activeCustomJson}>Active custom json</button>
+                    <hr />
+                    <button onClick={this.customBinary}>Custom binary</button>
+                    <hr />
+                    <button onClick={this.follow}>Follow</button>
                 </div>}
             </div>
         );

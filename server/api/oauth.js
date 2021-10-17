@@ -10,8 +10,11 @@ const { throwErr, } = require('../utils/misc');
 const { checkCrossOrigin, forbidCorsOnProd, } = require('../utils/origin');
 const { getClientByOrigin, clientFromConfig,
     hasAuthority, } = require('../utils/oauth');
+const { permissions, initOpsToPerms, } = require('../utils/oauthPermissions');
 
 module.exports = function useOAuthApi(app) {
+    const opsToPerms = initOpsToPerms(permissions);
+
     const router = koa_router({ prefix: '/api/oauth' });
 
     const crypto_key = config.get('oauth.server_session_secret');
@@ -40,8 +43,7 @@ module.exports = function useOAuthApi(app) {
             const clientS = ctx.session.clients[client];
             if (clientS) {
                 clientMeta.authorized = true;
-                clientMeta.allowActive = clientS.allowActive;
-                clientMeta.allowPosting = clientS.allowPosting;
+                clientMeta.allowed = clientS.allowed;
             }
         }
 
@@ -79,8 +81,7 @@ module.exports = function useOAuthApi(app) {
                 let clientMeta = clientFromConfig(client, locale);
                 if (clientMeta) {
                     const clientS = ctx.session.clients[client];
-                    clientMeta.allowActive = clientS.allowActive;
-                    clientMeta.allowPosting = clientS.allowPosting;
+                    clientMeta.allowed = clientS.allowed;
                     ctx.body.clients[client] = clientMeta;
                 }
             }
@@ -90,7 +91,7 @@ module.exports = function useOAuthApi(app) {
     router.post('/_/permissions', koaBody, async (ctx) => {
         let params = ctx.request.body;
         if (typeof(params) === 'string') params = JSON.parse(params);
-        const { client, allowPosting, allowActive, onlyOnce,} = params;
+        const { client, allowed, } = params;
         if (!client)
             throwErr(ctx, 400, ['client is required']);
 
@@ -108,7 +109,7 @@ module.exports = function useOAuthApi(app) {
 
         if (!ctx.session.clients)
             ctx.session.clients = {};
-        if (!allowPosting && !allowActive) {
+        if (!allowed) {
             delete ctx.session.clients[client];
             ctx.body = {
                 status: 'ok',
@@ -116,9 +117,7 @@ module.exports = function useOAuthApi(app) {
             return;
         } 
         ctx.session.clients[client] = {
-            allowPosting,
-            allowActive,
-            onlyOnce,
+            allowed,
         };
         ctx.body = {
             status: 'ok',
@@ -133,10 +132,8 @@ module.exports = function useOAuthApi(app) {
         };
         if (ctx.session.clients && ctx.session.clients[client]) {
             ctx.body.authorized = true;
-            const { allowActive, allowPosting, onlyOnce, } = ctx.session.clients[client];
-            ctx.body.allowPosting = allowPosting;
-            ctx.body.allowActive = allowActive;
-            ctx.body.onlyOnce = onlyOnce;
+            const { allowed, } = ctx.session.clients[client];
+            ctx.body.allowed = allowed;
             ctx.body.account = ctx.session.account;
         }
     });
@@ -209,6 +206,7 @@ module.exports = function useOAuthApi(app) {
     router.get('/_/logout', koaBody, async (ctx) => {
         forbidCorsOnProd(ctx);
         delete ctx.session.account;
+        delete ctx.session.clients;
         ctx.body = {
             status: 'ok',
         }
@@ -243,7 +241,7 @@ module.exports = function useOAuthApi(app) {
                 throw jrpc.customException(INVALID_REQUEST, 'A member "params" should be ["api", "method", "args"]');
             }
 
-            const [ api, method, args ] = params;
+            let [ api, method, args ] = params;
             if (!Array.isArray(args)) {
                 throw jrpc.customException(INVALID_REQUEST, 'A member "args" should be array');
             }
@@ -254,36 +252,82 @@ module.exports = function useOAuthApi(app) {
 
             let sendAsync = null;
             if (isBroadcast) {
-                const postingKey = config.get('oauth.service_account.posting');
-                const activeKey = config.get('oauth.service_account.active');
-
-                let keys = new Set();
-                let usedRoles = new Set();
-
-                for (const op of args[0].operations) {
-                    const roles = golos.broadcast._operations[op[0]].roles;
-                    if (roles[0]) {
-                        if (roles[0] === 'posting') {
-                            keys.add(postingKey);
-                        } else if (roles[0] === 'active') {
-                            keys.add(activeKey);
-                        } else {
-                            throw jrpc.customException(INVALID_REQUEST, 'Operations with owner roles not supported');
-                        }
-                        usedRoles.add(roles[0]);
-                    }
-                }
-
                 sendAsync = async () => {
+                    let keys = new Set();
+
+                    let clientFound = null;
                     if (checkCrossOrigin(ctx)) {
-                        let originFound = getClientByOrigin(ctx);
-                        if (usedRoles.has('active') && !ctx.session.clients[originFound].allowActive) {
-                            throw new Error(`active is not allowed for '${originFound}' client`)
+                        clientFound = getClientByOrigin(ctx);
+                    }
+
+                    const postingKey = config.get('oauth.service_account.posting');
+                    const activeKey = config.get('oauth.service_account.active');
+
+                    for (const op of args[0].operations) {console.log(op[1])
+                        if (clientFound) {
+                            const client = ctx.session.clients[clientFound];
+
+                            let perms = opsToPerms[op[0]];
+                            if (!perms) {
+                                throw new Error('Operation ' + op[0] + ' is not supported by OAuth');
+                            }
+
+                            let required = [];
+                            let allowed = false;
+                            for (let perm of perms) {
+                                if (perm.cond) {
+                                    const res = perm.cond(op[1], op[0]);
+                                    if (res === false || res instanceof Error) {
+                                        continue;
+                                    }
+                                }
+                                required.push(perm.perm);
+                                if (client.allowed.includes(perm.perm)) {
+                                    allowed = true;
+                                    break;
+                                }
+                            }
+
+                            if (!allowed && !required.length) {
+                                throw new Error('Such case of operation ' + op[0] + ' is not supported by OAuth');
+                            }
+                            if (!allowed) {
+                                throw new Error('Operation ' + op[0] + ` in this case is not allowed for '${clientFound}' client. `
+                                        + 'It requires: ' + required.join(' or '));
+                            }
                         }
-                        if (ctx.session.clients[originFound].onlyOnce) {
-                            delete ctx.session.clients[originFound];
+
+                        let roles = args[0]._meta && args[0]._meta._keys;
+                        if (roles && roles.length) {
+                            roles = roles.slice(0, 6);
+                            for (let role of roles) {
+                                if (role === 'posting') {
+                                    keys.add(postingKey);
+                                } else if (role === 'active') {
+                                    keys.add(activeKey);
+                                } else {
+                                    new Error(role + ' key is not supported');
+                                }
+                            }
+                        } else {
+                            roles = golos.broadcast._operations[op[0]].roles;
+                            if (roles[0]) {
+                                if (roles[0] === 'posting') {
+                                    keys.add(postingKey);
+                                } else if (roles[0] === 'active') {
+                                    keys.add(activeKey);
+                                } else {
+                                    throw new Error('Operations with owner roles not supported');
+                                }
+                            }
                         }
                     }
+
+                    delete args[0]._meta;
+
+                    //if (ctx.session.clients[originFound].onlyOnce) {
+                    //    delete ctx.session.clients[originFound];
+                    //}
 
                     return await golos.broadcast.sendAsync(
                         args[0], [...keys]);

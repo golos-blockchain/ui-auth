@@ -64,7 +64,7 @@ class Main extends React.Component {
                     <td>
                         <a href={'/oauth/' + key + '?from_main=1'}>
                             <button className='button hollow'>
-                                {tt('oauth_main_jsx.edit')}
+                                {tt('g.permissions')}
                             </button>
                         </a>
                         {<button className='button alert' onClick={() => this.forbid(key)}>

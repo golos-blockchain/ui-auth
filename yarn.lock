@@ -4150,9 +4150,9 @@ core-js@^2.4.0:
   integrity sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==
 
 core-js@^3.17.3:
-  version "3.18.0"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.18.0.tgz#9af3f4a6df9ba3428a3fb1b171f1503b3f40cc49"
-  integrity sha512-WJeQqq6jOYgVgg4NrXKL0KLQhi0CT4ZOCvFL+3CQ5o7I6J8HkT5wd53EadMfqTDp1so/MT1J+w2ujhWcCJtN7w==
+  version "3.18.3"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.18.3.tgz#86a0bba2d8ec3df860fefcc07a8d119779f01509"
+  integrity sha512-tReEhtMReZaPFVw7dajMx0vlsz3oOb8ajgPoHVYGxr8ErnZ6PcYEvvmjGmXlfpnxpkYSdOQttjB+MvVbCGfvLw==
 
 core-js@^3.6.0, core-js@^3.6.5:
   version "3.16.4"
@@ -6321,10 +6321,10 @@ gmail-send@^1.8.10:
     lodash "^4.17.15"
     nodemailer "^6.3.0"
 
-golos-lib-js@^0.9.5:
-  version "0.9.5"
-  resolved "https://registry.yarnpkg.com/golos-lib-js/-/golos-lib-js-0.9.5.tgz#ff12539d8b9dfe9c2dc19b17a889e41ed6af4dbb"
-  integrity sha512-+mtXKiPoXq0wZ2UYGPHagc4THz9hhlRGvgFUgJTa7HMVlegeVRDe0Vg49ehfG4706qriqpBLWdVNMLwvcsoSqA==
+golos-lib-js@^0.9.11:
+  version "0.9.11"
+  resolved "https://registry.yarnpkg.com/golos-lib-js/-/golos-lib-js-0.9.11.tgz#03d5db072dd614112a3392bc02774fe7620dfffd"
+  integrity sha512-/kbgHQwFizyBJSucGHfCymb2nU4EnPjsH7onGhtV7yYCN0VPjYIep6cFFh9WH7GY90ilUy2+ImYkBIWspNcOhA==
   dependencies:
     bigi "^1.4.2"
     bluebird "^3.7.2"

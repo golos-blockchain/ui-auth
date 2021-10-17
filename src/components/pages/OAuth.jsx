@@ -4,9 +4,14 @@ import { withRouter, } from 'react-router';
 import tt from 'counterpart';
 import Header from '../modules/Header';
 import LoginForm from '../modules/LoginForm';
+import PermissionsList from '../modules/PermissionsList';
 import { getHost, callApi, getSession, } from '../../utils/OAuthClient';
 import LoadingIndicator from '../elements/LoadingIndicator';
 import './OAuth.scss';
+import { permissions,
+    initOpsToPerms, } from '../../utils/oauthPermissions';
+
+const opsToPerms = initOpsToPerms(permissions);
 
 class OAuth extends React.Component {
     static propTypes = {
@@ -16,8 +21,27 @@ class OAuth extends React.Component {
         submitting: false,
     };
 
+    normalizeRequested(client, requested) {
+        requested = requested ? requested.split(',') : [];
+        let items = new Map();
+        for (let r of requested) {
+            if (opsToPerms[r]) {
+                items.set(opsToPerms[r][0].perm, opsToPerms[r][0]);
+            } else if (permissions[r]) {
+                items.set(r, permissions[r]);
+            }
+        }
+        if (client && client.allowed) {
+            for (let r of client.allowed) {
+                if (!permissions[r]) continue;
+                items.set(r, permissions[r]);
+            }
+        }
+        return items;
+    }
+
     async componentDidMount() {
-        const { client, } = this.props.match.params;
+        const { client, requested, } = this.props.match.params;
         const res = await callApi('/api/oauth/_/get_client/' + client + '/' + tt.getLocale());
         let clientObj = await res.json();
         clientObj = clientObj.client;
@@ -32,27 +56,18 @@ class OAuth extends React.Component {
             account: session.account || null,
             client: clientObj || null,
             clientId: client,
-            allowPosting: (clientObj && clientObj.authorized) ? clientObj.allowPosting : true,
-            allowPostingForcely: clientObj && !clientObj.allowPosting,
-            allowActive: clientObj && clientObj.allowActive,
             once: params.get('role'),
+            requested: this.normalizeRequested(clientObj, requested),
         });
     }
 
-    postingChange = (e) => {
-        this.setState({
-            allowPosting: e.target.checked,
-        });
-    };
-
-    postingActiveChange = (e) => {
-        this.setState({
-            allowActive: e.target.checked,
-        });
-    };
-
-    _onAllow = async (e, onlyOnce = false) => {
+    _onAllow = async (e, forbid = false) => {
         e.preventDefault();
+
+        let allowed = null;
+        if (!forbid) {
+            allowed = Array.from(this.state.requested.keys());
+        }
 
         this.setState({
             submitting: false,
@@ -60,12 +75,10 @@ class OAuth extends React.Component {
         });
 
         try {
-            const { allowPosting, allowActive, clientId, } = this.state;
+            const { clientId, } = this.state;
             let res = await callApi('/api/oauth/_/permissions', {
                 client: clientId,
-                allowPosting,
-                allowActive,
-                onlyOnce,
+                allowed,
             });
             res = await res.json();
             if (res.status === 'err') {
@@ -93,20 +106,11 @@ class OAuth extends React.Component {
     };
 
     _onAllowOnce = async (e) => {
-        e.preventDefault();
-
-        this._onAllow(e, true);
+        //e.preventDefault();
     };
 
     _onForbid = async (e) => {
-        e.preventDefault();
-
-        this.setState({
-            allowPosting: false,
-            allowActive: false,
-        }, () => {
-            this._onAllow(e);
-        });
+        this._onAllow(e, true);
     };
 
     _onForbidOnce = async (e) => {
@@ -120,7 +124,8 @@ class OAuth extends React.Component {
     render() {
         const { state, } = this;
         const { account, client, clientId, submitting, done,
-            allowPosting, allowPostingForcely, allowActive, once, } = state;
+            once,
+            requested, } = state;
 
         if (!account || client === undefined || submitting) {
             return (<div className='Signer_page'>
@@ -169,22 +174,7 @@ class OAuth extends React.Component {
                                 {tt('oauth_request.choise_permissions')}
                             </div>
                             <hr />
-                            {(!once || once === 'posting') && <div className='checkbox-multiline posting'>
-                                <input type='checkbox' id='posting' checked={allowPosting} disabled={allowPostingForcely}
-                                    onChange={this.postingChange}/>
-                                <label htmlFor='posting'>
-                                    <b>{tt('oauth_request.posting')}</b>
-                                    {tt('oauth_request.posting_descr')}
-                                </label>
-                            </div>}
-                            {(!once || once === 'active') &&<div className='checkbox-multiline posting_active'>
-                                <input type='checkbox' id='posting_active' checked={allowActive}
-                                    onChange={this.postingActiveChange} />
-                                <label htmlFor='posting_active'>
-                                    <b>{tt('oauth_request.posting_active')}</b>
-                                    {tt('oauth_request.posting_active_descr')}
-                                </label>
-                            </div>}
+                            <PermissionsList items={requested} />
                             <hr />
                             <div className='close_tab'>{tt('oauth_request.close_tab')}</div>
                             <hr />

@@ -34,7 +34,7 @@ function App() {
                     <Route path='/sign/delegate_vs'>
                         <Delegate action='delegate_vs' />
                     </Route>
-                    <Route path='/oauth/:client'>
+                    <Route path='/oauth/:client/:requested?'>
                         <OAuth />
                     </Route>
                     <Route path='/:client?'>
