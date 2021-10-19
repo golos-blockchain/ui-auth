@@ -299,12 +299,49 @@ let permissions = {
         },
         forceRed: (op) => true,
     },
-    proposals: {
+    proposal_create: {
         ops: [
             'proposal_create',
-            'proposal_update',
+        ],
+    },
+    proposal_delete: {
+        ops: [
             'proposal_delete',
         ],
+    },
+    proposal_update: {
+        ops: [
+            'proposal_update',
+        ],
+        maxRole: [POSTING],
+        cond: (op) => {
+            if (op.owner_approvals_to_add.length
+                || op.owner_approvals_to_remove.length) {
+                return false;
+            }
+            if (op.active_approvals_to_add.length
+                || op.active_approvals_to_remove.length) {
+                return false;
+            }
+            return POSTING;
+        },
+    },
+    proposal_update_active: {
+        ops: [
+            'proposal_update',
+        ],
+        maxRole: [ACTIVE],
+        cond: (op) => {
+            if (op.owner_approvals_to_add.length
+                || op.owner_approvals_to_remove.length) {
+                return false;
+            }
+            if (!op.active_approvals_to_add.length
+                && !op.active_approvals_to_remove.length) {
+                return false;
+            }
+            return ACTIVE;
+        },
     },
 };
 

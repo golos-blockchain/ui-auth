@@ -275,7 +275,10 @@
     "assets": "Creating your own UIA assets and managing them",
     "worker_request": "Creating worker requests",
     "worker_request_vote": "Voting for worker requests",
-    "proposals": "Creating operation proposals"
+    "proposal_create": "Creating transaction proposals",
+    "proposal_delete": "Removing transaction proposals",
+    "proposal_update": "Voting in transaction proposals",
+    "proposal_update_active": "Voting in transaction proposals with active authorities"
   },
   "g": {
     "APP_NAME": "Golos",

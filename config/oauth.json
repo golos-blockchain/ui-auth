@@ -44,6 +44,14 @@
           "title": "file:/// Tester",
           "description": "Tests only! Do not give access to real accounts."
         }
+      },
+      "proposals": {
+        "origins": ["localhost"],
+        "logo": "proposals.svg",
+        "ru": {
+          "title": "Тест пропозалов на localhost",
+          "description": "Только для тестов! Не давайте доступ к реальным аккаунтам."
+        }
       }
     }
   }
