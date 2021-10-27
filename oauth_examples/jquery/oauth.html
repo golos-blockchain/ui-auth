@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src='https://unpkg.com/golos-lib-js@0.9.7/dist/golos.min.js'></script>
+    <script src='https://unpkg.com/golos-lib-js@0.9.13/dist/golos.min.js'></script>
 </head>
 <body>
     <div class='loading'>
@@ -15,6 +15,7 @@
     <div class='actions' style='display: none;'>
         <span class='username'></span>
         <button class='logout'>Logout</button>
+        <p>Allowed operations: <span class='allowed'>none</span></p>
         <h4>Transfer (test active)</h4>
         <form>
             From:<br/>current account<br/>
@@ -27,6 +28,10 @@
         <hr/>
         <h4>Account metadata (test posting)</h4>
         <button class='meta'>Update metadata for current account</button>
+        <hr/>
+        <h4>Claim</h4>
+        <button class='claim-good'>Claim 0.001 GOLOS to yourself</button>
+        <button class='claim-bad'>Claim 0.001 GOLOS to another person (null)</button>
     </div>
     <script src='./jquery.js'></script>
     <script src='./main.js'></script>

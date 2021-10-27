@@ -1,0 +1,16 @@
+.PermissionsList {
+    .PermissionsList__item {
+        padding: 0.25rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        &.danger {
+            color: #D60000;
+        }
+        .note {
+            float: right;
+        }
+        .bull {
+            margin-right: 0.5rem;
+        }
+    }
+}

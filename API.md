@@ -38,7 +38,7 @@ HTTP-статус дублируется также в поле `"httpStatus"`, 
 
 Рекомендуется использовать сервис Golos Auth & Registration Service. Он является своеобразной оберткой для нод БЧ Golos, так что вы можете отправлять на него транзакции, но пользователю при этом не придется вводить ключ или пароль в вашем приложении.
 
-**Вот пример страницы, использующей OAuth для авторизации:**  
+**Вот примеры, как использовать OAuth в приложениях на jQuery или React:**  
 https://github.com/golos-blockchain/ui-auth/tree/master/oauth_examples
 
 **Но прежде чем начать работу**, вам необходимо обратиться к нашему сообществу для добавления вашего клиента (т.е. приложения, сайта) в список Golos Auth & Registration Service. Необходимо предоставить:
@@ -62,6 +62,7 @@ golos.config.set('oauth.client', 'hotdog-website');
 golos.config.set('oauth.host', API_HOST);
 golos.config.set('websocket', API_HOST + '/api/oauth/sign');
 golos.config.set('credentials', 'include');
+golos.use(new golos.middlewares.OAuthMiddleware());
 ```
 
 - oauth.host - адрес Golos Auth & Registration Service. Используйте **golos.app** для основной сети Golos, или **dev.golos.app** для тестовой сети.
@@ -87,7 +88,7 @@ https://github.com/golos-blockchain/libs/blob/master/golos-lib-js/docs/files/aut
 После успешной авторизации отправлять операции вообще без подписи. Сервис сам подпишет их.
 
 О том, как это делать в случае браузерного приложения\сайта, здесь:
-https://github.com/golos-blockchain/libs/blob/master/golos-lib-js/docs/files/auth.md
+https://github.com/golos-blockchain/libs/blob/master/golos-lib-js/docs/files/auth.md#отправка-операций
 
 ## Серверная авторизация
 

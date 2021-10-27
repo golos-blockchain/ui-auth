@@ -2,16 +2,25 @@ const koa_router = require('koa-router');
 const koa_body = require('koa-body');
 const config = require('config');
 const golos = require('golos-lib-js');
-const { Signature, hash, PublicKey } = require('golos-lib-js/lib/auth/ecc');
 const secureRandom = require('secure-random');
 const JsonRPC = require('simple-jsonrpc-js');
+const Tarantool = require('../../db/tarantool');
 const session = require('../utils/cryptoSession');
-const { throwErr, } = require('../utils/misc');
+const { bodyParams, throwErr, } = require('../utils/misc');
 const { checkCrossOrigin, forbidCorsOnProd, } = require('../utils/origin');
 const { getClientByOrigin, clientFromConfig,
-    hasAuthority, } = require('../utils/oauth');
+    hasAuthority, getRequiredPerms, } = require('../utils/oauth');
+const { permissions, initOpsToPerms, } = require('../utils/oauthPermissions');
+
+const PendingStates = {
+    CREATED: 1,
+    ACCEPTED: 2,
+    FORBIDDEN: 3,
+};
 
 module.exports = function useOAuthApi(app) {
+    const opsToPerms = initOpsToPerms(permissions);
+
     const router = koa_router({ prefix: '/api/oauth' });
 
     const crypto_key = config.get('oauth.server_session_secret');
@@ -32,6 +41,19 @@ module.exports = function useOAuthApi(app) {
 
     const koaBody = koa_body();
 
+    async function clearPendings() {
+        console.log('clearPendings');
+        try {
+            await Tarantool.instance('tarantool')
+                .call('oauth_cleanup',);
+        } catch (err) {
+            console.error(err);
+        }
+        setTimeout(clearPendings,
+            (process.env.NODE_ENV === 'production' ? 300 : 10) * 1000);
+    }
+    clearPendings();
+
     router.get('/_/get_client/:client/:locale?', koaBody, async (ctx) => {
         forbidCorsOnProd(ctx);
         const { client, locale, } = ctx.params;
@@ -40,8 +62,7 @@ module.exports = function useOAuthApi(app) {
             const clientS = ctx.session.clients[client];
             if (clientS) {
                 clientMeta.authorized = true;
-                clientMeta.allowActive = clientS.allowActive;
-                clientMeta.allowPosting = clientS.allowPosting;
+                clientMeta.allowed = clientS.allowed;
             }
         }
 
@@ -72,6 +93,7 @@ module.exports = function useOAuthApi(app) {
         ctx.body = {
             account: ctx.session.account,
             sign_endpoint: new URL('/api/oauth/sign', config.get('oauth.rest_api')).toString(),
+            service_account: config.get('oauth.service_account.name'),
         };
         if (with_clients === 'true') {
             ctx.body.clients = {};
@@ -79,8 +101,7 @@ module.exports = function useOAuthApi(app) {
                 let clientMeta = clientFromConfig(client, locale);
                 if (clientMeta) {
                     const clientS = ctx.session.clients[client];
-                    clientMeta.allowActive = clientS.allowActive;
-                    clientMeta.allowPosting = clientS.allowPosting;
+                    clientMeta.allowed = clientS.allowed;
                     ctx.body.clients[client] = clientMeta;
                 }
             }
@@ -88,9 +109,7 @@ module.exports = function useOAuthApi(app) {
     });
 
     router.post('/_/permissions', koaBody, async (ctx) => {
-        let params = ctx.request.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
-        const { client, allowPosting, allowActive, onlyOnce,} = params;
+        const { client, allowed, } = bodyParams(ctx);
         if (!client)
             throwErr(ctx, 400, ['client is required']);
 
@@ -108,7 +127,7 @@ module.exports = function useOAuthApi(app) {
 
         if (!ctx.session.clients)
             ctx.session.clients = {};
-        if (!allowPosting && !allowActive) {
+        if (!allowed) {
             delete ctx.session.clients[client];
             ctx.body = {
                 status: 'ok',
@@ -116,15 +135,14 @@ module.exports = function useOAuthApi(app) {
             return;
         } 
         ctx.session.clients[client] = {
-            allowPosting,
-            allowActive,
-            onlyOnce,
+            allowed,
         };
         ctx.body = {
             status: 'ok',
         };
     });
 
+    // Checks if user authorized in client at general
     router.get('/check/:client', koaBody, async (ctx) => {
         const { client, } = ctx.params;
 
@@ -133,18 +151,170 @@ module.exports = function useOAuthApi(app) {
         };
         if (ctx.session.clients && ctx.session.clients[client]) {
             ctx.body.authorized = true;
-            const { allowActive, allowPosting, onlyOnce, } = ctx.session.clients[client];
-            ctx.body.allowPosting = allowPosting;
-            ctx.body.allowActive = allowActive;
-            ctx.body.onlyOnce = onlyOnce;
+            const { allowed, } = ctx.session.clients[client];
+            ctx.body.allowed = allowed;
             ctx.body.account = ctx.session.account;
         }
     });
 
+    // Checks if specific transaction allowed
+    router.post('/check/:client', koaBody, async (ctx) => {
+        if (!checkCrossOrigin(ctx)) {
+            ctx.body = {
+                status: 'ok',
+            };
+            return;
+        }
+
+        let clientFound = getClientByOrigin(ctx);
+
+        let requiredPerms = new Set();
+        let errorMsg = '';
+
+        const { tx, } = bodyParams(ctx);
+
+        for (const op of tx.operations) {
+            let { allowed, required, } = getRequiredPerms(ctx, opsToPerms, clientFound, op);
+
+            if (!allowed && !required.length) {
+                throwErr(ctx, 400, ['Such case of operation ' + op[0] + ' is not supported by OAuth']);
+            }
+            if (!allowed) {
+                required.forEach(requiredPerms.add, requiredPerms);
+                errorMsg += 'Operation ' + op[0] + ` in this case is not allowed for '${clientFound}' client. `
+                        + 'It requires: ' + required.join(' or ') + '\n';
+            }
+        }
+
+        if (errorMsg) {
+            throwErr(ctx, 400, [errorMsg], null, {
+                requiredPerms: Array.from(requiredPerms),
+            });
+        }
+
+        ctx.body = {
+            status: 'ok',
+        };
+    });
+
+    router.post('/prepare_pending', koaBody, async (ctx) => {
+        let clientFound = getClientByOrigin(ctx);
+
+        const { tx, txHash, } = bodyParams(ctx);
+        if (!tx) throwErr(ctx, 400, ['tx is required']);
+        if (!txHash) throwErr(ctx, 400, ['txHash is required']);
+        
+        const txHash0 = golos.oauth._hashOps(tx.operations);
+
+        if (txHash !== txHash0) {
+            console.error('Wrong txHash', tx.operations);
+            throwErr(ctx, 400, ['Wrong txHash']);
+        }
+
+        const prepareRes = await Tarantool.instance('tarantool')
+            .call('oauth_prepare_tx',
+                clientFound, txHash,
+                JSON.stringify(tx)
+            );
+
+        ctx.body = {
+            status: 'ok',
+        };
+    });
+
+    router.get('/_/load_pending/:client/:txHash', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
+        const { client, txHash, } = ctx.params;
+
+        let txRes = await Tarantool.instance('tarantool')
+            .call('oauth_get_txs',
+                client, txHash, PendingStates.CREATED,
+            );
+        if (txRes[0][0]) {
+            const tx = txRes[0][0];
+            if (tx.client === client && tx.tx_hash === txHash) {
+                if (tx.state > PendingStates.CREATED) {
+                    tx.expired = true;
+                }
+                tx.tx = JSON.parse(tx.tx);
+                ctx.body = {
+                    status: 'ok',
+                    data: tx,
+                };
+                return;
+            }
+        }
+        throwErr(ctx, 400, ['Pending tx not found']);
+    });
+
+    router.post('/_/forbid_pending/:client/:txHash', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
+
+        const { client, txHash, } = ctx.params;
+
+        let txRes = await Tarantool.instance('tarantool')
+            .call('oauth_state_tx',
+                client, txHash, PendingStates.FORBIDDEN,
+            );
+        if (txRes[0][0]) {
+            ctx.body = {
+                status: 'ok',
+            };
+            return;
+        }
+        throwErr(ctx, 400, ['Pending tx not found']);
+    });
+
+    router.post('/_/return_pending/:client/:txHash', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
+
+        const { client, txHash, } = ctx.params;
+
+        const { err, res, } = bodyParams(ctx);
+        // validation
+        if (err) JSON.parse(err);
+        if (res) JSON.parse(res);
+
+        let txRes = await Tarantool.instance('tarantool')
+            .call('oauth_return_tx',
+                client, txHash, err, res,
+            );
+        if (txRes[0][0]) {
+            ctx.body = {
+                status: 'ok',
+            };
+            return;
+        }
+        throwErr(ctx, 400, ['Pending tx not found']);
+    });
+
+    router.get('/wait_for_pending/:txHash', koaBody, async (ctx) => {
+        const client = getClientByOrigin(ctx);
+        const { txHash, } = ctx.params;
+        let txRes = await Tarantool.instance('tarantool')
+            .call('oauth_get_txs',
+                client, txHash, PendingStates.ACCEPTED,
+            );
+        if (txRes[0][0]) {
+            const tx = txRes[0][0];
+            if (tx.client === client && tx.tx_hash === txHash) {
+                ctx.body = {
+                    status: 'ok',
+                };
+                if (tx.state === PendingStates.FORBIDDEN) {
+                    ctx.body.forbidden = true;
+                } else {
+                    ctx.body.err = tx.err ? JSON.parse(tx.err) : null;
+                    ctx.body.res = tx.res ? JSON.parse(tx.res) : null;
+                }
+                return;
+            }
+        }
+        throwErr(ctx, 400, ['Pending tx not found']);
+    });
+
     router.post('/_/authorize', koaBody, async (ctx) => {
-        let params = ctx.request.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
-        const { account, signatures } = params;
+        const { account, signatures } = bodyParams(ctx);
         if (!account) {
             throwErr(ctx, 400, ['account is required']);
         }
@@ -209,6 +379,7 @@ module.exports = function useOAuthApi(app) {
     router.get('/_/logout', koaBody, async (ctx) => {
         forbidCorsOnProd(ctx);
         delete ctx.session.account;
+        delete ctx.session.clients;
         ctx.body = {
             status: 'ok',
         }
@@ -243,7 +414,7 @@ module.exports = function useOAuthApi(app) {
                 throw jrpc.customException(INVALID_REQUEST, 'A member "params" should be ["api", "method", "args"]');
             }
 
-            const [ api, method, args ] = params;
+            let [ api, method, args ] = params;
             if (!Array.isArray(args)) {
                 throw jrpc.customException(INVALID_REQUEST, 'A member "args" should be array');
             }
@@ -254,39 +425,65 @@ module.exports = function useOAuthApi(app) {
 
             let sendAsync = null;
             if (isBroadcast) {
-                const postingKey = config.get('oauth.service_account.posting');
-                const activeKey = config.get('oauth.service_account.active');
-
-                let keys = new Set();
-                let usedRoles = new Set();
-
-                for (const op of args[0].operations) {
-                    const roles = golos.broadcast._operations[op[0]].roles;
-                    if (roles[0]) {
-                        if (roles[0] === 'posting') {
-                            keys.add(postingKey);
-                        } else if (roles[0] === 'active') {
-                            keys.add(activeKey);
-                        } else {
-                            throw jrpc.customException(INVALID_REQUEST, 'Operations with owner roles not supported');
-                        }
-                        usedRoles.add(roles[0]);
-                    }
-                }
-
                 sendAsync = async () => {
+                    let keys = new Set();
+
+                    let clientFound = null;
                     if (checkCrossOrigin(ctx)) {
-                        let originFound = getClientByOrigin(ctx);
-                        if (usedRoles.has('active') && !ctx.session.clients[originFound].allowActive) {
-                            throw new Error(`active is not allowed for '${originFound}' client`)
+                        clientFound = getClientByOrigin(ctx);
+                    }
+
+                    const postingKey = config.get('oauth.service_account.posting');
+                    const activeKey = config.get('oauth.service_account.active');
+
+                    for (const op of args[0].operations) {
+                        if (clientFound) {
+                            let { allowed, required, } = getRequiredPerms(ctx, opsToPerms, clientFound, op);
+
+                            if (!allowed && !required.length) {
+                                throw new Error('Such case of operation ' + op[0] + ' is not supported by OAuth');
+                            }
+                            if (!allowed) {
+                                throw new Error('Operation ' + op[0] + ` in this case is not allowed for '${clientFound}' client. `
+                                        + 'It requires: ' + required.join(' or '));
+                            }
                         }
-                        if (ctx.session.clients[originFound].onlyOnce) {
-                            delete ctx.session.clients[originFound];
+
+                        let roles = args[0]._meta && args[0]._meta._keys;
+                        if (roles && roles.length) {
+                            roles = roles.slice(0, 6);
+                            for (let role of roles) {
+                                if (role === 'posting') {
+                                    keys.add(postingKey);
+                                } else if (role === 'active') {
+                                    keys.add(activeKey);
+                                } else {
+                                    new Error(role + ' key is not supported');
+                                }
+                            }
+                        } else {
+                            roles = golos.broadcast._operations[op[0]].roles;
+                            if (roles[0]) {
+                                if (roles[0] === 'posting') {
+                                    keys.add(postingKey);
+                                } else if (roles[0] === 'active') {
+                                    keys.add(activeKey);
+                                } else {
+                                    throw new Error('Operations with owner roles not supported');
+                                }
+                            }
                         }
                     }
 
-                    return await golos.broadcast.sendAsync(
-                        args[0], [...keys]);
+                    let _meta = { ...args[0]._meta, };
+                    delete args[0]._meta;
+
+                    //if (ctx.session.clients[originFound].onlyOnce) {
+                    //    delete ctx.session.clients[originFound];
+                    //}
+
+                    return {...await golos.broadcast.sendAsync(
+                        args[0], [...keys]), _meta};
                 };
             } else {
                 sendAsync = async () => {
@@ -347,7 +544,7 @@ module.exports = function useOAuthApi(app) {
         acc = acc[0];
 
         if (action === 'delegate_vs') {
-            let gprops = await golos.api.getDynamicGlobalProperties();
+            let gprops = await golos.api.getDynamicGlobalPropertiesAsync();
             acc.vesting_shares = (parseFloat(acc.vesting_shares) - parseFloat(acc.delegated_vesting_shares)).toFixed(6) + ' GESTS';
             ctx.body.balances['GOLOS'] = golos.formatter.vestingGolos(acc, gprops).toFixed(3) + ' GOLOS';
             ctx.body.cprops = await golos.api.getChainPropertiesAsync();

@@ -25,6 +25,14 @@
           "description": "Tests only! Do not give access to real accounts."
         }
       },
+      "localhost": {
+        "origins": ["localhost"],
+        "logo": "localfile.svg",
+        "ru": {
+          "title": "Тест localhost",
+          "description": "Только для тестов! Не давайте доступ к реальным аккаунтам."
+        }
+      },
       "fakeorigin": {
         "origins": ["fakeorigin.com"],
         "logo": "fakeorigin.svg",
@@ -35,6 +43,14 @@
         "en": {
           "title": "file:/// Tester",
           "description": "Tests only! Do not give access to real accounts."
+        }
+      },
+      "proposals": {
+        "origins": ["localhost"],
+        "logo": "proposals.svg",
+        "ru": {
+          "title": "Тест пропозалов на localhost",
+          "description": "Только для тестов! Не давайте доступ к реальным аккаунтам."
         }
       }
     }

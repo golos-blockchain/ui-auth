@@ -3,6 +3,7 @@ import tt from 'counterpart';
 import LoadingIndicator from '../elements/LoadingIndicator';
 import { callApi, } from '../../utils/OAuthClient';
 import golos from 'golos-lib-js';
+import { PublicKey, } from 'golos-lib-js/lib/auth/ecc';
 import './LoginForm.scss';
 
 class LoginForm extends React.Component {
@@ -103,7 +104,7 @@ class LoginForm extends React.Component {
         posting.account_auths.push([service_account, 1]);
         await golos.broadcast.accountUpdateAsync(activeWif,
             name, undefined, active, posting,
-            acc.memo_key, acc.json_metadata);
+            new PublicKey(null).toString(), acc.json_metadata);
     };
 
     serverLogin = async (name, auths) => {

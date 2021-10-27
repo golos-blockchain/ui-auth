@@ -12,8 +12,8 @@ golos.config.set('credentials', 'include');
 let account = '';
 
 $('.login').click(e => {
-    oauth.login();
-    oauth.waitForLogin(() => {
+    oauth.login(['transfer', 'account_metadata', 'claim', 'donate']);
+    oauth.waitForLogin(res => {
         window.location.reload();
     }, () => {
         alert('Waiting for login is timeouted. Try again please.');
@@ -60,6 +60,26 @@ $('.meta').click(async (e) => {
     alert('Success!');
 });
 
+async function claim(from, to) {
+    console.log('--- Claiming from ' + from + ' to ' + to + ' TIP-balance... ---');
+    try {
+        await broadcast.claimAsync('', from, to, '0.001 GOLOS', false, []);
+    } catch (err) {
+        console.error(err);
+        alert(err);
+        return;
+    }
+    alert('Success!');
+}
+
+$('.claim-good').click(async (e) => {
+    await claim(account, account);
+})
+
+$('.claim-bad').click(async (e) => {
+    await claim(account, 'null');
+})
+
 async function init() {
     const res = await oauth.checkReliable();
     if (res.authorized) {
@@ -67,6 +87,7 @@ async function init() {
         $('.actions').show();
         $('.username').text(res.account);
         account = res.account;
+        $('.allowed').text(JSON.stringify(res.allowed));
     } else {
         $('.login-form').show();
         $('.actions').hide();
