@@ -187,7 +187,9 @@
     "apps_title": "Apps",
     "apps_empty": "You are not authorized in any app.",
     "link": "Link: ",
-    "edit": "Edit"
+    "edit": "Edit",
+    "remove_authority": "Forbid OAuth access to my account",
+    "remove_authority_confirm": "Do you really want to forbid OAuth access to your account?"
   },
   "oauth_transfer": {
     "from": "From",

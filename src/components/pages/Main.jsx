@@ -1,6 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import tt from 'counterpart';
+import RemoveAuthority from '../elements/RemoveAuthority';
 import Header from '../modules/Header';
 import { getHost, getSession, callApi, } from '../../utils/OAuthClient';
 import './Main.scss';
@@ -25,6 +26,8 @@ class Main extends React.Component {
             loading: false,
             account: session.account,
             clients: session.clients || this.state.clients,
+            service_account: session.service_account,
+            sign_endpoint: session.sign_endpoint,
         });
     }
 
@@ -35,7 +38,8 @@ class Main extends React.Component {
     };
 
     render() {
-        const { account, clients, loading, } = this.state;
+        const { account, clients, loading,
+            service_account, sign_endpoint, } = this.state;
         if (loading) {
             return null;
         }
@@ -97,6 +101,11 @@ class Main extends React.Component {
                         <hr/>
                         <h3>{tt('oauth_main_jsx.apps_title')}</h3>
                         {clientList}
+                        <hr/>
+                        <RemoveAuthority
+                            account={account}
+                            service_account={service_account}
+                            sign_endpoint={sign_endpoint} />
                     </div>
                 </div>
             </div>
