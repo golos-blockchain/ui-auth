@@ -544,7 +544,7 @@ module.exports = function useOAuthApi(app) {
         acc = acc[0];
 
         if (action === 'delegate_vs') {
-            let gprops = await golos.api.getDynamicGlobalProperties();
+            let gprops = await golos.api.getDynamicGlobalPropertiesAsync();
             acc.vesting_shares = (parseFloat(acc.vesting_shares) - parseFloat(acc.delegated_vesting_shares)).toFixed(6) + ' GESTS';
             ctx.body.balances['GOLOS'] = golos.formatter.vestingGolos(acc, gprops).toFixed(3) + ' GOLOS';
             ctx.body.cprops = await golos.api.getChainPropertiesAsync();

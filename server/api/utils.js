@@ -57,7 +57,7 @@ module.exports = function useUtilsApi(app) {
 
         let invite = null;
         try {
-            invite = await golos.api.getInvite(public_key);
+            invite = await golos.api.getInviteAsync(public_key);
         } catch (err) {
             if (err.toString().includes('Invalid parameter value')) {
                 return returnError(ctx, 'wrong_format');
