@@ -58,8 +58,36 @@ function hasAuthority(acc, serviceAccountName) {
     return hasActive && hasPosting;
 }
 
+function getRequiredPerms(ctx, opsToPerms, clientName, op) {
+    const client = ctx.session.clients[clientName];
+
+    let perms = opsToPerms[op[0]];
+    if (!perms) {
+        throw new Error('Operation ' + op[0] + ' is not supported by OAuth');
+    }
+
+    let required = [];
+    let allowed = false;
+    for (let perm of perms) {
+        if (perm.cond) {
+            const res = perm.cond(op[1], op[0]);
+            if (res === false || res instanceof Error) {
+                continue;
+            }
+        }
+        required.push(perm.perm);
+        if (client.allowed.includes(perm.perm)) {
+            allowed = true;
+            break;
+        }
+    }
+
+    return { allowed, required, };
+}
+
 module.exports = {
     getClientByOrigin,
     clientFromConfig,
     hasAuthority,
+    getRequiredPerms,
 }

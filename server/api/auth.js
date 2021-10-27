@@ -4,7 +4,7 @@ const Tarantool = require('../../db/tarantool');
 const golos = require('golos-lib-js');
 const { Signature, hash, PublicKey } = require('golos-lib-js/lib/auth/ecc');
 const secureRandom = require('secure-random');
-const { getRemoteIp, slowDownLimitReq, returnError, } = require('../utils/misc');
+const { bodyParams, getRemoteIp, slowDownLimitReq, returnError, } = require('../utils/misc');
 const { checkOrigin, } = require('../utils/origin');
 
 module.exports = function useAuthApi(app) {
@@ -16,9 +16,7 @@ module.exports = function useAuthApi(app) {
     let sessions = new Map();
 
     router.post('/login_account', koaBody, async (ctx) => {
-        let params = ctx.request.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
-        const { account, signatures } = params;
+        const { account, signatures } = bodyParams(ctx);
         if (!account) {
             return returnError(ctx, 'account is required');
         }

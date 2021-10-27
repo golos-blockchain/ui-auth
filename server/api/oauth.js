@@ -2,15 +2,21 @@ const koa_router = require('koa-router');
 const koa_body = require('koa-body');
 const config = require('config');
 const golos = require('golos-lib-js');
-const { Signature, hash, PublicKey } = require('golos-lib-js/lib/auth/ecc');
 const secureRandom = require('secure-random');
 const JsonRPC = require('simple-jsonrpc-js');
+const Tarantool = require('../../db/tarantool');
 const session = require('../utils/cryptoSession');
-const { throwErr, } = require('../utils/misc');
+const { bodyParams, throwErr, } = require('../utils/misc');
 const { checkCrossOrigin, forbidCorsOnProd, } = require('../utils/origin');
 const { getClientByOrigin, clientFromConfig,
-    hasAuthority, } = require('../utils/oauth');
+    hasAuthority, getRequiredPerms, } = require('../utils/oauth');
 const { permissions, initOpsToPerms, } = require('../utils/oauthPermissions');
+
+const PendingStates = {
+    CREATED: 1,
+    ACCEPTED: 2,
+    FORBIDDEN: 3,
+};
 
 module.exports = function useOAuthApi(app) {
     const opsToPerms = initOpsToPerms(permissions);
@@ -34,6 +40,19 @@ module.exports = function useOAuthApi(app) {
     });
 
     const koaBody = koa_body();
+
+    async function clearPendings() {
+        console.log('clearPendings');
+        try {
+            await Tarantool.instance('tarantool')
+                .call('oauth_cleanup',);
+        } catch (err) {
+            console.error(err);
+        }
+        setTimeout(clearPendings,
+            (process.env.NODE_ENV === 'production' ? 300 : 10) * 1000);
+    }
+    clearPendings();
 
     router.get('/_/get_client/:client/:locale?', koaBody, async (ctx) => {
         forbidCorsOnProd(ctx);
@@ -89,9 +108,7 @@ module.exports = function useOAuthApi(app) {
     });
 
     router.post('/_/permissions', koaBody, async (ctx) => {
-        let params = ctx.request.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
-        const { client, allowed, } = params;
+        const { client, allowed, } = bodyParams(ctx);
         if (!client)
             throwErr(ctx, 400, ['client is required']);
 
@@ -124,6 +141,7 @@ module.exports = function useOAuthApi(app) {
         };
     });
 
+    // Checks if user authorized in client at general
     router.get('/check/:client', koaBody, async (ctx) => {
         const { client, } = ctx.params;
 
@@ -138,10 +156,164 @@ module.exports = function useOAuthApi(app) {
         }
     });
 
+    // Checks if specific transaction allowed
+    router.post('/check/:client', koaBody, async (ctx) => {
+        if (!checkCrossOrigin(ctx)) {
+            ctx.body = {
+                status: 'ok',
+            };
+            return;
+        }
+
+        let clientFound = getClientByOrigin(ctx);
+
+        let requiredPerms = new Set();
+        let errorMsg = '';
+
+        const { tx, } = bodyParams(ctx);
+
+        for (const op of tx.operations) {
+            let { allowed, required, } = getRequiredPerms(ctx, opsToPerms, clientFound, op);
+
+            if (!allowed && !required.length) {
+                throwErr(ctx, 400, ['Such case of operation ' + op[0] + ' is not supported by OAuth']);
+            }
+            if (!allowed) {
+                required.forEach(requiredPerms.add, requiredPerms);
+                errorMsg += 'Operation ' + op[0] + ` in this case is not allowed for '${clientFound}' client. `
+                        + 'It requires: ' + required.join(' or ') + '\n';
+            }
+        }
+
+        if (errorMsg) {
+            throwErr(ctx, 400, [errorMsg], null, {
+                requiredPerms: Array.from(requiredPerms),
+            });
+        }
+
+        ctx.body = {
+            status: 'ok',
+        };
+    });
+
+    router.post('/prepare_pending', koaBody, async (ctx) => {
+        let clientFound = getClientByOrigin(ctx);
+
+        const { tx, txHash, } = bodyParams(ctx);
+        if (!tx) throwErr(ctx, 400, ['tx is required']);
+        if (!txHash) throwErr(ctx, 400, ['txHash is required']);
+        
+        const txHash0 = golos.oauth._hashOps(tx.operations);
+
+        if (txHash !== txHash0) {
+            console.error('Wrong txHash', tx.operations);
+            throwErr(ctx, 400, ['Wrong txHash']);
+        }
+
+        const prepareRes = await Tarantool.instance('tarantool')
+            .call('oauth_prepare_tx',
+                clientFound, txHash,
+                JSON.stringify(tx)
+            );
+
+        ctx.body = {
+            status: 'ok',
+        };
+    });
+
+    router.get('/_/load_pending/:client/:txHash', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
+        const { client, txHash, } = ctx.params;
+
+        let txRes = await Tarantool.instance('tarantool')
+            .call('oauth_get_txs',
+                client, txHash, PendingStates.CREATED,
+            );
+        if (txRes[0][0]) {
+            const tx = txRes[0][0];
+            if (tx.client === client && tx.tx_hash === txHash) {
+                if (tx.state > PendingStates.CREATED) {
+                    tx.expired = true;
+                }
+                tx.tx = JSON.parse(tx.tx);
+                ctx.body = {
+                    status: 'ok',
+                    data: tx,
+                };
+                return;
+            }
+        }
+        throwErr(ctx, 400, ['Pending tx not found']);
+    });
+
+    router.post('/_/forbid_pending/:client/:txHash', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
+
+        const { client, txHash, } = ctx.params;
+
+        let txRes = await Tarantool.instance('tarantool')
+            .call('oauth_state_tx',
+                client, txHash, PendingStates.FORBIDDEN,
+            );
+        if (txRes[0][0]) {
+            ctx.body = {
+                status: 'ok',
+            };
+            return;
+        }
+        throwErr(ctx, 400, ['Pending tx not found']);
+    });
+
+    router.post('/_/return_pending/:client/:txHash', koaBody, async (ctx) => {
+        forbidCorsOnProd(ctx);
+
+        const { client, txHash, } = ctx.params;
+
+        const { err, res, } = bodyParams(ctx);
+        // validation
+        if (err) JSON.parse(err);
+        if (res) JSON.parse(res);
+
+        let txRes = await Tarantool.instance('tarantool')
+            .call('oauth_return_tx',
+                client, txHash, err, res,
+            );
+        if (txRes[0][0]) {
+            ctx.body = {
+                status: 'ok',
+            };
+            return;
+        }
+        throwErr(ctx, 400, ['Pending tx not found']);
+    });
+
+    router.get('/wait_for_pending/:txHash', koaBody, async (ctx) => {
+        const client = getClientByOrigin(ctx);
+        const { txHash, } = ctx.params;
+        let txRes = await Tarantool.instance('tarantool')
+            .call('oauth_get_txs',
+                client, txHash, PendingStates.ACCEPTED,
+            );
+        if (txRes[0][0]) {
+            const tx = txRes[0][0];
+            if (tx.client === client && tx.tx_hash === txHash) {
+                ctx.body = {
+                    status: 'ok',
+                };
+                if (tx.state === PendingStates.FORBIDDEN) {
+                    ctx.body.forbidden = true;
+                } else {
+                    ctx.body.err = tx.err ? JSON.parse(tx.err) : null;
+                    ctx.body.res = tx.res ? JSON.parse(tx.res) : null;
+                }
+                return;
+            }
+        }
+        throwErr(ctx, 400, ['Pending tx not found']);
+    });
+
     router.post('/_/authorize', koaBody, async (ctx) => {
-        let params = ctx.request.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
-        const { account, signatures } = params;
+        const { account, signatures } = bodyParams(ctx);
         if (!account) {
             throwErr(ctx, 400, ['account is required']);
         }
@@ -263,30 +435,9 @@ module.exports = function useOAuthApi(app) {
                     const postingKey = config.get('oauth.service_account.posting');
                     const activeKey = config.get('oauth.service_account.active');
 
-                    for (const op of args[0].operations) {console.log(op[1])
+                    for (const op of args[0].operations) {
                         if (clientFound) {
-                            const client = ctx.session.clients[clientFound];
-
-                            let perms = opsToPerms[op[0]];
-                            if (!perms) {
-                                throw new Error('Operation ' + op[0] + ' is not supported by OAuth');
-                            }
-
-                            let required = [];
-                            let allowed = false;
-                            for (let perm of perms) {
-                                if (perm.cond) {
-                                    const res = perm.cond(op[1], op[0]);
-                                    if (res === false || res instanceof Error) {
-                                        continue;
-                                    }
-                                }
-                                required.push(perm.perm);
-                                if (client.allowed.includes(perm.perm)) {
-                                    allowed = true;
-                                    break;
-                                }
-                            }
+                            let { allowed, required, } = getRequiredPerms(ctx, opsToPerms, clientFound, op);
 
                             if (!allowed && !required.length) {
                                 throw new Error('Such case of operation ' + op[0] + ' is not supported by OAuth');
@@ -323,14 +474,15 @@ module.exports = function useOAuthApi(app) {
                         }
                     }
 
+                    let _meta = { ...args[0]._meta, };
                     delete args[0]._meta;
 
                     //if (ctx.session.clients[originFound].onlyOnce) {
                     //    delete ctx.session.clients[originFound];
                     //}
 
-                    return await golos.broadcast.sendAsync(
-                        args[0], [...keys]);
+                    return {...await golos.broadcast.sendAsync(
+                        args[0], [...keys]), _meta};
                 };
             } else {
                 sendAsync = async () => {

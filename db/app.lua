@@ -1,5 +1,6 @@
 require 'locks'
 require 'guid'
+require 'oauth'
 
 io.output():setvbuf('no')
 
@@ -84,4 +85,6 @@ box.once('bootstrap', function()
 
     guid = box.schema.create_space('guid')
     guid:create_index('primary', {type = 'tree', parts = {1, 'STR'}})
+
+    oauth_bootstrap()
 end)

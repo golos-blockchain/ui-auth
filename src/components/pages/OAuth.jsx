@@ -2,8 +2,10 @@ import React from 'react';
 import { Helmet } from 'react-helmet';
 import { withRouter, } from 'react-router';
 import tt from 'counterpart';
+import golos from 'golos-lib-js';
 import Header from '../modules/Header';
 import LoginForm from '../modules/LoginForm';
+import PendingTx from '../modules/PendingTx';
 import PermissionsList from '../modules/PermissionsList';
 import { getHost, callApi, getSession, } from '../../utils/OAuthClient';
 import LoadingIndicator from '../elements/LoadingIndicator';
@@ -52,38 +54,137 @@ class OAuth extends React.Component {
             return;
         }
         const params = new URLSearchParams(window.location.search);
+        const opsHash = params.get('ops_hash');
         this.setState({
             account: session.account || null,
             client: clientObj || null,
+            error: (clientObj ? null : tt('oauth_request.app_not_exist_ID', {
+                    ID: client,
+                })),
             clientId: client,
-            once: params.get('role'),
-            requested: this.normalizeRequested(clientObj, requested),
+            pending: opsHash,
+            requested: this.normalizeRequested(clientObj,
+                opsHash ? null : requested),
+            sign_endpoint: session.sign_endpoint,
         });
+        if (opsHash)
+            this.loadPendingTx(opsHash);
     }
+
+    loadPendingTx = async (hash, waited = 0) => {
+        const { clientId, } = this.state;
+        const res = await callApi('/api/oauth/_/load_pending/' + clientId + '/' + hash);
+        let obj = await res.json();
+        if (!obj.data) {
+            if (waited >= 8000) {
+                //console.error('loadPendingTx', obj);
+                window.close();
+                return;
+            }
+            console.error('loadPendingTx...');
+            const interval = 1000;
+            waited += interval;
+            setTimeout(() => this.loadPendingTx(hash, waited),
+                interval);
+        } else {
+            if (obj.data.expired) {
+                this.setState( {
+                    error: tt('oauth_request.pending_tx_expired'),
+                });
+                return;
+            }
+            let addForOp = new Map();
+
+            if (!obj.data.tx
+                || !obj.data.tx.operations) {
+                console.error('loadPendingTx', obj);
+                return;
+            }
+            for (let op of obj.data.tx.operations) {
+                let perms = opsToPerms[op[0]];
+                if (!perms) {
+                    //!
+                    console.log(op);
+                    return;
+                }
+                for (let perm of perms) {
+                    console.log(perm)
+                    if (perm.cond) {
+                        const res = perm.cond(op[1], op[0]);
+                        if (res === false || res instanceof Error) {
+                            continue;
+                        }
+                    }
+                    addForOp.set(perm.perm, perm);
+                    op.push(perm);
+                    break;
+                }
+                if (op.length < 3) {
+                    //!
+                    return;
+                }
+            }
+            this.setState({
+                pendingTx: obj.data,
+                addForOp,
+            });
+        }
+    };
+
+    _saveAllow = async (forbid = false, pending = false) => {
+        let allowed = null;
+        if (!forbid) {
+            allowed = new Set(this.state.requested.keys());
+            if (pending) {
+                allowed = new Set([...allowed, ...this.state.addForOp.keys()]);
+            }
+        }
+
+        const { clientId, } = this.state;
+        let res = await callApi('/api/oauth/_/permissions', {
+            client: clientId,
+            allowed: allowed ? [...allowed] : null,
+        });
+        res = await res.json();
+        if (res.status === 'err') {
+            throw new Error(res.error);
+        }
+    }
+
+    _signPending = async () => {
+        const { sign_endpoint, } = this.state;
+        golos.config.set('websocket', sign_endpoint);
+        const { pendingTx, } = this.state;
+        let res, err;
+        try {
+            res = await golos.broadcast.sendAsync(pendingTx.tx, []);
+        
+            console.log(res);
+        } catch (ex) {
+            err = ex;
+        }
+        const { clientId, pending, } = this.state;
+        let ret = await callApi('/api/oauth/_/return_pending/' + clientId + '/' + pending, {
+            err: err ? JSON.stringify(err, Object.getOwnPropertyNames(err)) : '',
+            res: res ? JSON.stringify(res) : '',
+        });
+        ret = await ret.json();
+    };
 
     _onAllow = async (e, forbid = false) => {
         e.preventDefault();
-
-        let allowed = null;
-        if (!forbid) {
-            allowed = Array.from(this.state.requested.keys());
-        }
-
         this.setState({
             submitting: false,
             done: false,
         });
 
+        const isPending = !!this.state.pendingTx;
+
         try {
-            const { clientId, } = this.state;
-            let res = await callApi('/api/oauth/_/permissions', {
-                client: clientId,
-                allowed,
-            });
-            res = await res.json();
-            if (res.status === 'err') {
-                throw new Error(res.error);
+            if (isPending) {
+                await this._signPending();
             }
+            await this._saveAllow(forbid, isPending);
             this.setState({
                 submitting: false,
                 done: true,
@@ -106,28 +207,48 @@ class OAuth extends React.Component {
     };
 
     _onAllowOnce = async (e) => {
-        //e.preventDefault();
+        e.preventDefault();
+        this.setState({
+            submitting: false,
+            done: false,
+        });
+        await this._signPending();
+        this.setState({
+            submitting: false,
+            done: true,
+        });
+        window.close();
     };
 
     _onForbid = async (e) => {
-        this._onAllow(e, true);
+        await this._onAllow(e, true);
     };
 
     _onForbidOnce = async (e) => {
         e.preventDefault();
-        window.close();
-        this.setState({
-            done: true,
+        const { clientId, pending, } = this.state;
+        let res = await callApi('/api/oauth/_/forbid_pending/' + clientId + '/' + pending, {
         });
+        res = await res.json();
+        if (res.status === 'ok') {
+            window.close();
+            this.setState({
+                done: true,
+            });
+            return;
+        }
+        console.error(res);
+        alert('Error: ' + JSON.stringify(res));
     };
 
     render() {
         const { state, } = this;
         const { account, client, clientId, submitting, done,
-            once,
-            requested, } = state;
+            pending, pendingTx,
+            requested,
+            error, } = state;
 
-        if (!account || client === undefined || submitting) {
+        if (!account || client === undefined || submitting || (pending && !pendingTx && !error)) {
             return (<div className='Signer_page'>
                 <Helmet>
                     <meta charSet='utf-8' />
@@ -156,12 +277,10 @@ class OAuth extends React.Component {
                         className='column'
                         style={{ maxWidth: '40rem', margin: '0 auto' }}
                     >
-                        {!client && <div className='callout alert'>
-                            {tt('oauth_request.app_not_exist_ID', {
-                                ID: clientId,
-                            })}
+                        {error && <div className='callout alert'>
+                            {error}
                         </div>}
-                        {client && <form>
+                        {!error && <form>
                             <h3>{tt('oauth_request.application_requests_access_APP', {
                                 APP: client.title,
                             })}</h3>
@@ -170,25 +289,34 @@ class OAuth extends React.Component {
                                 <h5>{client.title}</h5>
                                 <div>{client.description}</div>
                             </div>
-                            <div>
-                                {tt('oauth_request.choise_permissions')}
-                            </div>
-                            <hr />
-                            <PermissionsList items={requested} />
-                            <hr />
-                            <div className='close_tab'>{tt('oauth_request.close_tab')}</div>
-                            <hr />
+                            {pendingTx ? <div>
+                                    <hr />
+                                    <PendingTx tx={pendingTx} />
+                                    <hr />
+                                </div> : null}
+                            {!pendingTx ? <div>
+                                {(requested && requested.size) ?
+                                    tt('oauth_request.choise_permissions') :
+                                    tt('oauth_request.no_perms')}
+                            </div> : null}
+                            {!pendingTx ? <hr /> : null}
+                            {(!pendingTx && requested && requested.size) ? <div>
+                                <PermissionsList items={requested} />
+                                <hr />
+                                <div className='close_tab'>{tt('oauth_request.close_tab')}</div>
+                                <hr />
+                            </div> : null}
                             <center>
                                 <button className='button' onClick={this._onAllow}>
-                                    {tt('oauth_request.allow')}
+                                    {pending ? tt('oauth_request.allow_always') : tt('oauth_request.allow')}
                                 </button>
-                                {state.once && <button className='button hollow' onClick={this._onAllowOnce} style={{ marginLeft: '10px', }}>
+                                {pending ? <button className='button hollow' onClick={this._onAllowOnce} style={{ marginLeft: '10px', }}>
                                     {tt('oauth_request.allow_once')}
-                                </button>}
-                                {!once && <button className='button hollow' onClick={this._onForbid} style={{ marginLeft: '10px', }}>
+                                </button> : null}
+                                {!pending && <button className='button hollow' onClick={this._onForbid} style={{ marginLeft: '10px', }}>
                                     {tt('oauth_request.forbid')}
                                 </button>}
-                                {once && <button className='button hollow' onClick={this._onForbidOnce} style={{ marginLeft: '10px', }}>
+                                {pending && <button className='button hollow' onClick={this._onForbidOnce} style={{ marginLeft: '10px', }}>
                                     {tt('oauth_request.forbid_once')}
                                 </button>}
                                 {done ? <span className='success done'>

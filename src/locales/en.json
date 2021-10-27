@@ -210,9 +210,12 @@
   "oauth_request": {
     "title": "App authentication",
     "application_requests_access_APP": "That application requests access to your account",
-    "choise_permissions": "Choose permissions, which should be granted to application.",
+    "choise_permissions": "Following permissions are requested:",
+    "no_perms": "No additional permissions need. Application will only know your username.",
+    "app_want_send_op": "Application attempts to do the following actions:",
     "allow": "Allow",
-    "allow_once": "Allow 1 operation",
+    "allow_once": "Allow",
+    "allow_always": "Allow always",
     "forbid": "Forbid all",
     "forbid_once": "Decline",
     "posting": "Posting.",
@@ -220,7 +223,8 @@
     "posting_active": "Posting+Active.",
     "posting_active_descr": " Application also can use your active key, i.e. transfer tokens, etc. Only for 100%% trusted applications.",
     "close_tab": "Note: permissions can be used by applications only when a tab with application is opened.",
-    "app_not_exist_ID": "Such application with ID %(ID)s is not registered. Contact us to register it."
+    "app_not_exist_ID": "Such application with ID %(ID)s is not registered. Contact us to register it.",
+    "pending_tx_expired": "Transaction has expired - already sent or declined."
   },
   "tips_js": {
     "tip_balance_hint": "Balance that you use to reward users and that you use to earn rewards for yourself. Tokens from it can also be sent to increase the Golos Power.",

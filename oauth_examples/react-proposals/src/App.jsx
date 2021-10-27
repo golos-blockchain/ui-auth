@@ -1,5 +1,5 @@
 import React from 'react';
-import golos, { api, broadcast, oauth, } from 'golos-lib-js';
+import golos, { api, broadcast, oauth, middlewares, } from 'golos-lib-js';
 import ByteBuffer from 'bytebuffer';
 
 class App extends React.Component {
@@ -12,6 +12,7 @@ class App extends React.Component {
         golos.config.set('oauth.host', API_HOST);
         golos.config.set('websocket', API_HOST + '/api/oauth/sign');
         golos.config.set('credentials', 'include');
+        golos.use(new middlewares.OAuthMiddleware());
 
         this.state = {};
     }
@@ -25,7 +26,7 @@ class App extends React.Component {
     }
 
     login = () => {
-        oauth.login(['custom', 'proposal_create', 'proposal_delete', 'proposal_update']);
+        oauth.login(['custom', 'proposal_delete', 'proposal_update']);
         oauth.waitForLogin((res) => {
             if (res.authorized) {
                 this.setState({
@@ -52,6 +53,7 @@ class App extends React.Component {
         }
         console.log('account is: ', accs);
 
+        let res = null;
         try {
             let date = new Date();
             date.setHours(date.getHours() + 1);
@@ -67,7 +69,7 @@ class App extends React.Component {
                 ]
             }];
 
-            let res = await broadcast.proposalCreateAsync(
+            res = await broadcast.proposalCreateAsync(
                 '(active)', account, 'test1', '',
                 date,
                 ops,
@@ -78,15 +80,16 @@ class App extends React.Component {
             alert(err);
             return;
         }
-        alert('Success!');
+        alert('Success!\n\nresult:\n' + JSON.stringify(res));
     };
 
     proposalUpdate = async () => {
         console.log('--- Sending proposalUpdate... ---');
         const { account, } = this.state;
 
+        let res = null;
         try {
-            let res = await broadcast.proposalUpdateAsync(
+            res = await broadcast.proposalUpdateAsync(
                 '', account, 'test1',
                 [], [], // active accs to add, and to remove
                 [], [], // owner...
@@ -98,15 +101,16 @@ class App extends React.Component {
             alert(err);
             return;
         }
-        alert('Success!');
+        alert('Success!\n\nresult:\n' + JSON.stringify(res));
     };
 
     proposalDelete = async () => {
         console.log('--- Sending proposalDelete... ---');
         const { account, } = this.state;
 
+        let res = null;
         try {
-            let res = await broadcast.proposalDeleteAsync(
+            res = await broadcast.proposalDeleteAsync(
                 '(active)', account, 'test1',
                 account, // can be author or any of approvals who has approved proposal
                 []);
@@ -115,7 +119,7 @@ class App extends React.Component {
             alert(err);
             return;
         }
-        alert('Success!');
+        alert('Success!\n\nresult:\n' + JSON.stringify(res));
     };
 
     logout = async () => {
@@ -137,7 +141,7 @@ class App extends React.Component {
                         {account}
                         <button onClick={this.logout}>Logout</button>
                         <p>Allowed operations:&nbsp;
-                            <span class='allowed'>{JSON.stringify(allowed)}</span></p>
+                            <span className='allowed'>{JSON.stringify(allowed)}</span></p>
                     </div>
                     <hr />
                     <button onClick={this.proposalCreate}>proposal_create</button>

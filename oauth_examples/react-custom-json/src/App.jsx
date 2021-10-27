@@ -1,5 +1,5 @@
 import React from 'react';
-import golos, { api, broadcast, oauth, } from 'golos-lib-js';
+import golos, { api, broadcast, oauth, middlewares, } from 'golos-lib-js';
 import ByteBuffer from 'bytebuffer';
 
 class App extends React.Component {
@@ -12,6 +12,7 @@ class App extends React.Component {
         golos.config.set('oauth.host', API_HOST);
         golos.config.set('websocket', API_HOST + '/api/oauth/sign');
         golos.config.set('credentials', 'include');
+        golos.use(new middlewares.OAuthMiddleware());
 
         this.state = {};
     }
@@ -124,7 +125,7 @@ class App extends React.Component {
                         {account}
                         <button onClick={this.logout}>Logout</button>
                         <p>Allowed operations:&nbsp;
-                            <span class='allowed'>{JSON.stringify(allowed)}</span></p>
+                            <span className='allowed'>{JSON.stringify(allowed)}</span></p>
                     </div>
                     <hr />
                     <button onClick={this.customJson}>Custom json</button>

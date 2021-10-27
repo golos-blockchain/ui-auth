@@ -16,7 +16,7 @@
     "formik": "^2.2.9",
     "git-rev-sync": "^3.0.1",
     "gmail-send": "^1.8.10",
-    "golos-lib-js": "^0.9.11",
+    "golos-lib-js": "^0.9.12",
     "jspdf": "^2.3.0",
     "koa": "^2.13.0",
     "koa-body": "^4.2.0",

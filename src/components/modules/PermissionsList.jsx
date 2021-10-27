@@ -9,7 +9,6 @@ class PermissionsList extends React.Component {
 
         let itemViews = [];
         for (let [key, data] of items) {
-            console.log(data);
             const isActive = !data.maxRole || data.maxRole.includes('active');
             const isDanger = isActive || (data.forceRed && data.forceRed());
             itemViews.push(
