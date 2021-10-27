@@ -93,6 +93,7 @@ module.exports = function useOAuthApi(app) {
         ctx.body = {
             account: ctx.session.account,
             sign_endpoint: new URL('/api/oauth/sign', config.get('oauth.rest_api')).toString(),
+            service_account: config.get('oauth.service_account.name'),
         };
         if (with_clients === 'true') {
             ctx.body.clients = {};
