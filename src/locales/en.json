@@ -214,7 +214,7 @@
     "application_requests_access_APP": "That application requests access to your account",
     "choise_permissions": "Following permissions are requested:",
     "no_perms": "No additional permissions need. Application will only know your username.",
-    "app_want_send_op": "Application attempts to do the following actions:",
+    "app_want_send_op": "Application attempts to do the following actions. Click the arrow to show details.",
     "allow": "Allow",
     "allow_once": "Allow",
     "allow_always": "Allow always",
