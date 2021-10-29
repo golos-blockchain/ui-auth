@@ -154,12 +154,11 @@ class OAuth extends React.Component {
     _signPending = async () => {
         const { sign_endpoint, } = this.state;
         golos.config.set('websocket', sign_endpoint);
+        golos.config.set('credentials', 'include');
         const { pendingTx, } = this.state;
         let res, err;
         try {
             res = await golos.broadcast.sendAsync(pendingTx.tx, []);
-        
-            console.log(res);
         } catch (ex) {
             err = ex;
         }

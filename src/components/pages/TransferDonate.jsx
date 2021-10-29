@@ -132,6 +132,7 @@ class TransferDonate extends React.Component {
         }
 
         golos.config.set('websocket', sign_endpoint);
+        golos.config.set('credentials', 'include');
         const callback = (err, res) => {
             setSubmitting(false);
             if (err) {

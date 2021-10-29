@@ -58,29 +58,44 @@ function hasAuthority(acc, serviceAccountName) {
     return hasActive && hasPosting;
 }
 
-function getRequiredPerms(ctx, opsToPerms, clientName, op) {
-    const client = ctx.session.clients[clientName];
-
+function getRequiredPerms(ctx, opsToPerms, op, forEach) {
     let perms = opsToPerms[op[0]];
     if (!perms) {
         throw new Error('Operation ' + op[0] + ' is not supported by OAuth');
     }
 
+    const acc = ctx.session && ctx.session.account;
+
     let required = [];
-    let allowed = false;
     for (let perm of perms) {
-        if (perm.cond) {
-            const res = perm.cond(op[1], op[0]);
-            if (res === false || res instanceof Error) {
-                continue;
-            }
+        const res = perm.cond(op[1], op[0]);
+        if (res === false || res instanceof Error) {
+            continue;
+        }
+        if (!res[1] || 
+            !acc ||
+            acc !== res[1]) {
+            throw new Error('Missing authority for ' + op[0] + ' operation, authorized as ' + acc + ' but required ' + res[1]);
         }
         required.push(perm.perm);
-        if (client.allowed.includes(perm.perm)) {
-            allowed = true;
-            break;
-        }
+        if (forEach && forEach(perm)) break;
     }
+
+    return required;
+}
+
+function getMissingPerms(ctx, opsToPerms, clientName, op) {
+    const client = ctx.session.clients[clientName];
+
+    let allowed = false;
+    let required = getRequiredPerms(ctx, opsToPerms, op,
+        (perm) => {
+            if (client.allowed.includes(perm.perm)) {
+                allowed = true;
+                return true;
+            }
+            return false;
+        })
 
     return { allowed, required, };
 }
@@ -90,4 +105,5 @@ module.exports = {
     clientFromConfig,
     hasAuthority,
     getRequiredPerms,
+    getMissingPerms,
 }
