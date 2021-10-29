@@ -9,7 +9,7 @@ const session = require('../utils/cryptoSession');
 const { bodyParams, throwErr, } = require('../utils/misc');
 const { checkCrossOrigin, forbidCorsOnProd, } = require('../utils/origin');
 const { getClientByOrigin, clientFromConfig,
-    hasAuthority, getRequiredPerms, } = require('../utils/oauth');
+    hasAuthority, getRequiredPerms, getMissingPerms, } = require('../utils/oauth');
 const { permissions, initOpsToPerms, } = require('../utils/oauthPermissions');
 
 const PendingStates = {
@@ -174,7 +174,7 @@ module.exports = function useOAuthApi(app) {
         const { tx, } = bodyParams(ctx);
 
         for (const op of tx.operations) {
-            let { allowed, required, } = getRequiredPerms(ctx, opsToPerms, clientFound, op);
+            let { allowed, required, } = getMissingPerms(ctx, opsToPerms, clientFound, op);
 
             if (!allowed && !required.length) {
                 throwErr(ctx, 400, ['Such case of operation ' + op[0] + ' is not supported by OAuth']);
@@ -438,7 +438,7 @@ module.exports = function useOAuthApi(app) {
 
                     for (const op of args[0].operations) {
                         if (clientFound) {
-                            let { allowed, required, } = getRequiredPerms(ctx, opsToPerms, clientFound, op);
+                            let { allowed, required, } = getMissingPerms(ctx, opsToPerms, clientFound, op);
 
                             if (!allowed && !required.length) {
                                 throw new Error('Such case of operation ' + op[0] + ' is not supported by OAuth');
@@ -446,6 +446,11 @@ module.exports = function useOAuthApi(app) {
                             if (!allowed) {
                                 throw new Error('Operation ' + op[0] + ` in this case is not allowed for '${clientFound}' client. `
                                         + 'It requires: ' + required.join(' or '));
+                            }
+                        } else {
+                            let required = getRequiredPerms(ctx, opsToPerms, op)
+                            if (!required.length) {
+                                throw new Error('Such case of operation ' + op[0] + ' is not supported by OAuth');
                             }
                         }
 
