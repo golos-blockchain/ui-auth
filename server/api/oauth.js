@@ -421,7 +421,7 @@ module.exports = function useOAuthApi(app) {
 
             const isBroadcast = 
                 (api == 'network_broadcast_api') &&
-                (method === 'broadcast_transaction');
+                (method === 'broadcast_transaction' || method === 'broadcast_transaction_with_callback');
 
             let sendAsync = null;
             if (isBroadcast) {

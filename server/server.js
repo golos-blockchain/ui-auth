@@ -31,6 +31,8 @@ if (CHAIN_ID) {
     golos.config.set('chain_id', CHAIN_ID);
 }
 
+golos.config.set('broadcast_transaction_with_callback', true);
+
 tt.registerTranslations('en', require('../src/locales/en.json'));
 tt.registerTranslations('ru', require('../src/locales/ru-RU.json'));
 
