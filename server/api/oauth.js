@@ -436,7 +436,9 @@ module.exports = function useOAuthApi(app) {
                     const postingKey = config.get('oauth.service_account.posting');
                     const activeKey = config.get('oauth.service_account.active');
 
-                    for (const op of args[0].operations) {
+                    let trx = method === 'broadcast_transaction_with_callback' ? args[1] : args[0];
+
+                    for (const op of trx.operations) {
                         if (clientFound) {
                             let { allowed, required, } = getMissingPerms(ctx, opsToPerms, clientFound, op);
 
@@ -454,7 +456,7 @@ module.exports = function useOAuthApi(app) {
                             }
                         }
 
-                        let roles = args[0]._meta && args[0]._meta._keys;
+                        let roles = trx._meta && trx._meta._keys;
                         if (roles && roles.length) {
                             roles = roles.slice(0, 6);
                             for (let role of roles) {
@@ -480,15 +482,15 @@ module.exports = function useOAuthApi(app) {
                         }
                     }
 
-                    let _meta = { ...args[0]._meta, };
-                    delete args[0]._meta;
+                    let _meta = { ...trx._meta, };
+                    delete trx._meta;
 
                     //if (ctx.session.clients[originFound].onlyOnce) {
                     //    delete ctx.session.clients[originFound];
                     //}
 
                     return {...await golos.broadcast.sendAsync(
-                        args[0], [...keys]), _meta};
+                        trx, [...keys]), _meta};
                 };
             } else {
                 sendAsync = async () => {
