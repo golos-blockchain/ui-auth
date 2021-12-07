@@ -8,8 +8,6 @@ services:
     volumes:
       - ./config/default.json:/var/app/config/default.json
       - ./config/oauth.json:/var/app/config/oauth.json
-      - ./themes:/var/app/themes
-      - ./oauth_clients:/var/app/oauth_clients
     depends_on:
       - db
     ports:
