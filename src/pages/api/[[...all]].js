@@ -6,6 +6,7 @@ import { authCors, } from '@/server/auth';
 import { throwErr, onError, makeNoMatch, } from '@/server/error';
 import { checkOrigin, } from '@/server/origin';
 import { initGolos, } from '@/server/initGolos';
+import { rateLimitReq, } from '@/server/misc';
 import Tarantool from '@/server/tarantool';
 
 initGolos();
@@ -25,6 +26,17 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
             status: 'ok',
             date: new Date(),
         });
+    })
+
+    .post('/api/csp_violation', async (req, res) => {
+        rateLimitReq(req, {});
+
+        let params = req.body;
+        if (typeof(params) === 'string') try {
+            params = JSON.parse(params);
+        } catch (err) {}
+        console.log('-- /csp_violation -->', req.headers['user-agent'], params);
+        res.json({});
     })
 
     .post('/api/login_account', async (req, res) => {
