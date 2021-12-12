@@ -11,12 +11,12 @@ export const regSessionOpts = {
     },
 };
 
-export const useRegSession = async (req, res) => {
+export const initRegSession = async (req, res) => {
     await (withIronSessionApiRoute((req_, res_) => {}, regSessionOpts))(req, res);
     return req.session;
 };
 
 export const regSessionMiddleware = async (req, res, next) => {
-    await useRegSession(req, res);
+    await initRegSession(req, res);
     next();
 };

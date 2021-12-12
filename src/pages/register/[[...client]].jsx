@@ -14,10 +14,10 @@ import GeneratedPasswordInput from '@/elements/GeneratedPasswordInput';
 import { APP_DOMAIN, SUPPORT_EMAIL } from '@/client_config';
 import { callApi, } from '@/utils/RegApiClient';
 import { obtainUid, getClientCfg, } from '@/server/reg';
-import { useRegSession, } from '@/server/regSession';
+import { initRegSession, } from '@/server/regSession';
 
 export async function getServerSideProps({ req, res, params, }) {
-    await useRegSession(req, res);
+    await initRegSession(req, res);
     let clientCfg = getClientCfg(req, params);
     obtainUid(req);
     await req.session.save();

@@ -12,18 +12,18 @@ export const oauthSessionOpts = {
     },
 };
 
-export const useOAuthSession = async (req, res) => {
+export const initOAuthSession = async (req, res) => {
     await (withIronSessionApiRoute((req_, res_) => {}, oauthSessionOpts))(req, res);
     return req.session;
 };
 
 export const oauthSessionMiddleware = async (req, res, next) => {
-    await useOAuthSession(req, res);
+    await initOAuthSession(req, res);
     next();
 };
 
 export const getOAuthSession = async (req, res, with_clients = true) => {
-    const session = await useOAuthSession(req, res);
+    const session = await initOAuthSession(req, res);
     let data = {
         account: null,
         clients: {},
