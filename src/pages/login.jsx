@@ -1,5 +1,5 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
+import Head from 'next/head';
 import tt from 'counterpart';
 import Header from '@/modules/Header';
 import LoginForm from '@/modules/LoginForm';
@@ -8,6 +8,14 @@ import { getOAuthSession, } from '@/server/oauthSession';
 
 export async function getServerSideProps({ req, res, }) {
     const session = await getOAuthSession(req, res);
+    if (session.account) {
+        return {
+            redirect: {
+                destination: '/',
+                permanent: false,
+            },
+        };
+    }
     return {
         props: {
             session,
@@ -34,10 +42,10 @@ class Login extends React.Component {
         const { session, oauthCfg, } = this.props;
         return (
             <div className='Signer_page'>
-                <Helmet>
+                <Head>
                     <meta charSet='utf-8' />
                     <title>{tt('g.sign_in')} | {tt('oauth_main_jsx.title')}</title>
-                </Helmet>
+                </Head>
                 <Header
                     logoUrl={'/'} />
                 {<LoginForm session={session} oauthCfg={oauthCfg} />}

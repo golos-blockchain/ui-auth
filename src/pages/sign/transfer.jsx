@@ -1,21 +1,51 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
 import tt from 'counterpart';
 import golos from 'golos-lib-js';
-import { Asset } from 'golos-lib-js/lib/utils';
+import { Asset, } from 'golos-lib-js/lib/utils';
 import { Formik, Field, ErrorMessage, } from 'formik';
+import Head from 'next/head';
+import LoadingIndicator from '@/elements/LoadingIndicator';
 import Header from '@/modules/Header';
 import LoginForm from '@/modules/LoginForm';
+import { getOAuthCfg, getChainData, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
 import { callApi, } from '@/utils/OAuthClient';
-import LoadingIndicator from '@/elements/LoadingIndicator';
 import validate_account_name from '@/utils/validate_account_name';
 
-export async function getServerSideProps({ req, res, }) {
+const uncompose = (query, initial) => {
+    initial.to = query.to || initial.to;
+    const amountSym = query.amount;
+    if (amountSym) {
+        const [ amount, sym, ] = amountSym.split(' ');
+        initial.amount = amount;
+        initial.sym = sym;
+    }
+    initial.memo = query.memo || initial.memo;
+};
+
+export async function getServerSideProps({ resolvedUrl, req, res, query, }) {
+    const action = resolvedUrl.split('?')[0].split('/')[2];
+    let chainData = null;
+    const session = await getOAuthSession(req, res);
+    let initial = null;
+    if (session.account) {
+        chainData = await getChainData(session.account, action);
+        initial = {
+            from: session.account,
+            to: '',
+            amount: '',
+            sym: Object.keys(chainData.balances)[0],
+            memo: '',
+        };
+        uncompose(query, initial);
+    }
     return {
         props: {
-            action: 'transfer',
-            session: await getOAuthSession(req, res),
+            action,
+            oauthCfg: getOAuthCfg(),
+            session,
+            chainData,
+            initial,
         },
     };
 }
@@ -25,42 +55,18 @@ class TransferDonate extends React.Component {
     };
 
     state = {
-        account: undefined,
-        initial: undefined,
     };
 
-    async componentDidMount() {
-        await golos.importNativeLib()
-        const { session, } = this.props;
-        if (session.oauth_disabled) {
-            window.location.href = '/register';
+    normalizeBalances = () => {
+        const { chainData, } = this.props;
+        if (!chainData || !golos.isNativeLibLoaded()) {
             return;
         }
-        if (!session.account) {
-            this.setState({
-                account: null,
-            });
-            return;
+        let balances = { ...chainData.balances, };
+        for (const sym in balances) {
+            balances[sym] = Asset(balances[sym]);
         }
-        const { action, } = this.props;
-        let res = await callApi('/api/oauth/_/balances/' + session.account + '/' + action);
-        res = await res.json();
-        for (const sym in res.balances) {
-            res.balances[sym] = Asset(res.balances[sym]);
-        }
-        let initial = {
-            from: session.account,
-            to: '',
-            amount: '',
-            sym: Object.keys(res.balances)[0],
-        };
-        this.uncompose(initial);
-        this.setState({
-            sign_endpoint: session.sign_endpoint,
-            account: session.account,
-            balances: res.balances,
-            initial,
-        });
+        return balances;
     }
 
     onToChange = (e, handle) => {
@@ -80,7 +86,7 @@ class TransferDonate extends React.Component {
     };
 
     useAllBalance = (e, sym, setFieldValue) => {
-        const { balances, } = this.state;
+        const balances = this.normalizeBalances();
         let balance = balances && sym && balances[sym];
         if (!balance) balance = Asset(0, 3, 'GOLOS');
 
@@ -101,7 +107,7 @@ class TransferDonate extends React.Component {
         } else if (parseFloat(values.amount) === 0) {
             errors.amount = tt('g.required');
         } else {
-            const { balances, } = this.state;
+            const balances = this.normalizeBalances();
             const { amount, sym, } = values;
             if (!isNaN(amount) && balances && sym && balances[sym]) {
                 let balance = balances[sym].amountFloat;
@@ -119,8 +125,9 @@ class TransferDonate extends React.Component {
             done: false,
         })
 
-        const { action, } = this.props;
-        const { sign_endpoint, balances, } = this.state;
+        const { action, session, } = this.props;
+        const { sign_endpoint, } = session;
+        const balances = this.normalizeBalances();
         const { from, to, sym, } = values;
 
         let amount = Asset(0, balances[sym].precision, sym);
@@ -160,22 +167,14 @@ class TransferDonate extends React.Component {
                 amount, memo, [], callback);
     };
 
-    uncompose = (initial) => {
-        const params = new URLSearchParams(window.location.search);
-        initial.to = params.get('to') || initial.to;
-        initial.memo = params.get('memo') || initial.memo;
-        const amountSym = params.get('amount');
-        if (amountSym) {
-            const [ amount, sym, ] = amountSym.split(' ');
-            initial.amount = amount;
-            initial.sym = sym;
-        }
-    };
-
     compose = (values) => {
+        if (!$GLS_IsBrowser) {
+            return;
+        }
+
         let url = window.location.href.split('?')[0];
 
-        const { balances, } = this.state;
+        const balances = this.normalizeBalances();
         const { sym, to, memo, } = values;
 
         if (!golos.isNativeLibLoaded() || !balances || !balances[sym])
@@ -197,20 +196,22 @@ class TransferDonate extends React.Component {
 
     render() {
         const { state, } = this;
-        const { done, account, balances, initial, } = state;
+        const { done, } = state;
+        const balances = this.normalizeBalances();
 
-        const { action, } = this.props;
+        const { action, oauthCfg, session, initial, } = this.props;
+        const { account, } = session;
         const donate = action === 'donate';
 
         if (account === null) {
             return (<div className='Signer_page'>
-                <Helmet>
+                <Head>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
-                </Helmet>
+                </Head>
                 <Header
                     logoUrl={'/'} />
-                <LoginForm />
+                <LoginForm oauthCfg={oauthCfg} session={session} />
             </div>);
         }
 
@@ -227,7 +228,7 @@ class TransferDonate extends React.Component {
             }
 
         let form = null;
-        if (initial) form = (<Formik
+        if (initial && balances) form = (<Formik
                 initialValues={initial}
                 validate={this.validate}
                 onSubmit={this._onSubmit}
@@ -281,7 +282,9 @@ class TransferDonate extends React.Component {
                             </Field>
                         </span>
                     </div>
-                    <a className='Balance' onClick={e => this.useAllBalance(e, values.sym, setFieldValue)}>{tt((donate ? 'oauth_donate' : 'oauth_transfer') + '.balance') + getBalance(values.sym)}</a>
+                    <a className='Balance' onClick={e => this.useAllBalance(e, values.sym, setFieldValue)}>
+                        {tt((donate ? 'oauth_donate' : 'oauth_transfer') + '.balance') + getBalance(values.sym)}
+                    </a>
                     <ErrorMessage name='amount' component='div' className='error' />
 
                     <Field
@@ -309,10 +312,10 @@ class TransferDonate extends React.Component {
             </Formik>);
 
         return (<div className='Signer_page'>
-            <Helmet>
+            <Head>
                 <meta charSet='utf-8' />
                 <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
-            </Helmet>
+            </Head>
             <Header
                 logoUrl={'/'}
                 account={account} />
@@ -322,7 +325,7 @@ class TransferDonate extends React.Component {
                     style={{ maxWidth: '30rem', margin: '0 auto' }}
                 >
                     <h3>{tt('oauth_main_jsx.' + action)}</h3>
-                    {!account && <LoadingIndicator type='circle' />}
+                    {(!account || !form) && <LoadingIndicator type='circle' />}
                     {form}
                 </div>
             </div>

@@ -1,16 +1,17 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
 import tt from 'counterpart';
 import golos from 'golos-lib-js';
 import { Asset } from 'golos-lib-js/lib/utils';
+import Head from 'next/head';
 import { Formik, Field, ErrorMessage, } from 'formik';
+import LoadingIndicator from '@/elements/LoadingIndicator';
 import Header from '@/modules/Header';
 import LoginForm from '@/modules/LoginForm';
+import { getOAuthCfg, getChainData, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
 import { callApi, } from '@/utils/OAuthClient';
-import LoadingIndicator from '@/elements/LoadingIndicator';
-import validate_account_name from '@/utils/validate_account_name';
 import { steemToVests, } from '@/utils/State';
+import validate_account_name from '@/utils/validate_account_name';
 
 function calcMaxInterest(cprops) {
     let maxInterestRate = 100;
@@ -25,10 +26,18 @@ function calcDefaultInterest(cprops) {
 }
 
 export async function getServerSideProps({ req, res, }) {
+    const action = 'delegate_vs';
+    let chainData = null;
+    const session = await getOAuthSession(req, res);
+    if (session.account) {
+        chainData = await getChainData(session.account, action);
+    }
     return {
         props: {
-            action: 'delegate_vs',
-            session: await getOAuthSession(req, res),
+            action,
+            oauthCfg: getOAuthCfg(),
+            session,
+            chainData,
         },
     };
 }
@@ -38,42 +47,35 @@ class Delegate extends React.Component {
     };
 
     state = {
-        account: undefined,
     };
 
     async componentDidMount() {
         await golos.importNativeLib()
-        const { session, } = this.props;
+        const { session, chainData, } = this.props;
         if (session.oauth_disabled) {
             window.location.href = '/register';
             return;
         }
-        if (!session.account) {
-            this.setState({
-                account: null,
-            });
+        if (!chainData) {
             return;
         }
-        const { action, } = this.props;
-        let res = await callApi('/api/oauth/_/balances/' + session.account + '/' + action);
-        res = await res.json();
-        for (const sym in res.balances) {
-            res.balances[sym] = Asset(res.balances[sym]);
+        let balances = { ...chainData.balances, };
+        for (const sym in balances) {
+            balances[sym] = Asset(balances[sym]);
         }
         let initial = {
             from: session.account,
             to: '',
             amount: '',
-            interest: calcDefaultInterest(res.cprops),
-            sym: Object.keys(res.balances)[0],
+            interest: calcDefaultInterest(chainData.cprops),
+            sym: Object.keys(balances)[0],
         };
         this.uncompose(initial);
         this.setState({
             sign_endpoint: session.sign_endpoint,
-            account: session.account,
-            balances: res.balances,
-            cprops: res.cprops,
-            gprops: res.gprops,
+            balances,
+            cprops: chainData.cprops,
+            gprops: chainData.gprops,
             initial,
         });
     }
@@ -231,19 +233,20 @@ class Delegate extends React.Component {
 
     render() {
         const { state, } = this;
-        const { done, account, balances, initial, } = state;
+        const { done, balances, initial, } = state;
 
-        const { action, } = this.props;
+        const { action, oauthCfg, session, } = this.props;
+        const { account, } = session;
 
         if (account === null) {
             return (<div className='Signer_page'>
-                <Helmet>
+                <Head>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
-                </Helmet>
+                </Head>
                 <Header
                     logoUrl={'/'} />
-                <LoginForm />
+                <LoginForm oauthCfg={oauthCfg} session={session} />
             </div>);
         }
 
@@ -344,10 +347,10 @@ class Delegate extends React.Component {
 
         return (
             <div className='Signer_page'>
-                <Helmet>
+                <Head>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.' + action)} | {tt('oauth_main_jsx.title')}</title>
-                </Helmet>
+                </Head>
                 <Header
                     logoUrl={'/'}
                     account={account} />

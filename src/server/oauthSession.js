@@ -22,7 +22,7 @@ export const oauthSessionMiddleware = async (req, res, next) => {
     next();
 };
 
-export const getOAuthSession = async (req, res, with_clients = true) => {
+export const getOAuthSession = async (req, res, with_clients = false) => {
     const session = await initOAuthSession(req, res);
     let data = {
         account: null,
@@ -35,12 +35,12 @@ export const getOAuthSession = async (req, res, with_clients = true) => {
     }
     const locale = session.locale || 'ru';
     data.account = session.account;
-    if (with_clients === 'true') {
-        data.clients = {};
+    if (with_clients) {
         for (const client in session.clients) {
             let clientMeta = clientFromConfig(client, locale);
             if (clientMeta) {
                 const clientS = session.clients[client];
+                clientMeta.authorized = true;
                 clientMeta.allowed = clientS.allowed;
                 data.clients[client] = clientMeta;
             }

@@ -6,7 +6,7 @@ import { oauthSessionMiddleware, } from '@/server/oauthSession';
 import { throwErr, onError, makeNoMatch, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
 import { checkCrossOrigin, forbidCorsOnProd, } from '@/server/origin';
-import { getClientByOrigin, clientFromConfig, oauthCors, hasAuthority, getMissingPerms, } from '@/server/oauth';
+import { getClientByOrigin, oauthCors, hasAuthority, getMissingPerms, } from '@/server/oauth';
 import { permissions, initOpsToPerms, } from '@/utils/oauthPermissions';
 import Tarantool from '@/server/tarantool';
 
@@ -29,23 +29,6 @@ const PendingStates = {
 handler = nc({ onError, onNoMatch, attachParams: true, })
     .use(oauthCors())
     .use(oauthSessionMiddleware)
-
-    .get('/api/oauth/_/get_client/:client/:locale?', async (req, res) => {
-        forbidCorsOnProd(req);
-        const { client, locale, } = req.params;
-        let clientMeta = clientFromConfig(client, locale);
-        if (req.session.clients && clientMeta) {
-            const clientS = req.session.clients[client];
-            if (clientS) {
-                clientMeta.authorized = true;
-                clientMeta.allowed = clientS.allowed;
-            }
-        }
-
-        res.json({
-            client: clientMeta,
-        });
-    })
 
     .post('/api/oauth/_/authorize', async (req, res) => {
         let params = req.body;
@@ -140,49 +123,6 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
         res.json({
             status: 'ok',
         });
-    })
-
-    .get('/api/oauth/_/balances/:account/:action', async (req, res) => {
-        forbidCorsOnProd(req);
-        const { action, account, } = req.params;
-        let data = {
-            balances: {
-                'GOLOS': '0.000 GOLOS',
-            },
-        };
-        if (action === 'transfer') {
-            data.balances['GBG'] = '0.000 GBG';
-        }
-
-        let acc = await golos.api.getAccountsAsync([account]);
-        if (!acc[0]) {
-            return;
-        }
-        acc = acc[0];
-
-        if (action === 'delegate_vs') {
-            let gprops = await golos.api.getDynamicGlobalPropertiesAsync();
-            acc.vesting_shares = (parseFloat(acc.vesting_shares) - parseFloat(acc.delegated_vesting_shares)).toFixed(6) + ' GESTS';
-            data.balances['GOLOS'] = golos.formatter.vestingGolos(acc, gprops).toFixed(3) + ' GOLOS';
-            data.cprops = await golos.api.getChainPropertiesAsync();
-            data.gprops = gprops;
-            res.json(data);
-            return;
-        }
-
-        data.balances['GOLOS'] = (action === 'donate') ? acc.tip_balance : acc.balance;
-        if (data.balances['GBG'])
-            data.balances['GBG'] = acc.sbd_balance;
-
-        let uia = await golos.api.getAccountsBalancesAsync([account]);
-        if (!uia[0]) {
-            return;
-        }
-        uia = uia[0];
-        for (const sym in uia) {
-            data.balances[sym] = (action === 'donate') ? uia[sym].tip_balance : uia[sym].balance;
-        }
-        res.json(data);
     })
 
     // Checks if user authorized in client at general

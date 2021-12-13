@@ -1,9 +1,9 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
 import PropTypes from 'prop-types';
 import tt from 'counterpart';
 import cn from 'classnames';
-import { PrivateKey } from 'golos-lib-js/lib/auth/ecc';
+import { PrivateKey, } from 'golos-lib-js/lib/auth/ecc';
+import Head from 'next/head';
 import ReCAPTCHA from 'react-google-recaptcha';
 import LoadingIndicator from '@/elements/LoadingIndicator';
 import Tooltip from '@/elements/Tooltip';
@@ -23,7 +23,7 @@ export async function getServerSideProps({ req, res, params, }) {
     await req.session.save();
     return {
         props: {
-            client: params.client || null, // NOTE: It is server-side = works only if opened in new tab
+            client: params.client || null,
             clientCfg,
         },
     };
@@ -91,13 +91,8 @@ class Register extends React.Component {
 
         console.log('Auth service version:', data.version);
 
-        let theme = 'blogs';
         const config = data.config;
         const cfgclient = config && config.client;
-        if (cfgclient) {
-            theme = cfgclient.id;
-        }
-        this._applyTheme('/themes/' + theme + '/theme.css');
 
         let afterRedirect = document.referrer;
         if (cfgclient && cfgclient.after_redirect) {
@@ -112,7 +107,6 @@ class Register extends React.Component {
         }
 
         this.setState({
-            loaded: true,
             config: data.config,
             oauth_disabled: data.oauth_disabled,
             afterRedirect,
@@ -211,16 +205,6 @@ class Register extends React.Component {
         window.open(`/api/reg/modal/yandex`, '_blank');
     };
 
-    _applyTheme = (href) => {
-        let link = document.createElement('link');
-        link.href = href;
-        link.type = 'text/css';
-        link.rel = 'stylesheet';
-        link.media = 'screen,print';
-
-        document.getElementsByTagName('head')[0].appendChild(link);
-    };
-
     _getConfig() {
         let title = tt('register_jsx.title_default');
         let favicon = null;
@@ -254,15 +238,23 @@ class Register extends React.Component {
         return { title, favicon, logo_title, logo_subtitle, logo, origin, };
     }
 
-    render() {
-        if (!this.state.loaded) {
-            return (
-                <div className='row'>
-                    <div className='column'>{tt('g.loading')}...</div>
-                </div>
-            );
+    _renderThemeCss = () => {
+        let data = this.props.clientCfg;
+        let theme = 'blogs';
+        const config = data.config;
+        const cfgclient = config && config.client;
+        if (cfgclient) {
+            theme = cfgclient.id;
         }
+        return (<link
+                href={'/themes/' + theme + '/theme.css'}
+                type='text/css'
+                rel='stylesheet'
+                media='screen,print'
+            />);
+    };
 
+    render() {
         const { title, favicon, logo_title, logo_subtitle, logo, origin, } = this._getConfig();
 
         const { loggedIn, offchainUser, serverBusy } = this.props;
@@ -351,11 +343,12 @@ class Register extends React.Component {
 
         return (
             <div>
-                <Helmet>
+                <Head>
                     <meta charSet='utf-8' />
                     <title>{title}</title>
                     <link rel='icon' type='image/png' href={favicon} sizes='16x16' />
-                </Helmet>
+                    {this._renderThemeCss()}
+                </Head>
                 <Header logo={logo} title={logo_title} subtitle={logo_subtitle} logoUrl={origin} topRight={oauth_disabled ? <span></span> : undefined} />
                 <div className='Register row'>
                     <div

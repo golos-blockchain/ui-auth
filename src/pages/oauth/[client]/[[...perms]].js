@@ -1,7 +1,7 @@
 import React from 'react';
-import { Helmet, } from 'react-helmet';
 import tt from 'counterpart';
 import golos from 'golos-lib-js';
+import Head from 'next/head';
 import Header from '@/modules/Header';
 import LoginForm from '@/modules/LoginForm';
 import PendingTx from '@/modules/PendingTx';
@@ -10,17 +10,20 @@ import { callApi, } from '@/utils/OAuthClient';
 import LoadingIndicator from '@/elements/LoadingIndicator';
 import { permissions,
     initOpsToPerms, } from '@/utils/oauthPermissions';
-import { getOAuthCfg, } from '@/server/oauth';
+import { getOAuthCfg, clientFromConfig, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
 
 const opsToPerms = initOpsToPerms(permissions);
 
 export async function getServerSideProps({ req, res, params, }) {
-    const session = await getOAuthSession(req, res);
+    const session = await getOAuthSession(req, res, true);
+    let clientObj = clientFromConfig(params.client, req.session.locale || 'ru');
+    clientObj = { ...clientObj, ...session.clients[params.client], };
     return {
         props: {
             session,
             client: params.client,
+            clientObj,
             requested: params.perms ? params.perms[0] : null,
             oauthCfg: getOAuthCfg(),
         },
@@ -55,10 +58,7 @@ class OAuth extends React.Component {
     }
 
     async componentDidMount() {
-        const { client, requested, } = this.props;
-        const res = await callApi('/api/oauth/_/get_client/' + client + '/' + tt.getLocale());
-        let clientObj = await res.json();
-        clientObj = clientObj.client;
+        const { client, clientObj, requested, } = this.props;
 
         const { session, } = this.props;
         if (session.oauth_disabled) {
@@ -68,7 +68,6 @@ class OAuth extends React.Component {
         const params = new URLSearchParams(window.location.search);
         const opsHash = params.get('ops_hash');
         this.setState({
-            account: session.account || null,
             client: clientObj || null,
             error: (clientObj ? null : tt('oauth_request.app_not_exist_ID', {
                     ID: client,
@@ -77,7 +76,6 @@ class OAuth extends React.Component {
             pending: opsHash,
             requested: this.normalizeRequested(clientObj,
                 opsHash ? null : requested),
-            sign_endpoint: session.sign_endpoint,
         });
         if (opsHash)
             this.loadPendingTx(opsHash);
@@ -164,7 +162,8 @@ class OAuth extends React.Component {
     }
 
     _signPending = async () => {
-        const { sign_endpoint, } = this.state;
+        const { session, } = this.props;
+        const { sign_endpoint, } = session;
         golos.config.set('websocket', sign_endpoint);
         golos.config.set('credentials', 'include');
         const { pendingTx, } = this.state;
@@ -261,18 +260,20 @@ class OAuth extends React.Component {
 
     render() {
         const { state, } = this;
-        const { account, client, clientId, submitting, done,
+        const { client, clientId, submitting, done,
             pending, pendingTx,
             requested,
             error, } = state;
+        const { session, } = this.props;
+        const { account, } = session;
 
         if (!account || client === undefined || submitting || (pending && !pendingTx && !error)) {
             const { session, oauthCfg, } = this.props;
             return (<div className='Signer_page'>
-                <Helmet>
+                <Head>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_request.title')} | {tt('oauth_main_jsx.title')}</title>
-                </Helmet>
+                </Head>
                 <Header 
                     logoUrl={'/'} />
                 {(account === null) && <LoginForm session={session} oauthCfg={oauthCfg} />}
@@ -284,10 +285,10 @@ class OAuth extends React.Component {
 
         return (
             <div className='Signer_page'>
-                <Helmet>
+                <Head>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_request.title')} | {tt('oauth_main_jsx.title')}</title>
-                </Helmet>
+                </Head>
                 <Header
                     logoUrl={'/'}
                     account={account} />

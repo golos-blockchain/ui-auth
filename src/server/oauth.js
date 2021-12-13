@@ -1,6 +1,6 @@
 import config from 'config';
 import cors from 'cors';
-
+import golos from 'golos-lib-js';
 import { getOrigin, } from '@/server/origin';
 
 function oauthCors(opts = {}) {
@@ -117,6 +117,51 @@ function getOAuthCfg() {
     };
 }
 
+async function getChainData(account, action = 'transfer') {
+    let data = {
+        balances: {
+            'GOLOS': '0.000 GOLOS',
+        },
+    };
+    if (action === 'transfer') {
+        data.balances['GBG'] = '0.000 GBG';
+    }
+
+    const { ws_connection_client, chain_id, } = getOAuthCfg();
+    golos.config.set('websocket', ws_connection_client);
+    if (chain_id) golos.config.set('chain_id', chain_id);
+
+    let acc = await golos.api.getAccountsAsync([account]);
+    if (!acc[0]) {
+        return;
+    }
+    acc = acc[0];
+
+    if (action === 'delegate_vs') {
+        let gprops = await golos.api.getDynamicGlobalPropertiesAsync();
+        acc.vesting_shares = (parseFloat(acc.vesting_shares) - parseFloat(acc.delegated_vesting_shares)).toFixed(6) + ' GESTS';
+        data.balances['GOLOS'] = golos.formatter.vestingGolos(acc, gprops).toFixed(3) + ' GOLOS';
+        data.cprops = await golos.api.getChainPropertiesAsync();
+        data.gprops = gprops;
+        return data;
+    }
+
+    data.balances['GOLOS'] = (action === 'donate') ? acc.tip_balance : acc.balance;
+    if (data.balances['GBG'])
+        data.balances['GBG'] = acc.sbd_balance;
+
+    let uia = await golos.api.getAccountsBalancesAsync([account]);
+    if (!uia[0]) {
+        return data;
+    }
+    uia = uia[0];
+    for (const sym in uia) {
+        data.balances[sym] = (action === 'donate') ? uia[sym].tip_balance : uia[sym].balance;
+    }
+    return data;
+}
+
+
 module.exports = {
     oauthCors,
     getClientByOrigin,
@@ -125,4 +170,5 @@ module.exports = {
     getRequiredPerms,
     getMissingPerms,
     getOAuthCfg,
+    getChainData,
 }

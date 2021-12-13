@@ -1,5 +1,7 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
+import Head from 'next/head';
+import Link from 'next/link';
+import { withRouter, } from 'next/router';
 import tt from 'counterpart';
 import RemoveAuthority from '@/elements/RemoveAuthority';
 import Header from '@/modules/Header';
@@ -9,7 +11,7 @@ import { getOAuthSession, } from '@/server/oauthSession';
 export async function getServerSideProps({ req, res, }) {
     return {
         props: {
-            session: await getOAuthSession(req, res),
+            session: await getOAuthSession(req, res, true),
         },
     };
 }
@@ -19,9 +21,6 @@ class Index extends React.Component {
     };
 
     state = {
-        account: null,
-        clients: {},
-        loading: true,
     };
 
     componentDidMount() {
@@ -29,42 +28,36 @@ class Index extends React.Component {
         if (session.oauth_disabled) {
             window.location.href = '/register';
             return;
-        }
-        this.setState({
-            loading: false,
-            account: session.account,
-            clients: session.clients || this.state.clients,
-            service_account: session.service_account,
-            sign_endpoint: session.sign_endpoint,
-        });
+        } // TODO: invalid, move to server side
     }
 
     async forbid(client) {
         let res = await callApi('/api/oauth/logout/' + client);
         await res.json();
-        window.location.reload();
+        const { router, } = this.props;
+        router.replace(router.asPath);
     };
 
     render() {
-        const { account, clients, loading,
-            service_account, sign_endpoint, } = this.state;
-        if (loading) {
-            return null;
-        }
+        const { session, } = this.props;
+        const { account, clients,
+            service_account, sign_endpoint, } = session;
         let actions = [];
         for (let action of [
             'transfer', 'donate', 'delegate_vs']) {
-            actions.push(<a href={`/sign/${action}`}>
-                <button className='button hollow' style={{ marginRight: '10px', }}>
-                    {tt(`oauth_main_jsx.${action}`)}
-                </button>
-            </a>);
+            actions.push(<Link href={`/sign/${action}`}>
+                    <a>
+                        <button className='button hollow' style={{ marginRight: '10px', }}>
+                            {tt(`oauth_main_jsx.${action}`)}
+                        </button>
+                    </a>
+                </Link>);
         }
         let clientList = [];
         for (const [key, obj] of Object.entries(clients)) {
             clientList.push(<tr key={key}>
                     <td>
-                        <img src={getHost() + obj.logo} alt={obj.title} />
+                        <img src={obj.logo} alt={obj.title} />
                     </td>
                     <td>
                         {obj.title}
@@ -74,11 +67,11 @@ class Index extends React.Component {
                         {obj.allowActive ? <b className='active'>active</b> : null}
                     </td>
                     <td>
-                        <a href={'/oauth/' + key + '?from_main=1'}>
+                        <Link href={'/oauth/' + key + '?from_main=1'}>
                             <button className='button hollow'>
                                 {tt('g.permissions')}
                             </button>
-                        </a>
+                        </Link>
                         {<button className='button alert' onClick={() => this.forbid(key)}>
                             {tt('g.logout')}
                         </button>}
@@ -92,10 +85,10 @@ class Index extends React.Component {
         }
         return (
             <div className='Signer_page'>
-                <Helmet>
+                <Head>
                     <meta charSet='utf-8' />
                     <title>{tt('oauth_main_jsx.title')}</title>
-                </Helmet>
+                </Head>
                 <Header
                     logoUrl={'/'}
                     account={account} />
@@ -121,4 +114,4 @@ class Index extends React.Component {
     }
 }
 
-export default Index;
+export default withRouter(Index);

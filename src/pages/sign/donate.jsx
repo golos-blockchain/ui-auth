@@ -1,13 +1,7 @@
-import TransferDonate from '@/pages/sign/transfer';
-import { getOAuthSession, } from '@/server/oauthSession';
+import TransferDonate, { getServerSideProps as getSSP, } from '@/pages/sign/transfer';
 
-export async function getServerSideProps({ req, res, }) {
-    return {
-        props: {
-            action: 'donate',
-            session: await getOAuthSession(req, res),
-        },
-    };
+export async function getServerSideProps(ctx) {
+    return getSSP(ctx);
 }
 
 export default TransferDonate;

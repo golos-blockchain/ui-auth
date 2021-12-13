@@ -1,15 +1,11 @@
 import React from 'react';
+import Link from 'next/link';
 import LocaleSelect from '@/elements/LocaleSelect';
 import AccountMenu from '@/elements/AccountMenu';
 
 class Header extends React.Component {
     static propTypes = {
     };
-
-    onLogoClick = (e) => {
-        const { logoUrl, } = this.props;
-        window.location.href = logoUrl;
-    }
 
     render() {
         const { title, titleUppercase, subtitle, logoUrl, 
@@ -28,13 +24,21 @@ class Header extends React.Component {
                         <div className='columns'>
                             <ul className='menu'>
                                 <li className='Header__top-logo'>
-                                    <img src={logo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />
-                                    {sublogo && <img className='sublogo' src={sublogo} alt='' onClick={this.onLogoClick} style={{ cursor: 'pointer', }} />}
+                                    <Link href={logoUrl}>
+                                        <img src={logo} alt='' style={{ cursor: 'pointer', }} />
+                                    </Link>
+                                    {sublogo ? <Link href={logoUrl}>
+                                        <img className='sublogo' src={sublogo} alt='' style={{ cursor: 'pointer', }} />
+                                        </Link> : null}
                                 </li>
                                 <li className={'Header__top-title show-for-large noPrint ' + (titleUppercase === false ? '': 'uppercase')}>
-                                    <a href={logoUrl}>
-                                        {title}
-                                        <span className='subtitle'>{subtitle}</span>
+                                    <a>
+                                        {title ? <Link href={logoUrl}>
+                                            {title}
+                                        </Link> : null}
+                                        <Link href={logoUrl}>
+                                            <span className='subtitle'>{subtitle}</span>
+                                        </Link>
                                     </a>
                                 </li>
                             </ul>

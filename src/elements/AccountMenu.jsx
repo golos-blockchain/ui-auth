@@ -1,5 +1,7 @@
 import React from 'react';
 import tt from 'counterpart';
+import Link from 'next/link';
+import { withRouter, } from 'next/router';
 import { callApi, } from '@/utils/OAuthClient';
 
 class AccountMenu extends React.Component {
@@ -8,7 +10,8 @@ class AccountMenu extends React.Component {
 
     onLogout = async () => {
         await callApi('/api/oauth/_/logout', {});
-        window.location.reload();
+        const { router, } = this.props;
+        router.replace(router.asPath);
     };
 
     render() {
@@ -16,21 +19,21 @@ class AccountMenu extends React.Component {
         const isRegister = $GLS_IsBrowser && window.location.pathname.includes('/register');
         if (!account)
             return (<div className='AccountMenu columns shrink'>
-                {!isRegister && <a href='/register'>
+                {!isRegister && <Link href='/register'>
                     <button
                         className='button hollow'>
                         {tt('g.sign_up')}
                     </button>
-                </a>}
-                <a href='/login'>
+                </Link>}
+                <Link href='/login'>
                     <button
                         className='button hollow'>
                         {tt('g.sign_in')}
                     </button>
-                </a>
+                </Link>
             </div>);
         return (<div className='AccountMenu columns shrink'>
-                <a href='/'>{account}</a>
+                <Link href='/'>{account}</Link>
                 <button
                     className='button hollow'
                     onClick={this.onLogout}>{tt('g.logout')}</button>
@@ -38,4 +41,4 @@ class AccountMenu extends React.Component {
     }
 }
 
-export default AccountMenu;
+export default withRouter(AccountMenu);
