@@ -218,14 +218,14 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
 
         await Tarantool.instance('tarantool').update('users', 'primary', [user[0][0]], [['=', 4, true]])
 
+        req.session.user = user[0][0];
+        await req.session.save();
+
         state.step = 'verified';
         state.status = 'ok';
         res.json({
             ...state,
         });
-
-        req.session.user = user[0][0];
-        await req.session.save();
     })
 
     .get('/api/reg/check_soc_auth', (req, res) => {
