@@ -85,9 +85,9 @@ export function getClientCfg(req, params) {
 
     let data = {
         config: cfg,
-        oauth_disabled: !config.has('oauth'),
+        oauthEnabled: config.has('oauth'),
         version: getVersion(),
-        // TODO: oauth_disabled, locale_was_already_set
+        // TODO: locale_was_already_set
     };
 
     return data;

@@ -26,7 +26,11 @@ const uncompose = (query, initial) => {
 export async function getServerSideProps({ resolvedUrl, req, res, query, }) {
     const action = resolvedUrl.split('?')[0].split('/')[2];
     let chainData = null;
-    const session = await getOAuthSession(req, res);
+    const holder = await getOAuthSession(req, res);
+    if (!holder.oauthEnabled) {
+        return await holder.clearAndRedirect();
+    }
+    const session = holder.session();
     let initial = null;
     if (session.account) {
         chainData = await getChainData(session.account, action);
@@ -125,8 +129,8 @@ class TransferDonate extends React.Component {
             done: false,
         })
 
-        const { action, session, } = this.props;
-        const { sign_endpoint, } = session;
+        const { action, session, oauthCfg, } = this.props;
+        const { sign_endpoint, } = oauthCfg;
         const balances = this.normalizeBalances();
         const { from, to, sym, } = values;
 

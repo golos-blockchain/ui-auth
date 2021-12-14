@@ -16,7 +16,11 @@ import { getOAuthSession, } from '@/server/oauthSession';
 const opsToPerms = initOpsToPerms(permissions);
 
 export async function getServerSideProps({ req, res, params, }) {
-    const session = await getOAuthSession(req, res, true);
+    const holder = await getOAuthSession(req, res, true);
+    if (!holder.oauthEnabled) {
+        return await holder.clearAndRedirect();
+    }
+    const session = holder.session();
     let clientObj = clientFromConfig(params.client, req.session.locale || 'ru');
     clientObj = { ...clientObj, ...session.clients[params.client], };
     return {
@@ -60,11 +64,6 @@ class OAuth extends React.Component {
     async componentDidMount() {
         const { client, clientObj, requested, } = this.props;
 
-        const { session, } = this.props;
-        if (session.oauth_disabled) {
-            window.location.href = '/register';
-            return;
-        }
         const params = new URLSearchParams(window.location.search);
         const opsHash = params.get('ops_hash');
         this.setState({
@@ -162,8 +161,8 @@ class OAuth extends React.Component {
     }
 
     _signPending = async () => {
-        const { session, } = this.props;
-        const { sign_endpoint, } = session;
+        const { session, oauthCfg, } = this.props;
+        const { sign_endpoint, } = oauthCfg;
         golos.config.set('websocket', sign_endpoint);
         golos.config.set('credentials', 'include');
         const { pendingTx, } = this.state;

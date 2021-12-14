@@ -28,7 +28,11 @@ function calcDefaultInterest(cprops) {
 export async function getServerSideProps({ req, res, }) {
     const action = 'delegate_vs';
     let chainData = null;
-    const session = await getOAuthSession(req, res);
+    const holder = await getOAuthSession(req, res);
+    if (!holder.oauthEnabled) {
+        return await holder.clearAndRedirect();
+    }
+    const session = holder.session();
     if (session.account) {
         chainData = await getChainData(session.account, action);
     }
@@ -51,11 +55,7 @@ class Delegate extends React.Component {
 
     async componentDidMount() {
         await golos.importNativeLib()
-        const { session, chainData, } = this.props;
-        if (session.oauth_disabled) {
-            window.location.href = '/register';
-            return;
-        }
+        const { session, chainData, oauthCfg, } = this.props;
         if (!chainData) {
             return;
         }
@@ -72,7 +72,7 @@ class Delegate extends React.Component {
         };
         this.uncompose(initial);
         this.setState({
-            sign_endpoint: session.sign_endpoint,
+            sign_endpoint: oauthCfg.sign_endpoint,
             balances,
             cprops: chainData.cprops,
             gprops: chainData.gprops,

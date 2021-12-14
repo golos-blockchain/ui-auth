@@ -109,11 +109,16 @@ function getMissingPerms(req, opsToPerms, clientName, op) {
     return { allowed, required, };
 }
 
+function oauthEnabled() {
+    return config.has('oauth');
+}
+
 function getOAuthCfg() {
     return {
         ws_connection_client: config.get('oauth.ws_connection_client'),
         chain_id: config.has('oauth.chain_id') && config.get('oauth.chain_id'),
         service_account: config.get('oauth.service_account.name'),
+        sign_endpoint: new URL('/api/oauth/sign', config.get('oauth.rest_api')).toString(),
     };
 }
 
@@ -169,6 +174,7 @@ module.exports = {
     hasAuthority,
     getRequiredPerms,
     getMissingPerms,
+    oauthEnabled,
     getOAuthCfg,
     getChainData,
 }

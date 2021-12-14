@@ -24,7 +24,7 @@ class LoginForm extends React.Component {
             golos.config.set('chain_id', oauthCfg.chain_id);
         }
         this.setState({
-            service_account: session.service_account,
+            service_account: oauthCfg.service_account,
         });
     }
 

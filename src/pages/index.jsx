@@ -6,12 +6,18 @@ import tt from 'counterpart';
 import RemoveAuthority from '@/elements/RemoveAuthority';
 import Header from '@/modules/Header';
 import { callApi, } from '@/utils/OAuthClient';
+import { getOAuthCfg, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
 
 export async function getServerSideProps({ req, res, }) {
+    const holder = await getOAuthSession(req, res, true);
+    if (!holder.oauthEnabled) {
+        return await holder.clearAndRedirect();
+    }
     return {
         props: {
-            session: await getOAuthSession(req, res, true),
+            session: holder.session(),
+            oauthCfg: getOAuthCfg(),
         },
     };
 }
@@ -23,14 +29,6 @@ class Index extends React.Component {
     state = {
     };
 
-    componentDidMount() {
-        const { session, } = this.props;
-        if (session.oauth_disabled) {
-            window.location.href = '/register';
-            return;
-        } // TODO: invalid, move to server side
-    }
-
     async forbid(client) {
         let res = await callApi('/api/oauth/logout/' + client);
         await res.json();
@@ -39,9 +37,9 @@ class Index extends React.Component {
     };
 
     render() {
-        const { session, } = this.props;
-        const { account, clients,
-            service_account, sign_endpoint, } = session;
+        const { session, oauthCfg, } = this.props;
+        const { account, clients, } = session;
+        const { service_account, sign_endpoint, } = oauthCfg;
         let actions = [];
         for (let action of [
             'transfer', 'donate', 'delegate_vs']) {

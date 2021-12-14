@@ -77,14 +77,23 @@ async function slowDownLimitReq(req, limit, slowDown, suffix) {
     }
 }
 
-function checkCSRF(ctx, csrf) {
-    try { ctx.assertCSRF(csrf); } catch (e) {
-        ctx.status = 403;
-        ctx.body = 'invalid csrf token';
-        console.log('-- invalid csrf token -->', ctx.request.method, ctx.request.url, ctx.session.uid);
-        return false;
+function redirect(url, status = false) {
+    let redir = {
+        destination: url,
+    };
+    if (status) {
+        if (status === true) {
+            redir.permanent = true;
+        } else {
+            redir.statusCode = status;
+        }
+    } else {
+        redir.permanent = false;
     }
-    return true;
+    const ret = {
+        redirect: redir,
+    };
+    return ret;
 }
 
 module.exports = {
@@ -96,5 +105,5 @@ module.exports = {
     getRemoteIp,
     rateLimitReq,
     slowDownLimitReq,
-    checkCSRF,
+    redirect,
 };

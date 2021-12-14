@@ -7,7 +7,8 @@ import { initGolos, } from '@/server/initGolos';
 import { rateLimitReq, getRemoteIp, noBodyParser, bodyString, } from '@/server/misc';
 import { oauthSessionMiddleware, } from '@/server/oauthSession';
 import { oauthCors, getClientByOrigin,
-    getMissingPerms, getRequiredPerms, } from '@/server/oauth';
+    getMissingPerms, getRequiredPerms,
+    oauthEnabled, } from '@/server/oauth';
 import { checkCrossOrigin, } from '@/server/origin';
 import { permissions, initOpsToPerms, } from '@/utils/oauthPermissions';
 
@@ -21,8 +22,12 @@ const opsToPerms = initOpsToPerms(permissions);
 
 handler = nc({ onError, onNoMatch, })
     .use(oauthCors())
-    .use(oauthSessionMiddleware)
-    .post('/api/oauth/sign', async (req, res) => {
+    .use(oauthSessionMiddleware);
+
+if (oauthEnabled()) {
+    handler =
+
+    handler.post('/api/oauth/sign', async (req, res) => {
         res.setHeader('Content-Type', 'application/json');
 
         let jrpc = new JsonRPC();
@@ -151,6 +156,7 @@ handler = nc({ onError, onNoMatch, })
             console.error('/sign', rawBody);
         }
     })
+} // END: if (oauthEnabled())
 
 export default handler;
 

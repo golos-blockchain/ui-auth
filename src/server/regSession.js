@@ -1,7 +1,7 @@
 import { withIronSessionApiRoute, } from 'iron-session/next';
 import config from 'config';
 
-export const regSessionOpts = {
+const regSessionOpts = {
     cookieName: config.get('session_cookie_key'),
     password: config.get('server_session_secret'),
     cookieOptions: {

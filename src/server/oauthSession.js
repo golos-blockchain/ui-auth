@@ -1,35 +1,68 @@
 import { withIronSessionApiRoute, } from 'iron-session/next';
 import config from 'config';
-import { clientFromConfig, } from '@/server/oauth';
+import { throwErr, } from '@/server/error';
+import { redirect, } from '@/server/misc';
+import { clientFromConfig, oauthEnabled, } from '@/server/oauth';
 
-export const oauthSessionOpts = {
-    cookieName: 'X-OAuth-ISession',
-    password: config.get('oauth.server_session_secret'),
-    cookieOptions: {
-        sameSite: 'none',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 1000 * 3600 * 24 * 60,
-    },
+const makeSessionOpts = () => {
+    let password = 'destroying_destroying_destroying';
+    if (oauthEnabled()) {
+        password = config.get('oauth.server_session_secret');
+    }
+    return {
+        cookieName: 'X-OAuth-ISession',
+        password,
+        cookieOptions: {
+            sameSite: 'none',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 1000 * 3600 * 24 * 60,
+        },
+    };
 };
 
 export const initOAuthSession = async (req, res) => {
-    await (withIronSessionApiRoute((req_, res_) => {}, oauthSessionOpts))(req, res);
+    const opts = makeSessionOpts();
+    await (withIronSessionApiRoute((req_, res_) => {}, opts))(req, res);
     return req.session;
 };
 
 export const oauthSessionMiddleware = async (req, res, next) => {
     await initOAuthSession(req, res);
-    next();
+    if (oauthEnabled()) {
+        next();
+    } else {
+        req.session.destroy();
+        throwErr(req, 404, 'Not Found');
+    }
 };
+
+class OAuthSessionHolder {
+    account = null;
+    clients = {};
+    oauthEnabled = true;
+    constructor(req) {
+        this.req = req;
+    }
+    clearAndRedirect = async () => {
+        this.req.session.destroy();
+        return redirect('/register');
+    }
+    session = () => {
+        const { account, clients, } = this;
+        return {
+            account,
+            clients,
+        };
+    }
+}
 
 export const getOAuthSession = async (req, res, with_clients = false) => {
     const session = await initOAuthSession(req, res);
-    let data = {
-        account: null,
-        clients: {},
-        sign_endpoint: new URL('/api/oauth/sign', config.get('oauth.rest_api')).toString(),
-        service_account: config.get('oauth.service_account.name'),
-    };
+    let data = new OAuthSessionHolder(req);
+    if (!oauthEnabled()) {
+        data.oauthEnabled = false;
+        return data;
+    }
     if (!session.account) {
         return data;
     }

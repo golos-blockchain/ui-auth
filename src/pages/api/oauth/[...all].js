@@ -7,7 +7,7 @@ import { throwErr, onError, makeNoMatch, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
 import { noBodyParser, bodyParams, } from '@/server/misc';
 import { checkCrossOrigin, forbidCorsOnProd, } from '@/server/origin';
-import { getClientByOrigin, oauthCors, hasAuthority, getMissingPerms, } from '@/server/oauth';
+import { getClientByOrigin, oauthCors, hasAuthority, getMissingPerms, oauthEnabled, } from '@/server/oauth';
 import { permissions, initOpsToPerms, } from '@/utils/oauthPermissions';
 import Tarantool from '@/server/tarantool';
 
@@ -29,9 +29,12 @@ const PendingStates = {
 
 handler = nc({ onError, onNoMatch, attachParams: true, })
     .use(oauthCors())
-    .use(oauthSessionMiddleware)
+    .use(oauthSessionMiddleware);
 
-    .post('/api/oauth/_/authorize', async (req, res) => {
+if (oauthEnabled()) {
+    handler =
+
+    handler.post('/api/oauth/_/authorize', async (req, res) => {
         let params = await bodyParams(req);
         const { account, signatures } = params;
         if (!account) {
@@ -338,7 +341,8 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
             }
         }
         throwErr(req, 400, ['Pending tx not found']);
-    });
+    })
+} // END: if (oauthEnabled())
 
 export default handler;
 

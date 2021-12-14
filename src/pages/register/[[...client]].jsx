@@ -108,7 +108,7 @@ class Register extends React.Component {
 
         this.setState({
             config: data.config,
-            oauth_disabled: data.oauth_disabled,
+            oauthEnabled: data.oauthEnabled,
             afterRedirect,
         }, () => {
             console.log('afterRedirect is', this.state.afterRedirect);
@@ -271,7 +271,7 @@ class Register extends React.Component {
             submitting,
             cryptographyFailure,
             allBoxChecked,
-            oauth_disabled,
+            oauthEnabled,
         } = state;
 
         if (serverBusy) {
@@ -349,7 +349,7 @@ class Register extends React.Component {
                     <link rel='icon' type='image/png' href={favicon} sizes='16x16' />
                     {this._renderThemeCss()}
                 </Head>
-                <Header logo={logo} title={logo_title} subtitle={logo_subtitle} logoUrl={origin} topRight={oauth_disabled ? <span></span> : undefined} />
+                <Header logo={logo} title={logo_title} subtitle={logo_subtitle} logoUrl={origin} topRight={oauthEnabled ? undefined : <span></span>} />
                 <div className='Register row'>
                     <div
                         className='column'
