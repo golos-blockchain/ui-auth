@@ -65,7 +65,7 @@ class Index extends React.Component {
                         {obj.allowActive ? <b className='active'>active</b> : null}
                     </td>
                     <td>
-                        <Link href={'/oauth/' + key + '?from_main=1'}>
+                        <Link href={'/oauth/' + key + '?from_main=1'} passHref>
                             <button className='button hollow'>
                                 {tt('g.permissions')}
                             </button>
