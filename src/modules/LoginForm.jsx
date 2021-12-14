@@ -2,9 +2,9 @@ import React from 'react';
 import tt from 'counterpart';
 import golos from 'golos-lib-js';
 import { PublicKey, } from 'golos-lib-js/lib/auth/ecc';
-import { withRouter, } from 'next/router';
 import LoadingIndicator from '@/elements/LoadingIndicator';
 import { callApi, } from '@/utils/OAuthClient';
+import { withRouterHelpers, } from '@/utils/routing';
 
 class LoginForm extends React.Component {
     static propTypes = {
@@ -142,8 +142,8 @@ class LoginForm extends React.Component {
                     throw new Error('Cannot set authority|' + res.error);
                 }
             }
-            const { router, } = this.props;
-            router.replace(router.asPath);
+            const { routerHelpers, } = this.props;
+            routerHelpers.refresh();
         } else {
             if (!res.has_authority) {
                 await this.setAuthority(name, auths.active);
@@ -157,8 +157,8 @@ class LoginForm extends React.Component {
                     throw new Error('Cannot set authority|' + res.error);
                 }
             }
-            const { router, } = this.props;
-            router.replace(router.asPath);
+            const { routerHelpers, } = this.props;
+            routerHelpers.refresh();
         }
     };
 
@@ -229,4 +229,4 @@ class LoginForm extends React.Component {
     }
 }
 
-export default withRouter(LoginForm);
+export default withRouterHelpers(LoginForm);

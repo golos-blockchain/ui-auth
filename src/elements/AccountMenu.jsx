@@ -1,8 +1,8 @@
 import React from 'react';
 import tt from 'counterpart';
 import Link from 'next/link';
-import { withRouter, } from 'next/router';
 import { callApi, } from '@/utils/OAuthClient';
+import { withRouterHelpers, } from '@/utils/routing';
 
 class AccountMenu extends React.Component {
     static propTypes = {
@@ -10,8 +10,8 @@ class AccountMenu extends React.Component {
 
     onLogout = async () => {
         await callApi('/api/oauth/_/logout', {});
-        const { router, } = this.props;
-        router.replace(router.asPath);
+        const { routerHelpers, } = this.props;
+        routerHelpers.refresh();
     };
 
     render() {
@@ -41,4 +41,4 @@ class AccountMenu extends React.Component {
     }
 }
 
-export default withRouter(AccountMenu);
+export default withRouterHelpers(AccountMenu);

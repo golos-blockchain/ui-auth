@@ -1,11 +1,11 @@
 import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { withRouter, } from 'next/router';
 import tt from 'counterpart';
 import RemoveAuthority from '@/elements/RemoveAuthority';
 import Header from '@/modules/Header';
 import { callApi, } from '@/utils/OAuthClient';
+import { withRouterHelpers, } from '@/utils/routing';
 import { getOAuthCfg, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
 
@@ -32,8 +32,8 @@ class Index extends React.Component {
     async forbid(client) {
         let res = await callApi('/api/oauth/logout/' + client);
         await res.json();
-        const { router, } = this.props;
-        router.replace(router.asPath);
+        const { routerHelpers, } = this.props;
+        routerHelpers.refresh()
     };
 
     render() {
@@ -112,4 +112,4 @@ class Index extends React.Component {
     }
 }
 
-export default withRouter(Index);
+export default withRouterHelpers(Index);
