@@ -96,10 +96,13 @@ export const addModalRoutes = (handler) => {
     }))
 
     .get('/api/reg/modal/success', (req, res) => {
-        res.status(200).send('<script>window.close();</script>');
+        res.status(200);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send('<script>window.close();</script>');
     })
     .get('/api/reg/modal/failure', (req, res) => {
-        res.status(200).json({
+        res.status(200);
+        res.json({
             status: 'cannot_authorize',
             statusText: 'Cannot register - cannot authorize with social network.',
         });

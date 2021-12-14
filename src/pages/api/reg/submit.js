@@ -5,7 +5,8 @@ import querystring from 'querystring';
 import { api, broadcast, } from 'golos-lib-js';
 import { Signature, } from 'golos-lib-js/lib/auth/ecc';
 import { throwErr, onError, makeNoMatch, } from '@/server/error';
-import { rateLimitReq, getRemoteIp, } from '@/server/misc';
+import { rateLimitReq, getRemoteIp,
+        noBodyParser, bodyParams, } from '@/server/misc';
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 
@@ -22,8 +23,7 @@ handler = nc({ onError, onNoMatch, })
 
         rateLimitReq(req, state);
 
-        const params = req.body;
-        const account = typeof(params) === 'string' ? JSON.parse(params) : params;
+        const account = await bodyParams(req);
 
         //if (!checkCSRF(req, account.csrf)) return;
         console.log('-- /submit -->', req.session.uid, req.session.user, account);
@@ -218,6 +218,10 @@ handler = nc({ onError, onNoMatch, })
     })
 
 export default handler;
+
+export {
+    noBodyParser as config,
+};
 
 /**
  @arg signingKey {string|PrivateKey} - WIF or PrivateKey object

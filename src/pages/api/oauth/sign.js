@@ -1,11 +1,10 @@
 import nc from 'next-connect';
-import _config from 'config';
-import { buffer, } from 'micro';
+import config from 'config';
 import golos from 'golos-lib-js';
 import JsonRPC from 'simple-jsonrpc-js';
 import { throwErr, onError, makeNoMatch, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
-import { rateLimitReq, getRemoteIp, } from '@/server/misc';
+import { rateLimitReq, getRemoteIp, noBodyParser, bodyString, } from '@/server/misc';
 import { oauthSessionMiddleware, } from '@/server/oauthSession';
 import { oauthCors, getClientByOrigin,
     getMissingPerms, getRequiredPerms, } from '@/server/oauth';
@@ -18,8 +17,6 @@ let handler;
 
 const onNoMatch = makeNoMatch(() => handler);
 
-{
-const config = _config;
 const opsToPerms = initOpsToPerms(permissions);
 
 handler = nc({ onError, onNoMatch, })
@@ -147,19 +144,16 @@ handler = nc({ onError, onNoMatch, })
         };
 
         try {
-            const rawBody = (await buffer(req)).toString();
+            const rawBody = await bodyString(req);
 
             await jrpc.messageHandler(rawBody);
         } catch (err) {
             console.error('/sign', rawBody);
         }
     })
-}
 
 export default handler;
 
-export const config = {
-    api: {
-        bodyParser: false,
-    },
+export {
+    noBodyParser as config,
 };

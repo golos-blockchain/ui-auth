@@ -5,6 +5,7 @@ import config from 'config';
 import { oauthSessionMiddleware, } from '@/server/oauthSession';
 import { throwErr, onError, makeNoMatch, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
+import { noBodyParser, bodyParams, } from '@/server/misc';
 import { checkCrossOrigin, forbidCorsOnProd, } from '@/server/origin';
 import { getClientByOrigin, oauthCors, hasAuthority, getMissingPerms, } from '@/server/oauth';
 import { permissions, initOpsToPerms, } from '@/utils/oauthPermissions';
@@ -31,8 +32,7 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
     .use(oauthSessionMiddleware)
 
     .post('/api/oauth/_/authorize', async (req, res) => {
-        let params = req.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
+        let params = await bodyParams(req);
         const { account, signatures } = params;
         if (!account) {
             throwErr(req, 400, ['account is required']);
@@ -142,8 +142,7 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
     })
 
     .post('/api/oauth/_/permissions', async (req, res) => {
-        let params = req.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
+        let params = await bodyParams(req);
         const { client, allowed, } = params;
         if (!client)
             throwErr(req, 400, ['client is required']);
@@ -180,12 +179,6 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
         });
     })
 
-    .get('/api/oauth/tab', async (req, res) => {
-        req.session.ran = Math.random();
-        await req.session.save();
-        console.log('SAVED: ', req.session.clients, req.session.ran)
-    })
-
     // Checks if specific transaction allowed
     .post('/api/oauth/check/:client', async (req, res) => {
         if (!checkCrossOrigin(req)) {
@@ -200,8 +193,7 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
         let requiredPerms = new Set();
         let errorMsg = '';
 
-        let params = req.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
+        let params = await bodyParams(req);
         const { tx, } = params;
 
         for (const op of tx.operations) {
@@ -231,8 +223,7 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
     .post('/api/oauth/prepare_pending', async (req, res) => {
         let clientFound = getClientByOrigin(req);
 
-        let params = req.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
+        let params = await bodyParams(req);
         const { tx, txHash, } = params;
         if (!tx) throwErr(req, 400, ['tx is required']);
         if (!txHash) throwErr(req, 400, ['txHash is required']);
@@ -303,8 +294,7 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
 
         const { client, txHash, } = req.params;
 
-        let params = req.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
+        let params = await bodyParams(req);
         const { err, } = params;
         const result = params.res;
         // validation
@@ -351,3 +341,7 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
     });
 
 export default handler;
+
+export {
+    noBodyParser as config,
+};

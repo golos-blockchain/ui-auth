@@ -6,7 +6,8 @@ import { hash, } from 'golos-lib-js/lib/auth/ecc';
 import config from 'config';
 import { throwErr, onError, makeNoMatch, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
-import { getVersion, rateLimitReq, getRemoteIp, } from '@/server/misc';
+import { getVersion, rateLimitReq, getRemoteIp,
+        noBodyParser, bodyParams, } from '@/server/misc';
 import passport, { addModalRoutes, } from '@/server/passport';
 import { obtainUid, getClientCfg, } from '@/server/reg';
 import { regSessionMiddleware, } from '@/server/regSession';
@@ -69,12 +70,7 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
             throwErr(req, 503, ['registration_with_email_disabled'], null, state);
         }
 
-        if (!req.body) {
-            throwErr(req, 400, ['request_should_have_json_body'], null, state);
-        }
-
-        let params = req.body;
-        if (typeof(params) === 'string') params = JSON.parse(params);
+        let params = await bodyParams(req, false);
 
         const { email } = params;
 
@@ -193,22 +189,11 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
 
         rateLimitReq(req, state, 10);
 
-        if (!req.body) {
-            throwErr(req, 400, ['request_should_have_json_body'], null, state);
-        }
-
-        const body = req.body;
         let params = {};
 
         let error = false
 
-        if (typeof body === 'string') {
-            try {
-                params = JSON.parse(body);
-            } catch (e) {}
-        } else {
-            params = body;
-        }
+        params = await bodyParams(req, false);
 
         const { confirmation_code, email, } = params;
 
@@ -264,17 +249,10 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
 
         rateLimitReq(req, state);
 
-        const body = req.body;
         let params = {};
         let error = false
 
-        if (typeof body === 'string') {
-            try {
-                params = JSON.parse(body);
-            } catch (e) {}
-        } else {
-            params = body;
-        }
+        params = await bodyParams(req, false);
 
         const { invite_key } = params
 
@@ -326,3 +304,7 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
 handler = addModalRoutes(handler);
 
 export default handler;
+
+export {
+    noBodyParser as config,
+};

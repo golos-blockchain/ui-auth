@@ -1,3 +1,4 @@
+import { buffer, } from 'micro';
 import git from 'git-rev-sync';
 import { throwErr, } from '@/server/error';
 
@@ -12,9 +13,25 @@ function getVersion() {
     }
 }
 
-function bodyParams(ctx) {
-    let params = ctx.request.body;
-    if (typeof(params) === 'string') params = JSON.parse(params);
+const noBodyParser = {
+    api: {
+        bodyParser: false,
+    },
+};
+
+async function bodyString(req) {
+    return (await buffer(req)).toString();
+}
+
+async function bodyParams(req, throwInvalidJSON = true) {
+    let params = await bodyString(req);
+    try {
+        params = JSON.parse(params);
+    } catch (err) {
+        if (throwInvalidJSON)
+            throwErr(req, 400, err.message, err);
+        params = {};
+    }
     return params;
 }
 
@@ -72,6 +89,8 @@ function checkCSRF(ctx, csrf) {
 
 module.exports = {
     getVersion,
+    noBodyParser,
+    bodyString,
     bodyParams,
     emailRegex,
     getRemoteIp,
