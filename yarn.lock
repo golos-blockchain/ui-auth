@@ -3834,7 +3834,7 @@ nan@^2.13.2:
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.15.0.tgz#3f34a473ff18e15c1b5626b62903b5ad6e665fee"
   integrity sha512-8ZtvEnA2c5aYCZYd1cvgdnU6cqwixRoYg70xPLWUws5ORTa/lnw+u4amixRS/Ac5U5mQVgp9pnlSUnbNWFaWZQ==
 
-nanoid@^3.1.23, nanoid@^3.1.25:
+nanoid@^3.1.23:
   version "3.1.30"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.1.30.tgz#63f93cc548d2a113dc5dfbc63bfa09e2b9b64362"
   integrity sha512-zJpuPDwOv8D2zq2WRoMe1HsfZthVewpel9CAvTfc/2mBD1uUT/agc5f7GHGWXlYkFvi1mVxe4IjvP2HNrop7nQ==
@@ -3855,14 +3855,6 @@ next-secure-headers@^2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/next-secure-headers/-/next-secure-headers-2.2.0.tgz#d4eb1b00a424f811c1455d1288990a4aad3026af"
   integrity sha512-C7OfZ9JdSJyYMz2ZBMI/WwNbt0qNjlFWX9afUp8nEUzbz6ez3JbeopdyxSZJZJAzVLIAfyk6n73rFpd4e22jRg==
-
-next-session@4.0.4:
-  version "4.0.4"
-  resolved "https://registry.yarnpkg.com/next-session/-/next-session-4.0.4.tgz#aa351ac745beb1f163e9ef9dab4f0bdf4f053474"
-  integrity sha512-wMj3rg9+RomQGGxNNKUvkIgVvz+IZiW2v4IsLLshtgFUGoMI+svDYOo9P6Gja/aFjfDzRGPoBIJ4UmJeaQD9Hw==
-  dependencies:
-    cookie "^0.4.1"
-    nanoid "^3.1.25"
 
 next@12.0.7:
   version "12.0.7"
