@@ -1,8 +1,11 @@
 import { withIronSessionApiRoute, } from 'iron-session/next';
 import config from 'config';
+import clearOldCookies from '@/server/clearOldCookies';
 import { throwErr, } from '@/server/error';
 import { redirect, } from '@/server/misc';
 import { clientFromConfig, oauthEnabled, } from '@/server/oauth';
+
+export const cookieName = 'X-OAuth-ISession';
 
 const makeSessionOpts = () => {
     let password = 'destroying_destroying_destroying';
@@ -10,7 +13,7 @@ const makeSessionOpts = () => {
         password = config.get('oauth.server_session_secret');
     }
     return {
-        cookieName: 'X-OAuth-ISession',
+        cookieName,
         password,
         cookieOptions: {
             sameSite: 'none',
@@ -28,6 +31,7 @@ export const initOAuthSession = async (req, res) => {
 
 export const oauthSessionMiddleware = async (req, res, next) => {
     await initOAuthSession(req, res);
+    await clearOldCookies(req, res);
     if (oauthEnabled()) {
         next();
     } else {

@@ -1,8 +1,11 @@
 import { withIronSessionApiRoute, } from 'iron-session/next';
 import config from 'config';
+import clearOldCookies from '@/server/clearOldCookies';
+
+export const cookieName = config.get('session_cookie_key');
 
 const regSessionOpts = {
-    cookieName: config.get('session_cookie_key'),
+    cookieName,
     password: config.get('server_session_secret'),
     cookieOptions: {
         sameSite: 'none',
@@ -18,5 +21,6 @@ export const initRegSession = async (req, res) => {
 
 export const regSessionMiddleware = async (req, res, next) => {
     await initRegSession(req, res);
+    await clearOldCookies(req, res);
     next();
 };
