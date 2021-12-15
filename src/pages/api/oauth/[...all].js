@@ -100,9 +100,18 @@ if (oauthEnabled()) {
 
     .post('/api/oauth/_/logout', async (req, res) => {
         forbidCorsOnProd(req);
+        const account = req.session.account;
         delete req.session.account;
         delete req.session.clients;
         await req.session.save();
+        try {
+            await Tarantool.instance('tarantool')
+            .call('server_tokens_logout_all',
+                account,
+            );
+        } catch (err) {
+            console.error('ERROR: cannot logout all server tokens', err);
+        }
         res.json({
             status: 'ok',
         });
@@ -121,6 +130,14 @@ if (oauthEnabled()) {
         }
         delete req.session.clients[client];
         await req.session.save();
+        try {
+            await Tarantool.instance('tarantool')
+            .call('server_tokens_logout',
+                req.session.account, client,
+            );
+        } catch (err) {
+            console.error('ERROR: cannot logout server token', err);
+        }
         res.json({
             status: 'ok',
         });
@@ -138,6 +155,19 @@ if (oauthEnabled()) {
             const { allowed, } = req.session.clients[client];
             data.allowed = allowed;
             data.account = req.session.account;
+
+            try {
+                let token = await Tarantool.instance('tarantool')
+                .call('server_tokens_get',
+                    req.session.account, client,
+                );
+                token = token[0][0];
+                if (token) {
+                    data.server_token = token.token;
+                }
+            } catch (err) {
+                console.error('ERROR: cannot get server token', err);
+            }
         }
         res.json(data);
     })
@@ -175,6 +205,16 @@ if (oauthEnabled()) {
             allowed,
         };
         await req.session.save();
+
+        const token = secureRandom.randomBuffer(16).toString('hex');
+        try {
+            await Tarantool.instance('tarantool')
+            .call('server_tokens_create',
+                req.session.account, client, token,
+            );
+        } catch (err) {
+            console.error('ERROR: cannot add server token', err);
+        }
         res.json({
             status: 'ok',
         });
@@ -339,6 +379,24 @@ if (oauthEnabled()) {
             }
         }
         throwErr(req, 400, ['Pending tx not found']);
+    })
+
+    .get('/api/oauth/check_server_token/:token', async (req, res) => {
+        const { token, } = req.params;
+        let tokenData;
+        try {
+            tokenData = await Tarantool.instance('tarantool')
+            .call('server_tokens_check',
+                token,
+            );
+            tokenData = tokenData[0][0];
+        } catch (err) {
+            console.error('ERROR: cannot add server token', err);
+        }
+        res.json({
+            status: 'ok',
+            ...tokenData,
+        });
     })
 } // END: if (oauthEnabled())
 
