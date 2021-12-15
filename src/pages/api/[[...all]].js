@@ -65,12 +65,12 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
                 challenges.set(authSession, login_challenge);
             }
 
-            res.setHeader('X-Auth-Session', authSession);
-            res.json({
-                login_challenge,
-                already_authorized: alreadyAuthorized,
-                status: 'ok',
-            });
+            res.setHeader('X-Auth-Session', authSession)
+                .json({
+                    login_challenge,
+                    already_authorized: alreadyAuthorized,
+                    status: 'ok',
+                });
         } else { // step 2
             if (!login_challenge) {
                 throwErr(req, 400, 'no login_challenge in session');
@@ -110,7 +110,6 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
             challenges.delete(authSession);
             sessions.set(authSession, account);
 
-            res.setHeader('X-Auth-Session', authSession);
             let data = {
                 status: 'ok',
             };
@@ -123,7 +122,8 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
                 console.error('server auth: cannot obtain guid: ', e.message);
             }
 
-            res.json(data);
+            res.setHeader('X-Auth-Session', authSession)
+                .json(data);
         }
     })
 

@@ -4,7 +4,7 @@ export function authCors(opts = {}) {
     return cors({
         origin: true,
         credentials: true,
-        exposeHeaders: ['X-Auth-Session'],
+        exposedHeaders: ['X-Auth-Session'],
         ...opts,
     })
 }
