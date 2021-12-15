@@ -1,1 +1,1 @@
-# ui-auth
+# Примеры приложений с Golos OAuth
