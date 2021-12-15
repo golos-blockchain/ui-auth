@@ -1,7 +1,13 @@
 const Tarantool = require('../tarantool');
+const config = require('config');
+
+const isProd = global.isProd;
 
 async function clearOAuthPendings() {
-    console.log('clearOAuthPendings');
+    if (!config.has('oauth')) {
+        return;
+    }
+    console.log('clearOAuthPendings', isProd ? '' : 'in dev mode');
     try {
         await Tarantool.instance('tarantool')
             .call('oauth_cleanup',);
@@ -9,7 +15,7 @@ async function clearOAuthPendings() {
         console.error(err);
     }
     setTimeout(clearOAuthPendings,
-        (process.env.NODE_ENV === 'production' ? 300 : 10) * 1000);
+        (isProd ? 300 : 10) * 1000);
 }
 
 module.exports = clearOAuthPendings;

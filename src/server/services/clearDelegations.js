@@ -2,7 +2,7 @@ const config = require('config');
 const golos = require('golos-lib-js');
 const { initGolos, } = require('../initGolos');
 
-const isProd = (process.env.NODE_ENV === 'production');
+const isProd = global.isProd;
 const CHECK_INTERVAL = isProd ? 43200 : 15;
 
 const acc = config.get('registrar.account');
@@ -37,7 +37,7 @@ async function tryUndelegate(obj) {
 };
 
 async function clearDelegations() {
-    console.log('clearDelegations - starting loop');
+    console.log('clearDelegations - starting loop', isProd ? '' : 'in dev mode');
     let res = [];
     let from = '';
     let recalled = 0;

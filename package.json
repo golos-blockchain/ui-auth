@@ -42,8 +42,8 @@
   },
   "scripts": {
     "build": "next build",
-    "dev": "NODE_OPTIONS='--require ./src/service-worker.js' NODE_CONFIG_ENV=oauth next dev",
-    "production": "NODE_OPTIONS='--require ./src/service-worker.js' NODE_CONFIG_ENV=oauth next start",
+    "dev": "NODE_OPTIONS='--require ./src/server/services/dev.js' NODE_CONFIG_ENV=oauth next dev",
+    "production": "NODE_OPTIONS='--require ./src/server/services/prod.js' NODE_CONFIG_ENV=oauth next start",
     "test": "cypress open"
   },
   "browserslist": {
