@@ -39,7 +39,7 @@ HTTP-статус дублируется также в поле `"httpStatus"`, 
 Рекомендуется использовать сервис Golos Auth & Registration Service. Он является своеобразной оберткой для нод БЧ Golos, так что вы можете отправлять на него транзакции, но пользователю при этом не придется вводить ключ или пароль в вашем приложении.
 
 **Вот примеры, как использовать OAuth в приложениях на jQuery или React:**  
-https://github.com/golos-blockchain/ui-auth/tree/master/oauth_examples
+https://github.com/golos-blockchain/ui-auth/tree/examples/
 
 **Но прежде чем начать работу**, вам необходимо обратиться к нашему сообществу для добавления вашего клиента (т.е. приложения, сайта) в список Golos Auth & Registration Service. Необходимо предоставить:
 - идентификатор клиента (например: hotdog-website)
@@ -126,7 +126,7 @@ https://github.com/golos-blockchain/notify/blob/master/dataserver/api/auth.js
 ## Регистрация 
 
 Примером работы с API служит UI нашего же сервиса (используется Fetch и async-await, UI на React, для ReCaptcha используется https://www.npmjs.com/package/react-google-recaptcha):
-https://github.com/golos-blockchain/ui-auth/blob/master/src/CreateAccount.jsx
+https://github.com/golos-blockchain/ui-auth/blob/master/src/pages/register/%5B%5B...client%5D%5D.jsx
 
 ### Обработка ошибок
 
