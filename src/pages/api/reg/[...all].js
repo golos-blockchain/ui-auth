@@ -50,7 +50,11 @@ handler = nc({ onError, onNoMatch, attachParams: true, })
     })
 
     .get('/api/reg/get_client/:client?', async (req, res) => {
-        let cfg = getClientCfg(req, req.params);
+        const { locale, } = req.query;
+        if (locale && locale !== 'ru' && locale !== 'en') {
+            throwErr(req, 400, ['Locale must be ru or en']);
+        }
+        let cfg = getClientCfg(req, req.params, locale);
         res.json({
             status: 'ok',
             version: cfg.version,

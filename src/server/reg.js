@@ -22,10 +22,19 @@ export function obtainUid(req) {
     return session.uid;
 }
 
-export function getClientCfg(req, params) {
+export function getClientCfg(req, params, locale = '') {
     const { session, } = req;
     checkSession(session, 'getClientCfg');
-    let locale = session.locale || 'ru';
+    let localeAlreadySet = null;
+    if (locale) {
+        localeAlreadySet = false;
+        if (locale === 'ru' || locale === 'en') {
+            if (req.session.locale === locale) {
+                localeAlreadySet = true;
+            }
+            req.session.locale = locale;
+        }
+    }
 
     let cfg = {};
 
@@ -87,8 +96,11 @@ export function getClientCfg(req, params) {
         config: cfg,
         oauthEnabled: config.has('oauth'),
         version: getVersion(),
-        // TODO: locale_was_already_set
     };
+
+    if (localeAlreadySet !== null) {
+        data.locale_was_already_set = localeAlreadySet;
+    }
 
     return data;
 }

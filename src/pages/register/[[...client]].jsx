@@ -18,7 +18,7 @@ import { initRegSession, } from '@/server/regSession';
 
 export async function getServerSideProps({ req, res, params, }) {
     await initRegSession(req, res);
-    let clientCfg = getClientCfg(req, params);
+    let clientCfg = getClientCfg(req, params, tt.getLocale());
     obtainUid(req);
     await req.session.save();
     return {
