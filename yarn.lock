@@ -2568,13 +2568,10 @@ formik@^2.2.9:
     tiny-warning "^1.0.2"
     tslib "^1.10.0"
 
-foundation-sites@~6.2.4:
-  version "6.2.4"
-  resolved "https://registry.yarnpkg.com/foundation-sites/-/foundation-sites-6.2.4.tgz#554746c9f3d505bd5646b4dcc03f8a9941e67f7b"
-  integrity sha1-VUdGyfPVBb1WRrTcwD+KmUHmf3s=
-  dependencies:
-    jquery "^2.2.0"
-    what-input "^2.0.0"
+foundation-sites@~6.7.4:
+  version "6.7.4"
+  resolved "https://registry.yarnpkg.com/foundation-sites/-/foundation-sites-6.7.4.tgz#495ddb3b7014ae33df3bf7cc1f9fe74b2cfd572e"
+  integrity sha512-2QPaZJ0Od0DyklhQyKC3zPbr8AAUXSkr1scZJrQTgj/KTLresuCgUBfi7ft32NlOWhuqVXisjOgTE8N5EPS3cg==
 
 fs-extra@^9.1.0:
   version "9.1.0"
@@ -3378,11 +3375,6 @@ jest-worker@27.0.0-next.5:
     "@types/node" "*"
     merge-stream "^2.0.0"
     supports-color "^8.0.0"
-
-jquery@^2.2.0:
-  version "2.2.4"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-2.2.4.tgz#2c89d6889b5eac522a7eea32c14521559c6cbf02"
-  integrity sha1-LInWiJterFIqfuoywUUhVZxsvwI=
 
 js-base64@^2.1.8:
   version "2.6.4"
@@ -4502,14 +4494,7 @@ progress@^2.0.0:
   resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.3.tgz#7e8cf8d8f5b8f239c1bc68beb4eb78567d572ef8"
   integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
 
-prop-types-extra@1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/prop-types-extra/-/prop-types-extra-1.0.1.tgz#a57bd4810e82d27a3ff4317ecc1b4ad005f79a82"
-  integrity sha1-pXvUgQ6C0no/9DF+zBtK0AX3moI=
-  dependencies:
-    warning "^3.0.0"
-
-prop-types-extra@^1.0.1:
+prop-types-extra@^1.0.1, prop-types-extra@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/prop-types-extra/-/prop-types-extra-1.1.1.tgz#58c3b74cbfbb95d304625975aa2f0848329a010b"
   integrity sha512-59+AHNnHYCdiC+vMwY52WmvP5dM3QLeoumYuEyceQDi9aEhtwN9zIQ2ZNo25sMyXnbh32h+P1ezDsUpUH3JAew==
@@ -4517,7 +4502,7 @@ prop-types-extra@^1.0.1:
     react-is "^16.3.2"
     warning "^4.0.0"
 
-prop-types@^15.5.0, prop-types@^15.5.10, prop-types@^15.6.0, prop-types@^15.6.2, prop-types@^15.7.2:
+prop-types@^15.5.0, prop-types@^15.5.10, prop-types@^15.6.2, prop-types@^15.7.2:
   version "15.7.2"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.7.2.tgz#52c41e75b8c87e72b9d9360e0206b99dcbffa6c5"
   integrity sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==
@@ -4667,20 +4652,20 @@ react-fast-compare@^2.0.1:
   resolved "https://registry.yarnpkg.com/react-fast-compare/-/react-fast-compare-2.0.4.tgz#e84b4d455b0fec113e0402c329352715196f81f9"
   integrity sha512-suNP+J1VU1MWFKcyt7RtjiSWUjvidmQSlqu+eHslq+342xCbGTYmC0mEhPCOHxlW0CywylOC1u2DFAT+bv4dBw==
 
-"react-foundation-components@git+https://github.com/beautyfree/react-foundation-components.git#e91f61a4312d7e67bed50b055ee3fb90d82645d6":
+"react-foundation-components@git+https://github.com/golos-blockchain/react-foundation-components.git#5dbfb800aff45988c57bb7d09c1c235a8b49b418":
   version "0.14.0"
-  resolved "git+https://github.com/beautyfree/react-foundation-components.git#e91f61a4312d7e67bed50b055ee3fb90d82645d6"
+  resolved "git+https://github.com/golos-blockchain/react-foundation-components.git#5dbfb800aff45988c57bb7d09c1c235a8b49b418"
   dependencies:
     babel-runtime "^6.25.0"
     classnames "^2.2.5"
     dom-helpers "^2.4.0"
-    foundation-sites "~6.2.4"
-    lodash "^4.17.4"
-    prop-types "^15.6.0"
-    prop-types-extra "1.0.1"
+    foundation-sites "~6.7.4"
+    lodash "^4.17.21"
+    prop-types "^15.7.2"
+    prop-types-extra "^1.1.1"
     react-overlays "^0.7.0"
     uncontrollable "^5.1.0"
-    underscore.string "^3.3.4"
+    underscore.string "^3.3.5"
 
 react-google-recaptcha@^2.1.0:
   version "2.1.0"
@@ -5702,7 +5687,7 @@ uncontrollable@^5.1.0:
   dependencies:
     invariant "^2.2.4"
 
-underscore.string@^3.3.4:
+underscore.string@^3.3.5:
   version "3.3.5"
   resolved "https://registry.yarnpkg.com/underscore.string/-/underscore.string-3.3.5.tgz#fc2ad255b8bd309e239cbc5816fd23a9b7ea4023"
   integrity sha512-g+dpmgn+XBneLmXXo+sGlW5xQEt4ErkS3mgeN2GFbremYeMBSJKr9Wf2KJplQVaiPY/f7FN6atosWYNm9ovrYg==
@@ -5854,11 +5839,6 @@ webidl-conversions@^4.0.2:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-4.0.2.tgz#a855980b1f0b6b359ba1d5d9fb39ae941faa63ad"
   integrity sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==
-
-what-input@^2.0.0:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/what-input/-/what-input-2.1.1.tgz#86b6e0338d670a9fd936892b8f5115c4fe0d1d0b"
-  integrity sha1-hrbgM41nCp/ZNokrj1EVxP4NHQs=
 
 whatwg-url@^7.0.0:
   version "7.1.0"
