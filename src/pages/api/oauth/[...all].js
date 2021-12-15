@@ -25,8 +25,6 @@ const PendingStates = {
     FORBIDDEN: 3,
 };
 
-// TODO: add clearPending
-
 handler = nc({ onError, onNoMatch, attachParams: true, })
     .use(oauthCors())
     .use(oauthSessionMiddleware);

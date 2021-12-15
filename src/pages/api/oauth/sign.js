@@ -28,8 +28,6 @@ if (oauthEnabled()) {
     handler =
 
     handler.post('/api/oauth/sign', async (req, res) => {
-        res.setHeader('Content-Type', 'application/json');
-
         let jrpc = new JsonRPC();
 
         const INVALID_REQUEST = -32600;
@@ -145,7 +143,8 @@ if (oauthEnabled()) {
         });
 
         jrpc.toStream = (message) => {
-            res.send(message);
+            res.setHeader('Content-Type', 'application/json')
+                .send(message);
         };
 
         try {

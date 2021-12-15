@@ -11,10 +11,3 @@ export async function callApi(apiName, data) {
     let res = await fetch(apiName, request);
     return res;
 }
-
-// TODO: remove?
-export async function getSession(withClients = false) {
-    let res = await callApi('/api/oauth/_/get_session/' + withClients + '/ru');
-    res = await res.json();
-    return res;
-}
