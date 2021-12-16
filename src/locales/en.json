@@ -12,7 +12,7 @@
     "end_with_a_letter": "end with a letter.",
     "use_caution_sending_to_this_account": "Use caution sending to this account."
   },
-  "createaccount_jsx": {
+  "register_jsx": {
     "title_APP_NAME": "Sign up for %(APP_NAME)s",
     "title_default": "Sign up for Golos Blockchain",
     "support": "Any problems? Contact us in ",

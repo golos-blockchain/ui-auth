@@ -1,11 +1,3 @@
-export function getHost() {
-    const { location, } = window;
-    if (process.env.NODE_ENV === 'development') {
-        return location.protocol + '//'+ location.hostname + ':8080';
-    }
-    return location.origin;
-}
-
 export async function callApi(apiName, data) {
     let request = {
         method: data ? 'post' : 'get',
@@ -16,12 +8,6 @@ export async function callApi(apiName, data) {
         },
         body: data ? JSON.stringify(data) : undefined,
     };
-    let res = await fetch(getHost() + apiName, request);
-    return res;
-}
-
-export async function getSession(withClients = false) {
-    let res = await callApi('/api/oauth/_/get_session/' + withClients + '/ru');
-    res = await res.json();
+    let res = await fetch(apiName, request);
     return res;
 }

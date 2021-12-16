@@ -15,7 +15,7 @@
     "delegation": "75000.000000 GESTS"
   },
   "server_session_secret": "exiKdyF+IwRIXJDmtGIl4vWUz4i3eVSISpfZoeYc0s4=",
-  "session_cookie_key": "gls.session",
+  "session_cookie_key": "X-Reg-ISession",
   "session_key": "golos",
   "ws_connection_client": "https://apibeta.golos.today",
   "ws_connection_server": "wss://apibeta.golos.today/ws",

@@ -1,6 +1,7 @@
 require 'locks'
 require 'guid'
 require 'oauth'
+require 'server_tokens'
 
 io.output():setvbuf('no')
 
@@ -87,4 +88,5 @@ box.once('bootstrap', function()
     guid:create_index('primary', {type = 'tree', parts = {1, 'STR'}})
 
     oauth_bootstrap()
+    server_tokens_bootstrap()
 end)
