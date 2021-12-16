@@ -26,4 +26,13 @@ export default {
             },
         ];
     },
+
+    async rewrites() {
+        return [
+            {
+                source: '/:client/register',
+                destination: '/register/:client',
+            },
+        ]
+    },
 }
