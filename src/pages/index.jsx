@@ -43,7 +43,7 @@ class Index extends React.Component {
         let actions = [];
         for (let action of [
             'transfer', 'donate', 'delegate_vs']) {
-            actions.push(<Link href={`/sign/${action}`}>
+            actions.push(<Link href={`/sign/${action}`} key={action}>
                     <a>
                         <button className='button hollow' style={{ marginRight: '10px', }}>
                             {tt(`oauth_main_jsx.${action}`)}
@@ -52,13 +52,24 @@ class Index extends React.Component {
                 </Link>);
         }
         let clientList = [];
+        const linkifyClient = (domNode, url) => {
+            return (<a href={url} target='_blank' rel='noopener noreferrer nofollow'>
+                    {domNode}
+                </a>);
+        };
         for (const [key, obj] of Object.entries(clients)) {
+            let objLogo = (<img src={obj.logo} alt={obj.title} />);
+            let objTitle = obj.title;
+            if (obj.url) {
+                objLogo = linkifyClient(objLogo, obj.url);
+                objTitle = linkifyClient(objTitle, obj.url);
+            }
             clientList.push(<tr key={key}>
                     <td>
-                        <img src={obj.logo} alt={obj.title} />
+                        {objLogo}
                     </td>
                     <td>
-                        {obj.title}
+                        {objTitle}
                     </td>
                     <td>
                         {obj.allowPosting ? <b className='posting'>posting</b> : null}

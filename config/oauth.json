@@ -27,6 +27,7 @@
       },
       "localhost": {
         "origins": ["localhost"],
+        "url": "http://localhost",
         "logo": "localfile.svg",
         "ru": {
           "title": "Тест localhost",
@@ -35,6 +36,7 @@
       },
       "fakeorigin": {
         "origins": ["fakeorigin.com"],
+        "url": "http://localhost",
         "logo": "fakeorigin.svg",
         "ru": {
           "title": "Тест file:///",
@@ -47,6 +49,7 @@
       },
       "proposals": {
         "origins": ["localhost"],
+        "url": "http://localhost",
         "logo": "proposals.svg",
         "ru": {
           "title": "Тест пропозалов на localhost",
