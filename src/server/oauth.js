@@ -40,6 +40,7 @@ function clientFromConfig(client, locale) {
     if (clientCfg) {
         clientMeta = {};
         clientMeta.logo = '/oauth_clients/' + clientCfg.logo;
+        clientMeta.url = clientCfg.url || null;
         let loc = 'ru';
         if (locale && clientCfg[locale])
             loc = locale;
