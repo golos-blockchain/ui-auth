@@ -9,6 +9,7 @@ import Header from '@/modules/Header';
 import LoginForm from '@/modules/LoginForm';
 import { getOAuthCfg, getChainData, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
+import { withSecureHeadersSSR, } from '@/server/security';
 import { callApi, } from '@/utils/OAuthClient';
 import validate_account_name from '@/utils/validate_account_name';
 
@@ -23,7 +24,7 @@ const uncompose = (query, initial) => {
     initial.memo = query.memo || initial.memo;
 };
 
-export async function getServerSideProps({ resolvedUrl, req, res, query, }) {
+export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, resolvedUrl, query, }) => {
     const action = resolvedUrl.split('?')[0].split('/')[2];
     let chainData = null;
     const holder = await getOAuthSession(req, res);
@@ -52,7 +53,7 @@ export async function getServerSideProps({ resolvedUrl, req, res, query, }) {
             initial,
         },
     };
-}
+})
 
 class TransferDonate extends React.Component {
     static propTypes = {

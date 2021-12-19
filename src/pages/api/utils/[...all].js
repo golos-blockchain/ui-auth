@@ -1,17 +1,13 @@
-import nc from 'next-connect';
 import golos from 'golos-lib-js';
 import config from 'config';
-import { throwErr, onError, makeNoMatch, } from '@/server/error';
+import nextConnect from '@/server/nextConnect';
+import { throwErr, } from '@/server/error';
 import { slowDownLimitReq, } from '@/server/misc';
 import { initGolos, } from '@/server/initGolos';
 
 initGolos();
 
-let handler;
-
-const onNoMatch = makeNoMatch(() => handler);
-
-handler = nc({ onError, onNoMatch, attachParams: true, })
+let handler = nextConnect({ attachParams: true, })
 
     .get('/api/utils/account_exists/:name', async (req, res) => {
         await slowDownLimitReq(req, 0.5, 1, 'account_exists');

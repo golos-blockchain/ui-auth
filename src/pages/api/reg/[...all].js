@@ -1,10 +1,10 @@
-import nc from 'next-connect';
-import secureRandom from 'secure-random';
+import config from 'config';
 import gmailSend from 'gmail-send';
 import golos from 'golos-lib-js';
 import { hash, } from 'golos-lib-js/lib/auth/ecc';
-import config from 'config';
-import { throwErr, onError, makeNoMatch, } from '@/server/error';
+import secureRandom from 'secure-random';
+import nextConnect from '@/server/nextConnect';
+import { throwErr, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
 import { getVersion, rateLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
@@ -15,11 +15,7 @@ import Tarantool from '@/server/tarantool';
 
 initGolos();
 
-let handler;
-
-const onNoMatch = makeNoMatch(() => handler);
-
-handler = nc({ onError, onNoMatch, attachParams: true, })
+let handler = nextConnect({ attachParams: true, })
     .use(regSessionMiddleware)
     .use(passport.initialize())
     .use(passport.session())

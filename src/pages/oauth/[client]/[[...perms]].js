@@ -12,10 +12,11 @@ import { permissions,
     initOpsToPerms, } from '@/utils/oauthPermissions';
 import { getOAuthCfg, clientFromConfig, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
+import { withSecureHeadersSSR, } from '@/server/security';
 
 const opsToPerms = initOpsToPerms(permissions);
 
-export async function getServerSideProps({ req, res, params, }) {
+export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, params, }) => {
     const holder = await getOAuthSession(req, res, true);
     if (!holder.oauthEnabled) {
         return await holder.clearAndRedirect();
@@ -32,7 +33,7 @@ export async function getServerSideProps({ req, res, params, }) {
             oauthCfg: getOAuthCfg(),
         },
     };
-}
+})
 
 class OAuth extends React.Component {
     static propTypes = {

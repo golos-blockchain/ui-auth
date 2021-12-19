@@ -1,9 +1,9 @@
-import nc from 'next-connect';
 import golos from 'golos-lib-js';
 import { Signature, hash, PublicKey, } from 'golos-lib-js/lib/auth/ecc';
 import secureRandom from 'secure-random';
+import nextConnect from '@/server/nextConnect';
 import { authCors, } from '@/server/auth';
-import { throwErr, onError, makeNoMatch, } from '@/server/error';
+import { throwErr, } from '@/server/error';
 import { checkOrigin, } from '@/server/origin';
 import { initGolos, } from '@/server/initGolos';
 import { rateLimitReq,
@@ -12,14 +12,10 @@ import Tarantool from '@/server/tarantool';
 
 initGolos();
 
-let handler;
-
-const onNoMatch = makeNoMatch(() => handler);
-
 let challenges = new Map();
 let sessions = new Map();
 
-handler = nc({ onError, onNoMatch, attachParams: true, })
+let handler = nextConnect({ attachParams: true, })
     .use(authCors())
 
     .get('/api', (req, res) => {

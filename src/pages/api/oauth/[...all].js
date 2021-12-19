@@ -1,9 +1,9 @@
-import nc from 'next-connect';
 import secureRandom from 'secure-random';
 import golos from 'golos-lib-js';
 import config from 'config';
+import nextConnect from '@/server/nextConnect';
 import { oauthSessionMiddleware, } from '@/server/oauthSession';
-import { throwErr, onError, makeNoMatch, } from '@/server/error';
+import { throwErr, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
 import { noBodyParser, bodyParams, } from '@/server/misc';
 import { checkCrossOrigin, forbidCorsOnProd, } from '@/server/origin';
@@ -13,10 +13,6 @@ import Tarantool from '@/server/tarantool';
 
 initGolos();
 
-let handler;
-
-const onNoMatch = makeNoMatch(() => handler);
-
 const opsToPerms = initOpsToPerms(permissions);
 
 const PendingStates = {
@@ -25,7 +21,7 @@ const PendingStates = {
     FORBIDDEN: 3,
 };
 
-handler = nc({ onError, onNoMatch, attachParams: true, })
+let handler = nextConnect({ attachParams: true, })
     .use(oauthCors())
     .use(oauthSessionMiddleware);
 
