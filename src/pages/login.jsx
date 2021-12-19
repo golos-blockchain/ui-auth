@@ -6,8 +6,9 @@ import LoginForm from '@/modules/LoginForm';
 import { redirect, } from '@/server/misc';
 import { getOAuthCfg, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
+import { withSecureHeadersSSR, } from '@/server/security';
 
-export async function getServerSideProps({ req, res, }) {
+export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, }) => {
     const holder = await getOAuthSession(req, res);
     if (!holder.oauthEnabled) {
         return await holder.clearAndRedirect();
@@ -22,7 +23,7 @@ export async function getServerSideProps({ req, res, }) {
             oauthCfg: getOAuthCfg(),
         },
     };
-}
+});
 
 class Login extends React.Component {
     static propTypes = {

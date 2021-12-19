@@ -1,20 +1,16 @@
-import nc from 'next-connect';
 import axios from 'axios';
 import config from 'config';
 import querystring from 'querystring';
 import { api, broadcast, } from 'golos-lib-js';
 import { Signature, } from 'golos-lib-js/lib/auth/ecc';
-import { throwErr, onError, makeNoMatch, } from '@/server/error';
+import nextConnect from '@/server/nextConnect';
+import { throwErr, } from '@/server/error';
 import { rateLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 
-let handler;
-
-const onNoMatch = makeNoMatch(() => handler);
-
-handler = nc({ onError, onNoMatch, })
+let handler = nextConnect()
     .use(regSessionMiddleware)
     .post('/api/reg/submit', async (req, res) => {
         let state = {

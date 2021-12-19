@@ -5,18 +5,19 @@ import cn from 'classnames';
 import { PrivateKey, } from 'golos-lib-js/lib/auth/ecc';
 import Head from 'next/head';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { APP_DOMAIN, SUPPORT_EMAIL } from '@/client_config';
+import GeneratedPasswordInput from '@/elements/GeneratedPasswordInput';
 import LoadingIndicator from '@/elements/LoadingIndicator';
 import Tooltip from '@/elements/Tooltip';
 import Header from '@/modules/Header';
-import validate_account_name from '@/utils/validate_account_name';
-import KeyFile from '@/utils/KeyFile';
-import GeneratedPasswordInput from '@/elements/GeneratedPasswordInput';
-import { APP_DOMAIN, SUPPORT_EMAIL } from '@/client_config';
-import { callApi, } from '@/utils/RegApiClient';
 import { obtainUid, getClientCfg, } from '@/server/reg';
 import { initRegSession, } from '@/server/regSession';
+import { withSecureHeadersSSR, } from '@/server/security';
+import KeyFile from '@/utils/KeyFile';
+import { callApi, } from '@/utils/RegApiClient';
+import validate_account_name from '@/utils/validate_account_name';
 
-export async function getServerSideProps({ req, res, params, }) {
+export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, params, }) => {
     await initRegSession(req, res);
     let clientCfg = getClientCfg(req, params, tt.getLocale());
     obtainUid(req);
@@ -27,7 +28,7 @@ export async function getServerSideProps({ req, res, params, }) {
             clientCfg,
         },
     };
-}
+})
 
 function formatAsset(val) {
     return val;

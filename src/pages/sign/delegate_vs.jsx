@@ -9,6 +9,7 @@ import Header from '@/modules/Header';
 import LoginForm from '@/modules/LoginForm';
 import { getOAuthCfg, getChainData, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
+import { withSecureHeadersSSR, } from '@/server/security';
 import { callApi, } from '@/utils/OAuthClient';
 import { steemToVests, } from '@/utils/State';
 import validate_account_name from '@/utils/validate_account_name';
@@ -25,7 +26,7 @@ function calcDefaultInterest(cprops) {
     return Math.min(50, calcMaxInterest(cprops));
 }
 
-export async function getServerSideProps({ req, res, }) {
+export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, }) => {
     const action = 'delegate_vs';
     let chainData = null;
     const holder = await getOAuthSession(req, res);
@@ -44,7 +45,7 @@ export async function getServerSideProps({ req, res, }) {
             chainData,
         },
     };
-}
+})
 
 class Delegate extends React.Component {
     static propTypes = {

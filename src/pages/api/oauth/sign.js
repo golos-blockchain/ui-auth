@@ -1,8 +1,8 @@
-import nc from 'next-connect';
 import config from 'config';
 import golos from 'golos-lib-js';
 import JsonRPC from 'simple-jsonrpc-js';
-import { throwErr, onError, makeNoMatch, } from '@/server/error';
+import nextConnect from '@/server/nextConnect';
+import { throwErr, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
 import { rateLimitReq, getRemoteIp, noBodyParser, bodyString, } from '@/server/misc';
 import { oauthSessionMiddleware, } from '@/server/oauthSession';
@@ -14,13 +14,9 @@ import { permissions, initOpsToPerms, } from '@/utils/oauthPermissions';
 
 initGolos();
 
-let handler;
-
-const onNoMatch = makeNoMatch(() => handler);
-
 const opsToPerms = initOpsToPerms(permissions);
 
-handler = nc({ onError, onNoMatch, })
+let handler = nextConnect()
     .use(oauthCors())
     .use(oauthSessionMiddleware);
 
