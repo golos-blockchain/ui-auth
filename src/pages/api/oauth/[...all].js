@@ -7,7 +7,8 @@ import { throwErr, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
 import { noBodyParser, bodyParams, } from '@/server/misc';
 import { checkCrossOrigin, forbidCorsOnProd, } from '@/server/origin';
-import { getClientByOrigin, oauthCors, hasAuthority, getMissingPerms, oauthEnabled, } from '@/server/oauth';
+import { clientFromConfig, getClientByOrigin,
+    oauthCors, hasAuthority, getMissingPerms, oauthEnabled, } from '@/server/oauth';
 import { permissions, initOpsToPerms, } from '@/utils/oauthPermissions';
 import Tarantool from '@/server/tarantool';
 
@@ -392,6 +393,16 @@ if (oauthEnabled()) {
         res.json({
             status: 'ok',
             ...tokenData,
+        });
+    })
+
+    .get('/api/oauth/get_client/:client/:locale?', (req, res) => {
+        const { client, } = req.params;
+        const locale = req.params.locale || 'ru';
+        const clientMeta = clientFromConfig(client, locale);
+        res.json({
+            status: 'ok',
+            client: clientMeta,
         });
     })
 } // END: if (oauthEnabled())

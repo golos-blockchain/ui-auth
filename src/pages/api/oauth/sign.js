@@ -143,8 +143,9 @@ if (oauthEnabled()) {
                 .send(message);
         };
 
+        let rawBody
         try {
-            const rawBody = await bodyString(req);
+            rawBody = await bodyString(req);
 
             await jrpc.messageHandler(rawBody);
         } catch (err) {
