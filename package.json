@@ -14,7 +14,7 @@
     "formik": "^2.2.9",
     "git-rev-sync": "^3.0.1",
     "gmail-send": "^1.8.10",
-    "golos-lib-js": "^0.9.23",
+    "golos-lib-js": "^0.9.25",
     "iron-session": "6.0.4",
     "jspdf": "^2.3.0",
     "lodash": "^4.17.11",
