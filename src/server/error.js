@@ -6,6 +6,19 @@ class ServerError extends Error {
         this.status = status || 500;
         this.name = 'ServerError';
     }
+
+    // For saving into session (see passport.js)
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            status: this.status,
+            msgLocale: this.msgLocale,
+            msgStrData: this.msgStrData,
+            exception: this.exception, // but it will not work for most Errors
+            bodyProps: this.bodyProps,
+        }
+    }
 }
 
 export const throwErr = (req, status, message, exception, bodyProps) => {

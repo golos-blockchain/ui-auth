@@ -8,7 +8,7 @@ import { throwErr, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
 import { getVersion, rateLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
-import passport, { addModalRoutes, } from '@/server/passport';
+import passport, { addModalRoutes, checkAlreadyUsed } from '@/server/passport';
 import { obtainUid, getClientCfg, } from '@/server/reg';
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
@@ -82,22 +82,18 @@ let handler = nextConnect({ attachParams: true, })
         const fakeEmailsAllowed = config.has('fake_emails_allowed')
             && config.get('fake_emails_allowed');
         if (fakeEmailsAllowed && !/^[a-z0-9](\.?[a-z0-9]){5,}@g(oogle)?mail\.com$/.test(email)) {
-            throwErr(req, 400, ['wrong_mail_service'], null, state);
+            throwErr(req, 400, ['wrong_mail_service'], null, state)
+        }
+
+        if (email.split('@')[0].includes('.')) {
+            throwErr(req, 400, ['google_aliases_not_supported'], null, state)
         }
 
         const emailHash = hash.sha256(email, 'hex');
 
         console.log('/send_code existing_email');
 
-        const existing_email = await Tarantool.instance('tarantool').select('users', 'by_verify_registered',
-            1, 0, 'eq', ['email', emailHash, true]);
-        if (existing_email[0]) {
-            console.log('-- /send_code existing_email error -->',
-                req.session.user, req.session.uid,
-                emailHash, existing_email[0][0]
-            );
-            throwErr(req, 400, ['email_already_used'], null, state);
-        }
+        await checkAlreadyUsed(req, 'email', emailHash, state)
 
         let confirmation_code = parseInt(
             secureRandom.randomBuffer(8).toString('hex'),
@@ -228,17 +224,22 @@ let handler = nextConnect({ attachParams: true, })
         });
     })
 
-    .get('/api/reg/check_soc_auth', (req, res) => {
-        const { soc_type, soc_id_type, } = req.session;
+    .get('/api/reg/check_soc_auth', async (req, res) => {
+        const { soc_id, soc_id_type, soc_error, } = req.session
         let state = {
-            status: 'ok',
-            verification_way: 'social-' + soc_type,
-            step: soc_id_type ? 'verified' : 'sending',
-        };
+            verification_way: 'social-undefined',
+            step: (soc_id_type && !soc_error) ? 'verified' : 'sending',
+        }
+        if (!soc_id) {
+            delete req.session.soc_error // To do not prevent another tries
+            await req.session.save()
+            throwErr(req, soc_error.status, [soc_error.message], soc_error.exception, state)
+        }
+        state.status = 'ok'
         res.json({
             soc_id_type: soc_id_type || null,
             ...state,
-        });
+        })
     })
 
     .post('/api/reg/use_invite', async (req, res) => {

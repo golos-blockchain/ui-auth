@@ -121,11 +121,11 @@ class Register extends React.Component {
         window.addEventListener('focus', this.checkSocAuth, {once: true});
 
         const response = await callApi('/api/reg/check_soc_auth');
-        if (response.ok) {
+        if (response.ok || response.status === 400) {
             const result = await response.json();
-            if (result.soc_id_type) {
+            if (result.soc_id_type || result.error) {
                 window.removeEventListener('focus', this.checkSocAuth);
-                this.useSocialLogin(result, result.soc_id_type);
+                this.useSocialLogin(result, result.soc_id_type)
             } else if (!event) {
                 setTimeout(this.checkSocAuth, 5000);
             } else {
@@ -153,17 +153,23 @@ class Register extends React.Component {
 
     useSocialLogin = (result, socName) => {
         this.updateApiState(result, () => {
-            this.setState({
-                fetching: false,
-                message: (<div>
-                    {tt('register_jsx.authorized_with_') + this.state.authType + '.'}
-                    {this._renderSocialButtons()}
-                </div>),
-                verificationWay: 'social-' + socName,
+            if (result.error) {
+                this.setState({
+                    verificationWay: 'email' // to show social buttons again
+                })
+            } else {
+                this.setState({
+                    fetching: false,
+                    message: (<div>
+                        {tt('register_jsx.authorized_with_') + this.state.authType + '.'}
+                        {this._renderSocialButtons()}
+                    </div>),
+                    verificationWay: 'social-' + socName,
 
-                email: '',
-            });
-        });
+                    email: '',
+                })
+            }
+        })
     };
 
     useVk = (e) => {
