@@ -7,6 +7,7 @@ import nextConnect from '@/server/nextConnect';
 import { throwErr, } from '@/server/error';
 import { rateLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
+import { checkAlreadyUsed } from '@/server/passport'
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 
@@ -71,21 +72,9 @@ let handler = nextConnect()
             throwErr(req, 400, ['already_registered'], null, state);
         }
 
-        console.log('-- /submit check same_email_account');
+        console.log('-- /submit check same_account');
 
-        if (user[0][2] === 'email') {
-            const emailHash = user[0][3];
-            const existing_email = await Tarantool.instance('tarantool').select('users', 'by_verify_registered',
-                1, 0, 'eq', ['email', emailHash, true]);
-            if (existing_email[0]) {
-                console.log('-- /submit existing_email error -->',
-                    req.session.user, req.session.uid,
-                    emailHash, existing_email[0][0]
-                );
-                console.log(`api /submit: existing_same-email account ${req.session.uid} #${user_id}, IP ${remote_ip}`);
-                throwErr(req, 400, ['email_already_used'], null, state);
-            }
-        }
+        await checkAlreadyUsed(req, user[0][2], user[0][3], state)
 
         console.log('-- /submit check same_ip_account');
 
