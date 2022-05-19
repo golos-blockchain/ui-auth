@@ -1,0 +1,23 @@
+{
+  "recovery": {
+    "rest_api": "https://dev.golos.app",
+    "chain_id": "782a3039b478c839e4cb0c941ff4eaeb7df40bdd68bd441afd444b9da763de12",
+    "ws_connection_client": "https://apibeta.golos.today",
+    "blogs_service": {
+      "host": "https://beta.golos.today"
+    },
+    "captcha": {
+      "recaptcha_v2": {
+        "enabled": true,
+        "site_key": "6LcDa08cAAAAAA7fZTpQ-7muLyqam8ui3U62S2Lh",
+        "secret_key": "6LcDa08cAAAAAME702LXqy3u7lq0zDn-3-W9nudS"
+      }
+    },
+    "notifier_account": {
+      "name": "notify",
+      "posting": "5KdtyMiCbZ6494U8PmkHRAdauuKDWAZn2zPmSANcVV6KEQCUSnA",
+      "memo": "5KifwbeGohWL2VKep2PXoALmYmRCMU1tdZg1jVzgcnaaYvBMFGM",
+      "interval_sec": 60
+    }
+  }
+}

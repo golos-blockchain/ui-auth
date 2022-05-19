@@ -6,6 +6,10 @@ function requires(...names) {
     return new Error('instead requires: ' + names.join(' or '));
 }
 
+function notForOAuth() {
+    return new Error('This operation is forbidden for OAuth client usage')
+}
+
 function initOpsToPerms(permsToOps) {
     let res = {};
     for (const [perm, data] of Object.entries(permsToOps)) {
@@ -398,6 +402,16 @@ let permissions = {
                 op.active_approvals_to_add[0] :
                 op.active_approvals_to_remove[0]];
         },
+    },
+    request_account_recovery: {
+        ops: [
+            'request_account_recovery',
+        ],
+        cond: (op, t, oauth) => {
+            if (oauth) return notForOAuth()
+            return [ACTIVE, op.recovery_account]
+        },
+        internal: true,
     },
 };
 

@@ -120,7 +120,7 @@ class OAuth extends React.Component {
                 for (let perm of perms) {
                     console.log(perm)
                     if (perm.cond) {
-                        const res = perm.cond(op[1], op[0]);
+                        const res = perm.cond(op[1], op[0], true);
                         if (res === false || res instanceof Error) {
                             continue;
                         }

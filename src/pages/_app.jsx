@@ -2,6 +2,7 @@ import tt from 'counterpart';
 import golos from 'golos-lib-js';
 import '@/App.scss';
 import React from 'react';
+import { IntlProvider } from 'react-intl'
 
 tt.registerTranslations('en', require('@/locales/en.json'));
 tt.registerTranslations('ru', require('@/locales/ru-RU.json'));
@@ -38,7 +39,14 @@ class MyApp extends React.Component {
         if ($GLS_IsBrowser && !this.state.nativeLibLoaded)
             return (<div></div>);
         const { Component, pageProps, } = this.props;
-        return <Component {...pageProps} />
+        const localeWithoutRegionCode = (typeof(localStorage) !== 'undefined' && localStorage.getItem('locale')) || 'ru'
+        return <IntlProvider
+                key={localeWithoutRegionCode}
+                locale={localeWithoutRegionCode}
+                defaultLocale={localeWithoutRegionCode}
+            >
+                <Component {...pageProps} />
+            </IntlProvider>
     }
 }
 
