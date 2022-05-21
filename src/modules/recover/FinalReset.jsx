@@ -74,12 +74,14 @@ class FinalReset extends React.Component {
 
             localStorage.removeItem('recovery.sent')
 
-            keyFile.save()
+            setTimeout(() => {
+                this.setState({
+                    done: true,
+                    errorMessage: ''
+                })
+            }, 1000)
 
-            this.setState({
-                done: true,
-                errorMessage: ''
-            })
+            keyFile.save()
         } catch (err) {
             console.error(err, err.payload)
             this.setState({

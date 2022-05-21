@@ -12,6 +12,7 @@
     "config": "^1.26.2",
     "cors": "^2.8.5",
     "counterpart": "^0.18.6",
+    "file-saver": "^2.0.5",
     "formik": "^2.2.9",
     "git-rev-sync": "^3.0.1",
     "gmail-send": "^1.8.10",
