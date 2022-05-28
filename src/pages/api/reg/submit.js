@@ -1,8 +1,7 @@
-import axios from 'axios';
 import config from 'config';
-import querystring from 'querystring';
 import { api, broadcast, } from 'golos-lib-js';
 import { Signature, } from 'golos-lib-js/lib/auth/ecc';
+import { checkCaptcha } from '@/server/captcha'
 import nextConnect from '@/server/nextConnect';
 import { throwErr, } from '@/server/error';
 import { rateLimitReq, getRemoteIp,
@@ -33,22 +32,9 @@ let handler = nextConnect()
             throwErr(req, 403, ['not_verified'], null, state);
         }
 
-        let captcha = config.get('captcha');
-        if (captcha) {
-            let recaptcha_v2 = captcha.get('recaptcha_v2');
-            if (recaptcha_v2.get('enabled')) {
-                const secret_key = recaptcha_v2.get('secret_key');
-
-                const res = await axios.post('https://www.google.com/recaptcha/api/siteverify',
-                    querystring.stringify({
-                        secret: secret_key,
-                        response: account.recaptcha_v2,
-                    }));
-                if (!res.data.success) {
-                    console.error('-- /submit: try to register without ReCaptcha v2 solving, data:', res.data, ', user-id:', user_id, ', form fields:', account);
-                    throwErr(req, 403, ['recaptcha_v2_failed'], null, state);
-                }
-            }
+        if (!checkCaptcha(account.recaptcha_v2)) {
+            console.error('-- /submit: try to register without ReCaptcha v2 solving, data:', res.data, ', user-id:', user_id, ', form fields:', account);
+            throwErr(req, 403, ['recaptcha_v2_failed'], null, state);
         }
 
         console.log('-- /submit lock_entity');

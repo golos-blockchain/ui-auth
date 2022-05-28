@@ -818,17 +818,18 @@ class Register extends React.Component {
 
             this.updateApiState(data);
 
-            this.setState({
-                submitting: false,
-            });
-
             if (data.status === 'err') {
                 console.error('Register server error', data);
+                this.setState({
+                    submitting: false,
+                })
             } else {
-                keyFile.save();
                 if (this.state.afterRedirect) {
-                    window.location = this.state.afterRedirect.replace('{account}', name);
+                    setTimeout(() => {
+                        window.location.href = this.state.afterRedirect.replace('{account}', name)
+                    }, 1000)
                 }
+                keyFile.save()
             }
         } catch (err) {
             console.error('Caught Register server error', err);

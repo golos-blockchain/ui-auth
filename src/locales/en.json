@@ -123,7 +123,8 @@
     "no_such_invite": "No such invite code. Please sure you are correctly typed its code.",
     "blockchain_not_available_for_invite": "We sorry but blockchain is not available now. Wait a moment and try again, please.",
     "blockchain_not_available": "We sorry but blockchain is not available now. Wait a moment and try again, please.",
-    "wrong_confirmation": "Wrong confirmation code."
+    "wrong_confirmation": "Wrong confirmation code.",
+    "cannot_find_owner_key_in_history": "It looks like we cannot recover your account... Nobody has changed your password during latest 30 days. Did you just missing the password? In this case we cannot help..."
   },
   "oauth_main_jsx": {
     "title": "GOLOS signer",
@@ -211,6 +212,65 @@
     "proposal_delete": "Removing transaction proposals",
     "proposal_update": "Voting in transaction proposals",
     "proposal_update_active": "Voting in transaction proposals with active authorities"
+  },
+  "recovery": {
+    "change_title": "Change recovery account",
+    "change_desc": "Set trusted account which can be used to recovery access to your Golos account if someone will steal your keys/password and change it.",
+    "change_desc2": "Account will set after 30 days.",
+    "owner_key": "Your current password or owner key",
+    "recovery_account": "Recovery account",
+    "wrong_password": "Wrong password or owner key.",
+    "request_exists": "Your request is received. Your recovery account will be ",
+    "request_exists2": "It will pass ",
+    "request_exists3": "You can cancel the request",
+    "recover_title": "Recover account",
+    "recover_desc": "If you are not lost password or own key, but someone stolen it and changed your password, access to your account can be recovered.",
+    "input_name": "Enter your account name",
+    "continue": "Next"
+  },
+  "recovery_step2_jsx": {
+    "your_account_is": "Your account is ",
+    "recover_fail": "Unfortunately you cannot recovery access, because you was not set recovery account",
+    "recover_will_send": "Recovery request will be send to ",
+    "email": "E-mail to contact you",
+    "email_error": "Wrong e-mail.",
+    "old_password": "Your old password",
+    "old_password_desc": "In order to recover your account, we need your old password (or owner-key). If you changed password few times, you can use any of these passwords, if it is not older than 30 days.",
+    "old_password_error": "Wrong password or key."
+  },
+  "recovery_step3_jsx": {
+    "sent_desc": "You sent request to your recovery account ",
+    "sent_desc2": "Please wait until he/she will approve your request.",
+    "sent_desc3": "Add this page into browser bookmarks and check it periodically. ",
+    "sent_desc4": "When request will be approved, you will be able to reset password and keys.",
+    "retry_after": "Retry of the request will be available ",
+    "can_retry": "You can cancel request and try again later.",
+    "cancel": "Cancel",
+    "approved": "Request was approved! Recoverer should send to you a temporary recovery key. Enter it below:",
+    "approved2": "...and also enter again your old password or owner-key:",
+    "approved3": "...and then you will receive new password.",
+    "finish": "Receive",
+    "wrong_tmp_owner": "Wrong temporary key...",
+    "finish2": "Finish",
+    "done": "New password applied!",
+    "last": "Brilliant! There is only one step more, and your account is recovered! Just wait a bit, reload the page and we will change your password...",
+    "last2": "You can change password ",
+    "last3": "And still do not forget your temporary recovery key!",
+    "reset": "Almost done! It will be your new password:",
+    "to_apply": "In order to apply it, please enter your temporary key again...",
+    "wrong_approve": "Request approved, but there are some problems with approvement... You can cancel it and try again. Details:"
+  },
+  "recovery_review": {
+    "title": "Approve recovery",
+    "desc": " requested you to recover their account.",
+    "desc2": "You received their e-mail in the private messages. You can use it to contact with ",
+    "desc3": " and check that such request is sent really by this person, not some thief, which wants to stole the account.",
+    "tmp_owner": "If you will approve request, when you will have to send this temporary key to the e-mail:",
+    "tmp_owner2": "He/she can use this temporary key to reset keys and password.",
+    "tmp_owner3": "And do not forget to mention what he/she should proceed recovery until ",
+    "tmp_owner4": "24 hours.",
+    "accept": "Approve",
+    "done": "Done! Send the key to the e-mail"
   },
   "g": {
     "APP_NAME": "Golos",

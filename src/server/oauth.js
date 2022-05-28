@@ -68,7 +68,7 @@ function hasAuthority(acc, serviceAccountName) {
     return hasActive && hasPosting;
 }
 
-function getRequiredPerms(req, opsToPerms, op, forEach) {
+function getRequiredPerms(req, opsToPerms, op, forEach, requestByClient = false) {
     let perms = opsToPerms[op[0]];
     if (!perms) {
         throw new Error('Operation ' + op[0] + ' is not supported by OAuth');
@@ -78,7 +78,7 @@ function getRequiredPerms(req, opsToPerms, op, forEach) {
 
     let required = [];
     for (let perm of perms) {
-        const res = perm.cond(op[1], op[0]);
+        const res = perm.cond(op[1], op[0], requestByClient);
         if (res === false || res instanceof Error) {
             continue;
         }
@@ -105,7 +105,7 @@ function getMissingPerms(req, opsToPerms, clientName, op) {
                 return true;
             }
             return false;
-        })
+        }, true)
 
     return { allowed, required, };
 }

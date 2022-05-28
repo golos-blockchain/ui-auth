@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@formatjs/intl-utils": "^3.8.4",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -11,10 +12,11 @@
     "config": "^1.26.2",
     "cors": "^2.8.5",
     "counterpart": "^0.18.6",
+    "file-saver": "^2.0.5",
     "formik": "^2.2.9",
     "git-rev-sync": "^3.0.1",
     "gmail-send": "^1.8.10",
-    "golos-lib-js": "^0.9.25",
+    "golos-lib-js": "^0.9.33",
     "iron-session": "6.0.4",
     "jspdf": "^2.3.0",
     "lodash": "^4.17.11",
@@ -34,6 +36,7 @@
     "react-dom": "^17.0.2",
     "react-foundation-components": "git+https://github.com/golos-blockchain/react-foundation-components.git#5dbfb800aff45988c57bb7d09c1c235a8b49b418",
     "react-google-recaptcha": "^2.1.0",
+    "react-intl": "^5.25.1",
     "secure-random": "^1.1.1",
     "simple-jsonrpc-js": "^1.2.0",
     "styled-components": "^5.3.3",
@@ -42,8 +45,8 @@
   },
   "scripts": {
     "build": "next build",
-    "dev": "NODE_OPTIONS='--require ./src/server/services/dev.js' NODE_CONFIG_ENV=oauth next dev",
-    "production": "NODE_OPTIONS='--require ./src/server/services/prod.js' NODE_CONFIG_ENV=oauth next start",
+    "dev": "NODE_OPTIONS='--require ./src/server/services/dev.js' NODE_CONFIG_ENV=oauth,recovery next dev",
+    "production": "NODE_OPTIONS='--require ./src/server/services/prod.js' NODE_CONFIG_ENV=oauth,recovery next start",
     "test": "cypress open"
   },
   "browserslist": {
