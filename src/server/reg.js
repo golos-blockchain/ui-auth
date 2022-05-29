@@ -38,6 +38,10 @@ export function getClientCfg(req, params, locale = '') {
 
     let cfg = {};
 
+    cfg.ws_connection_client = config.get('ws_connection_client')
+    if (config.has('chain_id'))
+        cfg.chain_id = config.get('chain_id')
+
     cfg.captcha = {};
     let captcha = config.get('captcha');
     if (captcha) {

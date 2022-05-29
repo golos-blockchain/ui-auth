@@ -10,8 +10,8 @@
   "fake_emails_allowed": false,
   "registrar": {
     "account": "id-demiurge",
-    "fee": "1.000 GOLOS",
-    "signing_key": "5JFZC7AtEe1wF2ce6vPAUxDeevzYkPgmtR14z9ZVgvCCtrFAaLw",
+    "add_to_fee": "1.000 GOLOS",
+    "signing_key": "5K67PNheLkmxkgJ5UjvR8Nyt3GVPoLEN1dMZjFuNETzrNyMecPG",
     "delegation": "75000.000000 GESTS"
   },
   "server_session_secret": "exiKdyF+IwRIXJDmtGIl4vWUz4i3eVSISpfZoeYc0s4=",

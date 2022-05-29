@@ -1,6 +1,7 @@
 import config from 'config';
 import { api, broadcast, } from 'golos-lib-js';
 import { Signature, } from 'golos-lib-js/lib/auth/ecc';
+
 import { checkCaptcha } from '@/server/captcha'
 import nextConnect from '@/server/nextConnect';
 import { throwErr, } from '@/server/error';
@@ -110,25 +111,28 @@ let handler = nextConnect()
 
         console.log('-- /submit creating account');
 
-        const [fee_value, fee_currency] = config.get('registrar.fee').split(' ');
         const delegation = config.get('registrar.delegation')
 
-        let fee = parseFloat(fee_value);
+        let fee
         let max_referral_interest_rate;
         let max_referral_term_sec;
         let max_referral_break_fee;
         try {
-            const chain_properties = await api.getChainPropertiesAsync();
-            const chain_fee = parseFloat(chain_properties.account_creation_fee);
-            if (chain_fee && chain_fee > fee) {
-                if (fee / chain_fee > 0.5) { // just a sanity check - chain fee shouldn't be a way larger
-                    console.log('-- /submit warning: chain_fee is larger than config fee -->', req.session.uid, fee, chain_fee);
-                    fee = chain_fee;
+            const chainProps = await api.getChainPropertiesAsync();
+            if (config.has('registrar.fee')) {
+                fee = parseFloat(config.get('registrar.fee'))
+            } else {
+                fee = account.invite_code ?
+                    parseFloat(chainProps.min_invite_balance) :
+                    parseFloat(chainProps.create_account_min_golos_fee)
+                if (config.has('registrar.add_to_fee')) {
+                    fee += parseFloat(config.get('registrar.add_to_fee'))
                 }
             }
-            max_referral_interest_rate = chain_properties.max_referral_interest_rate;
-            max_referral_term_sec = chain_properties.max_referral_term_sec;
-            max_referral_break_fee = chain_properties.max_referral_break_fee;
+
+            max_referral_interest_rate = chainProps.max_referral_interest_rate;
+            max_referral_term_sec = chainProps.max_referral_term_sec;
+            max_referral_break_fee = chainProps.max_referral_break_fee;
         } catch (error) {
             console.error('Error in /submit get_chain_properties', error);
         }
@@ -151,7 +155,7 @@ let handler = nextConnect()
 
         await createAccount({
             signingKey: config.get('registrar.signing_key'),
-            fee: `${fee.toFixed(3)} ${fee_currency}`,
+            fee: `${fee.toFixed(3)} GOLOS`,
             creator: config.registrar.account,
             new_account_name: account.name,
             owner: account.owner_key,

@@ -68,6 +68,23 @@
     "authorizing_with": "Authorizing with ",
     "authorized_with_": "Аuthorized with "
   },
+  "transfer_register_jsx": {
+    "please_send_transfer": "Please send ",
+    "to": " to ",
+    "with_memo": " with following memo",
+    "you_can_use_markets": "You can use exchanges to do that.",
+    "click_check_button": "After transfer click the Check button",
+    "or_cancel_it": "Or cancel the registration",
+    "check": "Check",
+    "not_yet": "Transfer not yet received...",
+    "success": "Your account - ",
+    "success2": " - registered!",
+    "password": "Your password:",
+    "save_password_please": "Запишите его в надежном месте и не теряйте. Восстановить утерянный пароль мы не сможем. Вы также можете скачать файл с паролем и ключами.",
+    "save_keys": "Save keys",
+    "cannot_reset": "Unfortunately, something went wrong. We cannot set your password. But everything is under control - it is your temporary key. Save it, and contact us: ",
+    "unload_warning": "Do you saved the key? Or you want to cancel registration? If transfer already sent, there are no refund possible."
+  },
   "invites_jsx": {
     "claim_wrong_secret": "Wrong secret",
     "claim_wrong_secret_fatal": "No such invite check",
@@ -124,7 +141,9 @@
     "blockchain_not_available_for_invite": "We sorry but blockchain is not available now. Wait a moment and try again, please.",
     "blockchain_not_available": "We sorry but blockchain is not available now. Wait a moment and try again, please.",
     "wrong_confirmation": "Wrong confirmation code.",
-    "cannot_find_owner_key_in_history": "It looks like we cannot recover your account... Nobody has changed your password during latest 30 days. Did you just missing the password? In this case we cannot help..."
+    "cannot_find_owner_key_in_history": "It looks like we cannot recover your account... Nobody has changed your password during latest 30 days. Did you just missing the password? In this case we cannot help...",
+    "wrong_invite_asset_symbol": "That invite is not applicable, because it is not in GOLOS",
+    "too_low_invite_balance": "Too low invite balance. %(PROVIDED)s is provided when at least %(REQUIRED)s is required."
   },
   "oauth_main_jsx": {
     "title": "GOLOS signer",
@@ -271,6 +290,11 @@
     "tmp_owner4": "24 hours.",
     "accept": "Approve",
     "done": "Done! Send the key to the e-mail"
+  },
+  "verify_way_tabs_jsx": {
+    "email": "With Gmail",
+    "invite_code": "Invite-code",
+    "transfer": "Transfer"
   },
   "g": {
     "APP_NAME": "Golos",
