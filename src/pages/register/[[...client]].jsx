@@ -15,7 +15,7 @@ import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import Tooltip from '@/elements/Tooltip';
 import Header from '@/modules/Header';
 import TransferRegister from '@/modules/register/TransferRegister'
-import { obtainUid, getClientCfg, } from '@/server/reg';
+import { obtainUid, getClientCfg, getDailyLimit, } from '@/server/reg';
 import { initRegSession, } from '@/server/regSession';
 import { withSecureHeadersSSR, } from '@/server/security';
 import KeyFile from '@/utils/KeyFile';
@@ -31,6 +31,7 @@ export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, params
         props: {
             client: params.client || null,
             clientCfg,
+            dailyLimit: getDailyLimit()
         },
     };
 })
@@ -362,11 +363,25 @@ class Register extends React.Component {
         const disableGetCode = okStatus || !emailHint || state.fetching;
         const disableContinueInvite = !inviteHint;
 
-        const form = (state.verificationWay === 'transfer') ?
-        <TransferRegister
-            clientCfg={this.props.clientCfg}
-            afterRedirect={this.state.afterRedirect}
-        /> : (<form
+        let form
+        if (state.verificationWay === 'transfer') {
+            form = <TransferRegister
+                clientCfg={this.props.clientCfg}
+                afterRedirect={this.state.afterRedirect}
+            />
+        } else if (state.verificationWay === 'email') {
+            const { dailyLimit } = this.props
+            if (dailyLimit && dailyLimit.exceed) {
+                form = <div>
+                    <VerifyWayTabs currentWay='email' />
+                    <div className='callout alert'>
+                        {tt('register_jsx.email_exceed')}
+                    </div>
+                </div>
+            }
+        }
+
+        form = form || (<form
             onSubmit={this._onSubmit}
             autoComplete='off'
             noValidate
@@ -374,10 +389,6 @@ class Register extends React.Component {
         >
             {(showMailForm) && (
                 <div>
-                    {/*showMailForm && <div>
-                        <a onClick={this.onInviteEnabledChange}>{tt(isInviteWay ? 'register_jsx.i_have_not_invite_code' : 'register_jsx.i_have_invite_code')}
-                        </a>
-                    </div>*/}
                     {showMailForm && <VerifyWayTabs currentWay={state.verificationWay} />}
                     {isInviteWay && <div>
                         <label>
@@ -903,13 +914,6 @@ class Register extends React.Component {
 
         this.setState({
             email
-        });
-    };
-
-    onInviteEnabledChange = e => {
-        const isInvite = this.state.verificationWay === 'invite_code';
-        this.setState({
-            verificationWay: isInvite ? 'email' : 'invite_code',
         });
     };
 

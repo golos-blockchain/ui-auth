@@ -66,7 +66,8 @@
     "re_send": "Re-send",
     "phone_number_has_been_verified": "E-mail has been verified, please continue the registration.",
     "authorizing_with": "Authorizing with ",
-    "authorized_with_": "Аuthorized with "
+    "authorized_with_": "Аuthorized with ",
+    "email_exceed": "Currently limit of free registration is exceed. You can use invite or transfer."
   },
   "transfer_register_jsx": {
     "please_send_transfer": "Please send ",

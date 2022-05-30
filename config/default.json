@@ -12,7 +12,8 @@
     "account": "id-demiurge",
     "add_to_fee": "1.000 GOLOS",
     "signing_key": "5K67PNheLkmxkgJ5UjvR8Nyt3GVPoLEN1dMZjFuNETzrNyMecPG",
-    "delegation": "75000.000000 GESTS"
+    "delegation": "75000.000000 GESTS",
+    "free_regs_per_day": 10
   },
   "server_session_secret": "exiKdyF+IwRIXJDmtGIl4vWUz4i3eVSISpfZoeYc0s4=",
   "session_cookie_key": "X-Reg-ISession",

@@ -8,6 +8,7 @@ import { throwErr, } from '@/server/error';
 import { rateLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
 import { checkAlreadyUsed } from '@/server/passport'
+import { useDailyLimit } from '@/server/reg'
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 
@@ -107,6 +108,12 @@ let handler = nextConnect()
             else {
               console.log(`api /submit: is confirmed e-mail for user ${req.session.uid} #${user_id}`)
             }
+        }
+
+        console.log('-- /submit using daily limit');
+
+        if ((!account.invite_code || req.session.soc_id) && !useDailyLimit()) {
+            throwErr(req, 403, ['daily_reg_limit_exceed'], null, state)
         }
 
         console.log('-- /submit creating account');

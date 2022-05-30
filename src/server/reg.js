@@ -22,6 +22,40 @@ export function obtainUid(req) {
     return session.uid;
 }
 
+export function getDailyLimit() {
+    if (config.has('registrar.free_regs_per_day')) {
+        const now = Date.now()
+        const per_day = parseInt(config.get('registrar.free_regs_per_day'))
+        const dailyLimit = global.dailyLimit
+        let regs = (dailyLimit && dailyLimit.regs) || 0
+        let first = (dailyLimit && dailyLimit.first) || now
+        const full = regs >= per_day
+        const exceed = full && (now - first) < 1000*60*60*24
+        if (full && !exceed) {
+            regs = 0
+            first = now
+        }
+        return {
+            regs,
+            first,
+            exceed,
+            per_day
+        }
+    }
+    return null
+}
+
+export function useDailyLimit() {
+    const limit = getDailyLimit()
+    if (!limit) return true
+    if (limit.exceed) return false
+    global.dailyLimit = {
+        regs: limit.regs + 1,
+        first: limit.first
+    }
+    return true
+}
+
 export function getClientCfg(req, params, locale = '') {
     const { session, } = req;
     checkSession(session, 'getClientCfg');
