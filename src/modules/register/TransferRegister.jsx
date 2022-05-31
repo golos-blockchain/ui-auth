@@ -199,6 +199,7 @@ class TransferRegister extends React.Component {
             <b>{password}</b><br/>
             <br/>
             {tt('transfer_register_jsx.save_password_please')}<br/>
+            <br/>
             <button className='button'
                 onClick={this.saveKeys}>
                 {tt('transfer_register_jsx.save_keys')}

@@ -70,7 +70,7 @@
     "email_exceed": "Currently limit of free registration is exceed. You can use invite or transfer."
   },
   "transfer_register_jsx": {
-    "please_send_transfer": "Please send ",
+    "please_send_transfer": "Please send at least ",
     "to": " to ",
     "with_memo": " with following memo",
     "you_can_use_markets": "You can use exchanges to do that.",
@@ -81,7 +81,7 @@
     "success": "Your account - ",
     "success2": " - registered!",
     "password": "Your password:",
-    "save_password_please": "Запишите его в надежном месте и не теряйте. Восстановить утерянный пароль мы не сможем. Вы также можете скачать файл с паролем и ключами.",
+    "save_password_please": "Save it and do not lose. We cannot recover lost password. You also can download file with password and keys.",
     "save_keys": "Save keys",
     "cannot_reset": "Unfortunately, something went wrong. We cannot set your password. But everything is under control - it is your temporary key. Save it, and contact us: ",
     "unload_warning": "Do you saved the key? Or you want to cancel registration? If transfer already sent, there are no refund possible."
