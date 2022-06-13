@@ -148,7 +148,7 @@ class Delegate extends React.Component {
             const { amount, } = values;
             const sym = 'GOLOS';
             if (!isNaN(amount) && balances && balances[sym]) {
-                let balance = balances[sym].amountFloat;
+                let balance = parseFloat(balances[sym].amountFloat)
                 if (!isNaN(balance) && balance < parseFloat(amount)) {
                     errors.amount = tt('oauth_transfer.insufficient');
                 }
@@ -176,8 +176,8 @@ class Delegate extends React.Component {
         const { from, to, } = values;
 
         let amount = Asset(0, balances['GOLOS'].precision, 'GOLOS');
-        amount.amountFloat = parseFloat(values.amount);
-        amount = steemToVests(amount.amountFloat, this.state.gprops) + ' GESTS';
+        amount.amountFloat = values.amount
+        amount = steemToVests(parseFloat(amount.amountFloat), this.state.gprops) + ' GESTS';
 
         let interest = parseFloat(values.interest);
         interest = Math.trunc(interest * 100);
@@ -220,7 +220,7 @@ class Delegate extends React.Component {
             return '...';
 
         let amount = Asset(0, balances['GOLOS'].precision, 'GOLOS');
-        amount.amountFloat = parseFloat(values.amount || '0');
+        amount.amountFloat = values.amount || '0'
 
         url += '?';
         url += 'to=' + to;

@@ -136,7 +136,7 @@ class TransferDonate extends React.Component {
         const { from, to, sym, } = values;
 
         let amount = Asset(0, balances[sym].precision, sym);
-        amount.amountFloat = parseFloat(values.amount);
+        amount.amountFloat = values.amount
         amount = amount.toString();
 
         let memo = values.memo || '';
@@ -186,7 +186,7 @@ class TransferDonate extends React.Component {
             return '...';
 
         let amount = Asset(0, balances[sym].precision, sym);
-        amount.amountFloat = parseFloat(values.amount || '0');
+        amount.amountFloat = values.amount || '0'
 
         url += '?';
         url += 'to=' + (to || '');

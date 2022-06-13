@@ -152,6 +152,7 @@
     "transfer": "Transfer tokens",
     "donate": "Donate to user",
     "delegate_vs": "Delegate vesting shares",
+    "unfreeze": "Unfreeze account",
     "apps_title": "Apps",
     "apps_empty": "You are not authorized in any app.",
     "link": "Link: ",
@@ -291,6 +292,13 @@
     "tmp_owner4": "24 hours.",
     "accept": "Approve",
     "done": "Done! Send the key to the e-mail"
+  },
+  "unfreeze_jsx": {
+    "account_not_found": "No such account. We are not removing any accounts. Maybe some typo in account name...",
+    "not_frozen": "This account is active.",
+    "frozen": "This account is allright, but it is frozen. There are millions inactive accounts, it is very hard for our hardware, so we freezing them. In order to activate it, please send to it at least ",
+    "frozen2": " using exchanges or ",
+    "frozen3": "this form."
   },
   "verify_way_tabs_jsx": {
     "email": "With Gmail",
