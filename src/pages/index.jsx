@@ -2,6 +2,8 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import tt from 'counterpart';
+import { api } from 'golos-lib-js'
+
 import RemoveAuthority from '@/elements/RemoveAuthority';
 import Header from '@/modules/Header';
 import { callApi, } from '@/utils/OAuthClient';
@@ -15,9 +17,18 @@ export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, }) => 
     if (!holder.oauthEnabled) {
         return await holder.clearAndRedirect();
     }
+    const session = holder.session()
+    if (session.account) {
+        try {
+            const acc = await api.getAccountsAsync([session.account])
+            if (acc && acc[0] && acc[0].frozen) {
+                return await holder.freeze(session.account)
+            }
+        } catch (err) {}
+    }
     return {
         props: {
-            session: holder.session(),
+            session,
             oauthCfg: getOAuthCfg(),
         },
     };

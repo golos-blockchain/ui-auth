@@ -35,6 +35,9 @@ export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, resolv
     let initial = null;
     if (session.account) {
         chainData = await getChainData(session.account, action);
+        if (chainData.frozen) {
+            return await holder.freeze(session.account)
+        }
         initial = {
             from: session.account,
             to: '',

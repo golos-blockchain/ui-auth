@@ -109,7 +109,8 @@
     "posting_key_cannot_be_used": "Posting-ключ не подходит, нужен active-ключ.",
     "owner_key_cannot_be_used": "Owner-ключ не подходит, нужен active-ключ.",
     "Cannot authorize": "Не удается авторизоваться на сервере. Попробуйте очистить куки, а если не поможет, напишите нам.",
-    "Cannot set authority": "Не удается получить права доступа к вашему аккаунту (authority). Напишите нам."
+    "Cannot set authority": "Не удается получить права доступа к вашему аккаунту (authority). Напишите нам.",
+    "Account is frozen": "Этот аккаунт временно деактивирован из-за неактивности."
   },
   "mobilevalidation_js": {
     "email_cannot_be_empty": "E-mail не может быть пустым",

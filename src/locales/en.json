@@ -109,7 +109,8 @@
     "posting_key_cannot_be_used": "Key must be active, not posting",
     "owner_key_cannot_be_used": "Key must be active, not owner.",
     "Cannot authorize": "Cannot authorize on server. Contact us, please.",
-    "Cannot set authority": "Cannot set authority on your account. Contact us, please."
+    "Cannot set authority": "Cannot set authority on your account. Contact us, please.",
+    "Account is frozen": "This account is temporarily deactivated due to inactivity."
   },
   "mobilevalidation_js": {
     "email_cannot_be_empty": "E-mail cannot be empty",

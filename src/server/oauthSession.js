@@ -47,9 +47,12 @@ class OAuthSessionHolder {
     constructor(req) {
         this.req = req;
     }
-    clearAndRedirect = async () => {
-        this.req.session.destroy();
-        return redirect('/register');
+    clearAndRedirect = async (path = '/register') => {
+        this.req.session.destroy()
+        return redirect(path)
+    }
+    freeze = async (account) => {
+        return this.clearAndRedirect('/login?frozen=' + account)
     }
     session = () => {
         const { account, clients, } = this;

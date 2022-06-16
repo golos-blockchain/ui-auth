@@ -108,6 +108,15 @@ if (oauthEnabled()) {
                     //    delete req.session.clients[originFound];
                     //}
 
+                    const acc = await golos.api.getAccounts([req.session.account])
+                    if (!acc[0]) {
+                        throw new Error('Your account is not found')
+                    }
+                    if (acc[0].frozen) {
+                        const visitUrl = new URL('/sign/unfreeze/' + acc[0].name, config.get('oauth.rest_api'))
+                        throw new Error('Your account is frozen, please visit ' + visitUrl.toString())
+                    }
+
                     return {...await golos.broadcast.sendAsync(
                         trx, [...keys]), _meta};
                 };

@@ -19,6 +19,14 @@ export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, resolv
     const holder = await getOAuthSession(req, res)
     if (recoveryCfg.recoveryEnabled && holder.oauthEnabled) {
         const session = holder.session()
+        if (session.account) {
+            try {
+                const acc = await api.getAccountsAsync([session.account])
+                if (acc && acc[0] && acc[0].frozen) {
+                    return await holder.freeze(session.account)
+                }
+            } catch (err) {}
+        }
         return {
             props: {
                 recoveryCfg,

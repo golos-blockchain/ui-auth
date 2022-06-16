@@ -22,6 +22,14 @@ export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, params
         return await holder.clearAndRedirect();
     }
     const session = holder.session();
+    if (session.account) {
+        try {
+            const acc = await golos.api.getAccountsAsync([session.account])
+            if (acc && acc[0] && acc[0].frozen) {
+                return await holder.freeze(session.account)
+            }
+        } catch (err) {}
+    }
     let clientObj = clientFromConfig(params.client, req.session.locale || 'ru');
     clientObj = { ...clientObj, ...session.clients[params.client], };
     return {
