@@ -5,12 +5,17 @@ import cn from 'classnames';
 import { PrivateKey, } from 'golos-lib-js/lib/auth/ecc';
 import Head from 'next/head';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { APP_DOMAIN, SUPPORT_EMAIL } from '@/client_config';
+
+import { SUPPORT_EMAIL } from '@/client_config';
 import GeneratedPasswordInput from '@/elements/GeneratedPasswordInput';
 import LoadingIndicator from '@/elements/LoadingIndicator';
+import AccountName from '@/elements/register/AccountName'
+import CryptoFailure from '@/elements/register/CryptoFailure'
+import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import Tooltip from '@/elements/Tooltip';
 import Header from '@/modules/Header';
-import { obtainUid, getClientCfg, } from '@/server/reg';
+import TransferRegister from '@/modules/register/TransferRegister'
+import { obtainUid, getClientCfg, getDailyLimit, } from '@/server/reg';
 import { initRegSession, } from '@/server/regSession';
 import { withSecureHeadersSSR, } from '@/server/security';
 import KeyFile from '@/utils/KeyFile';
@@ -26,6 +31,7 @@ export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, params
         props: {
             client: params.client || null,
             clientCfg,
+            dailyLimit: getDailyLimit()
         },
     };
 })
@@ -35,10 +41,6 @@ function formatAsset(val) {
 }
 
 class Register extends React.Component {
-    static propTypes = {
-        serverBusy: PropTypes.bool,
-    };
-
     state = {
         fetching: false,
         step: 'sending',
@@ -63,6 +65,41 @@ class Register extends React.Component {
         allBoxChecked: false,
     };
 
+    processQuery = () => {
+        const params = new URLSearchParams(window.location.search)
+        const invite = params.get('invite')
+        if (invite || params.has('invite')) {
+            if (!validate_account_name(invite)) {
+                console.log('Referrer account will be', invite);
+                if (this.state.referrer !== invite)
+                    this.setState({referrer: invite});
+            } else {
+                const verificationWay = 'invite_code'
+                if (this.state.invite_code !== invite ||
+                    this.state.verificationWay !== verificationWay)
+                    this.setState({
+                        invite_code: invite,
+                        verificationWay,
+                    }, () => {
+                        if (invite)
+                            this.validateInviteCode(invite);
+                    });
+            }
+        } else if (params.has('transfer')) {
+            const verificationWay = 'transfer'
+            if (this.state.verificationWay !== verificationWay)
+                this.setState({
+                    verificationWay,
+                })
+        } else {
+            const verificationWay = 'email'
+            if (this.state.verificationWay !== verificationWay)
+                this.setState({
+                    verificationWay,
+                })
+        }
+    }
+
     async componentDidMount() {
         const cryptoTestResult = undefined;
         if (cryptoTestResult !== undefined) {
@@ -73,20 +110,7 @@ class Register extends React.Component {
             this.setState({ cryptographyFailure: true });
         }
 
-        const invite = new URLSearchParams(window.location.search).get('invite');
-        if (invite) {
-            if (!validate_account_name(invite)) {
-                console.log('Referrer account will be ', invite);
-                this.setState({referrer: invite});
-            } else {
-                this.setState({
-                    invite_code: invite,
-                    verificationWay: 'invite_code',
-                }, () => {
-                    this.validateInviteCode(invite);
-                });
-            }
-        }
+        this.processQuery()
 
         let data = this.props.clientCfg;
 
@@ -114,6 +138,10 @@ class Register extends React.Component {
         }, () => {
             console.log('afterRedirect is', this.state.afterRedirect);
         });
+    }
+
+    componentDidUpdate() {
+        this.processQuery()
     }
 
     checkSocAuth = async (event) => {
@@ -264,7 +292,6 @@ class Register extends React.Component {
     render() {
         const { title, favicon, logo_title, logo_subtitle, logo, origin, } = this._getConfig();
 
-        const { loggedIn, offchainUser, serverBusy } = this.props;
         const { state, } = this;
         const {
             email,
@@ -281,20 +308,8 @@ class Register extends React.Component {
             oauthEnabled,
         } = state;
 
-        if (serverBusy) {
-            return this._renderInvitationError();
-        }
-
         if (cryptographyFailure) {
-            return this._renderCryptoFailure();
-        }
-
-        if (loggedIn) {
-            return this._renderLoggedWarning();
-        }
-
-        if (offchainUser && offchainUser.get('account')) {
-            return this._renderExistingUserAccount(offchainUser.get('account'));
+            return <CryptoFailure />
         }
 
         let emailConfirmStep = null;
@@ -348,6 +363,146 @@ class Register extends React.Component {
         const disableGetCode = okStatus || !emailHint || state.fetching;
         const disableContinueInvite = !inviteHint;
 
+        let form
+        if (state.verificationWay === 'transfer') {
+            form = <TransferRegister
+                clientCfg={this.props.clientCfg}
+                afterRedirect={this.state.afterRedirect}
+            />
+        } else if (state.verificationWay === 'email') {
+            const { dailyLimit } = this.props
+            if (dailyLimit && dailyLimit.exceed) {
+                form = <div>
+                    <VerifyWayTabs currentWay='email' />
+                    <div className='callout alert'>
+                        {tt('register_jsx.email_exceed')}
+                    </div>
+                </div>
+            }
+        }
+
+        form = form || (<form
+            onSubmit={this._onSubmit}
+            autoComplete='off'
+            noValidate
+            method='post'
+        >
+            {(showMailForm) && (
+                <div>
+                    {showMailForm && <VerifyWayTabs currentWay={state.verificationWay} />}
+                    {isInviteWay && <div>
+                        <label>
+                            {this._renderInviteCodeField(true)}
+                        </label>
+                    </div>}
+                    {!isInviteWay && <div>
+                        <label>
+                            <span style={{ color: 'red' }}>
+                                *
+                            </span>{' '}
+                            {tt('register_jsx.enter_email')}<a target='_blank' rel='noopener noreferrer' href='https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp'>{tt('register_jsx.here')}</a>{')'} 
+                            <input
+                                type='text'
+                                name='email'
+                                autoComplete='off'
+                                disabled={state.fetching}
+                                onChange={this.onEmailChange}
+                                value={email}
+                            />
+                            <div
+                                className={cn({
+                                    error: emailError,
+                                    success: emailHint,
+                                })}
+                            >
+                                <p>{emailError || emailHint}</p>
+                            </div>
+                        </label>
+                    </div>}
+                    {this._renderSocialButtons()}
+                </div>
+            )}
+            {emailConfirmStep}
+            {showMailForm && !isInviteWay && (
+                <div>
+                    {state.fetching
+                        && <LoadingIndicator type='circle' size='20px' inline />}
+                    <p className='Register__send-code-block'>
+                        <a
+                            className={cn('button', {
+                                disabled: disableGetCode,
+                            })}
+                            onClick={
+                                !disableGetCode
+                                    ? this.onClickSendCode
+                                    : null
+                            }
+                        >
+                            {tt('g.continue')}
+                        </a>
+                    </p>
+                </div>
+            )}
+            {showMailForm && isInviteWay && (
+                <div>
+                    <p>
+                        <a
+                            className={cn('button', {
+                                disabled: disableContinueInvite,
+                            })}
+                            onClick={
+                                !disableContinueInvite
+                                    ? this.onClickContinueInvite
+                                    : null
+                            }
+                        >
+                            {tt('g.continue')}
+                        </a>
+                    </p>
+                </div>
+            )}
+
+            <AccountName value={name} error={nameError}
+                disabled={!okStatus}
+                onChange={name => {
+                    this.setState({ name })
+                }}
+                onError={nameError => {
+                    this.setState({ nameError })
+                }}
+            />
+
+            <GeneratedPasswordInput
+                onChange={this.onPasswordChange}
+                disabled={!okStatus || submitting}
+                showPasswordString={
+                    name.length > 0 && !nameError
+                }
+            />
+            {okStatus && this._renderCaptcha()}
+            <div style={{ height: '10px' }}></div>
+            {nextStep}
+            <noscript>
+                <div className='callout alert'>
+                    <p>
+                        {tt(
+                            'register_jsx.form_requires_javascript_to_be_enabled'
+                        )}
+                    </p>
+                </div>
+            </noscript>
+            {submitting && <LoadingIndicator type='circle' />}
+            <button
+                disabled={submitDisabled}
+                className={cn('button action uppercase', {
+                    disabled: submitDisabled,
+                })}
+                style={{ marginBottom: '2rem', }}
+            >
+                {tt('register_jsx.create_account')}
+            </button>
+        </form>)
+
         return (
             <div>
                 <Head>
@@ -371,185 +526,7 @@ class Register extends React.Component {
                             <a href={'mailto:' + SUPPORT_EMAIL}>{SUPPORT_EMAIL}</a>
                         </p>
                         <hr />
-                        <form
-                            onSubmit={this._onSubmit}
-                            autoComplete='off'
-                            noValidate
-                            method='post'
-                        >
-                            {(showMailForm) && (
-                                <div>
-                                    {showMailForm && <div>
-                                        <a onClick={this.onInviteEnabledChange}>{tt(isInviteWay ? 'register_jsx.i_have_not_invite_code' : 'register_jsx.i_have_invite_code')}
-                                        </a>
-                                    </div>}
-                                    {isInviteWay && <div>
-                                        <label>
-                                            {this._renderInviteCodeField(true)}
-                                        </label>
-                                    </div>}
-                                    {!isInviteWay && <div>
-                                        <label>
-                                            <span style={{ color: 'red' }}>
-                                                *
-                                            </span>{' '}
-                                            {tt('register_jsx.enter_email')}<a target='_blank' rel='noopener noreferrer' href='https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp'>{tt('register_jsx.here')}</a>{')'} 
-                                            <input
-                                                type='text'
-                                                name='email'
-                                                autoComplete='off'
-                                                disabled={state.fetching}
-                                                onChange={this.onEmailChange}
-                                                value={email}
-                                            />
-                                            <div
-                                                className={cn({
-                                                    error: emailError,
-                                                    success: emailHint,
-                                                })}
-                                            >
-                                                <p>{emailError || emailHint}</p>
-                                            </div>
-                                        </label>
-                                    </div>}
-                                    {this._renderSocialButtons()}
-                                </div>
-                            )}
-                            {emailConfirmStep}
-                            {showMailForm && !isInviteWay && (
-                                <div>
-                                    {state.fetching
-                                        && <LoadingIndicator type='circle' size='20px' inline />}
-                                    <p className='Register__send-code-block'>
-                                        <a
-                                            className={cn('button', {
-                                                disabled: disableGetCode,
-                                            })}
-                                            onClick={
-                                                !disableGetCode
-                                                    ? this.onClickSendCode
-                                                    : null
-                                            }
-                                        >
-                                            {tt('g.continue')}
-                                        </a>
-                                    </p>
-                                </div>
-                            )}
-                            {showMailForm && isInviteWay && (
-                                <div>
-                                    <p>
-                                        <a
-                                            className={cn('button', {
-                                                disabled: disableContinueInvite,
-                                            })}
-                                            onClick={
-                                                !disableContinueInvite
-                                                    ? this.onClickContinueInvite
-                                                    : null
-                                            }
-                                        >
-                                            {tt('g.continue')}
-                                        </a>
-                                    </p>
-                                </div>
-                            )}
-
-                            <div className={nameError ? 'error' : ''}>
-                                <label>
-                                    {tt('register_jsx.enter_account_name')}
-
-                                    <div className='input-group'>
-                                        <input
-                                            className='input-group-field'
-                                            type='text'
-                                            name='name'
-                                            autoComplete='off'
-                                            disabled={!okStatus}
-                                            onChange={this.onNameChange}
-                                            value={name}
-                                        />
-                                    </div>
-
-                                    <div className='Register__account-name-hint'>
-                                        {tt(
-                                            'register_jsx.account_name_hint'
-                                        )}
-                                    </div>
-                                </label>
-                                <p>{nameError}</p>
-                            </div>
-                            <GeneratedPasswordInput
-                                onChange={this.onPasswordChange}
-                                disabled={!okStatus || submitting}
-                                showPasswordString={
-                                    name.length > 0 && !nameError
-                                }
-                            />
-                            {okStatus && this._renderCaptcha()}
-                            <div style={{ height: '10px' }}></div>
-                            {nextStep}
-                            <noscript>
-                                <div className='callout alert'>
-                                    <p>
-                                        {tt(
-                                            'register_jsx.form_requires_javascript_to_be_enabled'
-                                        )}
-                                    </p>
-                                </div>
-                            </noscript>
-                            {submitting && <LoadingIndicator type='circle' />}
-                            <button
-                                disabled={submitDisabled}
-                                className={cn('button action uppercase', {
-                                    disabled: submitDisabled,
-                                })}
-                                style={{ marginBottom: '2rem', }}
-                            >
-                                {tt('register_jsx.create_account')}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    _renderExistingUserAccount(existingUserAccount) {
-        const APP_NAME = tt('g.APP_NAME');
-
-        return (
-            <div className='row'>
-                <div className='column'>
-                    <div className='callout alert'>
-                        <p>
-                            {tt(
-                                'register_jsx.our_records_indicate_you_already_have_account',
-                                { APP_NAME }
-                            )}: <strong>{existingUserAccount}</strong>
-                        </p>
-                        <p>
-                            {tt(
-                                'register_jsx.in_order_to_prevent_abuse_APP_NAME_can_only_register_one_account_per_user',
-                                { APP_NAME }
-                            )}
-                        </p>
-                        <p>
-                            {tt(
-                                'register_jsx.next_3_blocks.you_can_either'
-                            ) + ' '}
-                            <a href='/login.html'>{tt('g.login')}</a>
-                            {tt(
-                                'register_jsx.next_3_blocks.to_your_existing_account_or'
-                            ) + ' '}
-                            <a href={'mailto:' + SUPPORT_EMAIL}>
-                                {tt('register_jsx.send_us_email')}
-                            </a>
-                            {' ' +
-                                tt(
-                                    'register_jsx.next_3_blocks.if_you_need_a_new_account'
-                                )}.
-                        </p>
+                        {form}
                     </div>
                 </div>
             </div>
@@ -598,79 +575,6 @@ class Register extends React.Component {
                 >
                     {tt('g.continue')}
                 </a>
-            </div>
-        );
-    }
-
-    _renderInvitationError() {
-        return (
-            <div className='row'>
-                <div className='column'>
-                    <div className='callout alert'>
-                        <p>Registration is disabled for a while. </p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    _renderLoggedWarning() {
-        const APP_NAME = tt('g.APP_NAME');
-
-        return (
-            <div className='row'>
-                <div className='column'>
-                    <div className='callout alert'>
-                        <p>
-                            {tt('register_jsx.you_need_to')}
-                            <a href='#' onClick={this._onLogoutClick}>
-                                {tt('g.logout')}
-                            </a>
-                            {tt('register_jsx.before_creating_account')}
-                        </p>
-                        <p>
-                            {tt(
-                                'register_jsx.APP_NAME_can_only_register_one_account_per_verified_user',
-                                { APP_NAME }
-                            )}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    _renderCryptoFailure() {
-        const APP_NAME = tt('g.APP_NAME');
-
-        return (
-            <div className='row'>
-                <div className='column'>
-                    <div className='callout alert'>
-                        <h4>
-                            {tt('register_jsx.ctyptography_test_failed')}
-                        </h4>
-                        <p>
-                            {tt(
-                                'register_jsx.we_will_be_unable_to_create_account_with_this_browser',
-                                { APP_NAME }
-                            )}.
-                        </p>
-                        <p>
-                            {tt('loginform_jsx.the_latest_versions_of') + ' '}
-                            <a href='https://www.google.com/chrome/'>Chrome</a>
-                            {' ' + tt('g.and')}
-                            <a href='https://www.mozilla.org/en-US/firefox/new/'>
-                                Firefox
-                            </a>
-                            {' ' +
-                                tt(
-                                    'loginform_jsx.are_well_tested_and_known_to_work_with',
-                                    { APP_DOMAIN }
-                                )}
-                        </p>
-                    </div>
-                </div>
             </div>
         );
     }
@@ -895,11 +799,11 @@ class Register extends React.Component {
                 if (data.invite) {
                     inviteHint = tt(
                         'register_jsx.invite_new_account_will_receive',
-                        {amount: formatAsset(data.invite.balance, true, false, '')});
+                        {amount: data.account_will_receive_str});
                 } else {
-                    inviteError = tt(
+                    inviteError = data.error_str || tt(
                         'invites_jsx.claim_wrong_secret_fatal'
-                    );
+                    )
                 }
             } catch (err) {
                 inviteError = tt('invites_jsx.claim_wrong_secret_cannot_fetch');
@@ -1003,37 +907,6 @@ class Register extends React.Component {
         }
     };
 
-    onNameChange = e => {
-        const name = e.target.value.trim().toLowerCase(); // Add prefix here
-        this.validateAccountName(name);
-        this.setState({ name });
-    };
-
-    async validateAccountName(name) {
-        let nameError = '';
-
-        if (name.length > 0) {
-            nameError = validate_account_name(name);
-
-            if (!nameError) {
-                try {
-                    const res = await callApi(`/api/utils/account_exists/${name}`);
-
-                    let data = await res.json();
-                    if (data.exists) {
-                        nameError = tt(
-                            'register_jsx.account_name_already_used'
-                        );
-                    }
-                } catch (err) {
-                    nameError = tt('register_jsx.account_name_hint');
-                }
-            }
-        }
-
-        this.setState({ nameError });
-    }
-
     onEmailChange = e => {
         // продолжаем let 
         let email = e.target.value.trim().toLowerCase()
@@ -1041,13 +914,6 @@ class Register extends React.Component {
 
         this.setState({
             email
-        });
-    };
-
-    onInviteEnabledChange = e => {
-        const isInvite = this.state.verificationWay === 'invite_code';
-        this.setState({
-            verificationWay: isInvite ? 'email' : 'invite_code',
         });
     };
 
@@ -1059,11 +925,6 @@ class Register extends React.Component {
         this.setState({
             invite_code
         });
-    };
-
-    _onLogoutClick = e => {
-        e.preventDefault();
-        this.props.logout();
     };
 }
 

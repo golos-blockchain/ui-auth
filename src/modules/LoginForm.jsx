@@ -12,6 +12,7 @@ class LoginForm extends React.Component {
 
     state = {
         error: '',
+        errorLink: null,
         submitting: false,
         name: '',
         password: '',
@@ -26,6 +27,16 @@ class LoginForm extends React.Component {
         this.setState({
             service_account: oauthCfg.service_account,
         });
+
+        const params = new URLSearchParams(window.location.search)
+        const frozen = params.get('frozen')
+        if (frozen) {
+            this.setState({
+                name: frozen,
+                error: tt('loginform_jsx.Account is frozen'),
+                errorLink: this._getFrozenLink(frozen)
+            })
+        }
     }
 
     onNameChange = e => {
@@ -44,8 +55,14 @@ class LoginForm extends React.Component {
         });
     };
 
+    _getFrozenLink = (name) => {
+        return <span>&nbsp;<a href={'/sign/unfreeze/' + name} target='_blank' rel='noopener noreferrer'>
+                {tt('g.more_hint')}
+            </a></span>
+    }
+
     setError = (errMsg) => {
-        const [ msg, cause, ] = errMsg.split('|');
+        const [ msg, cause, ] = (errMsg && errMsg.split) ? errMsg.split('|') : [ errMsg, null ]
         let error = tt('loginform_jsx.' + msg);
         if (cause) {
             console.error(msg + ', cause:', cause);
@@ -53,8 +70,13 @@ class LoginForm extends React.Component {
         } else {
             console.error(msg);
         }
+        let errorLink = null
+        if (msg === 'Account is frozen') {
+            errorLink = this._getFrozenLink(this.state.name)
+        }
         this.setState({
             error,
+            errorLink,
             submitting: false,
         });
     };
@@ -62,7 +84,7 @@ class LoginForm extends React.Component {
     _onSubmit = async e => {
         e.preventDefault();
 
-        this.setState({ submitting: true, error: '', });
+        this.setState({ submitting: true, error: '', errorLink: null });
 
         try {
             const { state, } = this;
@@ -220,7 +242,7 @@ class LoginForm extends React.Component {
                     </center>
                     <center>
                         {state.error ? (<div className='error'>
-                            {state.error}
+                            {state.error}{state.errorLink}
                         </div>) : null}
                     </center>
                 </form>

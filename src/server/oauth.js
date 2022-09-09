@@ -142,6 +142,9 @@ async function getChainData(account, action = 'transfer') {
         return;
     }
     acc = acc[0];
+    if (acc.frozen) {
+        return { frozen: true }
+    }
 
     if (action === 'delegate_vs') {
         let gprops = await golos.api.getDynamicGlobalPropertiesAsync();

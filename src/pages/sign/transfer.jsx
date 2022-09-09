@@ -35,6 +35,9 @@ export const getServerSideProps = withSecureHeadersSSR(async ({ req, res, resolv
     let initial = null;
     if (session.account) {
         chainData = await getChainData(session.account, action);
+        if (chainData.frozen) {
+            return await holder.freeze(session.account)
+        }
         initial = {
             from: session.account,
             to: '',
@@ -136,7 +139,7 @@ class TransferDonate extends React.Component {
         const { from, to, sym, } = values;
 
         let amount = Asset(0, balances[sym].precision, sym);
-        amount.amountFloat = parseFloat(values.amount);
+        amount.amountFloat = values.amount
         amount = amount.toString();
 
         let memo = values.memo || '';
@@ -186,7 +189,7 @@ class TransferDonate extends React.Component {
             return '...';
 
         let amount = Asset(0, balances[sym].precision, sym);
-        amount.amountFloat = parseFloat(values.amount || '0');
+        amount.amountFloat = values.amount || '0'
 
         url += '?';
         url += 'to=' + (to || '');

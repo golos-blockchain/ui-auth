@@ -72,6 +72,9 @@ if (oauthEnabled()) {
             if (!chainAccount) {
                 throwErr(req, 400, ['missing blockchain account']);
             }
+            if (chainAccount.frozen) {
+                throwErr(req, 400, ['account is frozen'])
+            }
 
             const hasAuth = hasAuthority(chainAccount, config.get('oauth.service_account.name'));
 

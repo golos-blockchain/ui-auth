@@ -76,6 +76,9 @@ let handler = nextConnect({ attachParams: true, })
             if (!chainAccount) {
                 throwErr(req, 400, 'missing blockchain account');
             }
+            if (chainAccount.frozen) {
+                throwErr(req, 400, 'account is frozen');
+            }
 
             const auth = { posting: false };
             const bufSha = hash.sha256(JSON.stringify({token: login_challenge}, null, 0));

@@ -9,7 +9,7 @@ import { initGolos, } from '@/server/initGolos';
 import { getVersion, rateLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
 import passport, { addModalRoutes, checkAlreadyUsed } from '@/server/passport';
-import { obtainUid, getClientCfg, } from '@/server/reg';
+import { getDailyLimit, obtainUid, getClientCfg, } from '@/server/reg';
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 
@@ -26,7 +26,8 @@ let handler = nextConnect({ attachParams: true, })
         res.json({
             status: 'ok',
             version: getVersion(),
-        });
+            free_limit: getDailyLimit()
+        })
     })
 
     .get('/api/reg/set_locale/:locale', async (req, res) => {
