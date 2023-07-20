@@ -2,7 +2,7 @@ import golos from 'golos-lib-js';
 import { Signature, hash, PublicKey, } from 'golos-lib-js/lib/auth/ecc';
 import secureRandom from 'secure-random';
 import nextConnect from '@/server/nextConnect';
-import { authCors, } from '@/server/auth';
+import { authCors, authSessions } from '@/server/auth'
 import { throwErr, } from '@/server/error';
 import { checkOrigin, } from '@/server/origin';
 import { initGolos, } from '@/server/initGolos';
@@ -13,7 +13,6 @@ import Tarantool from '@/server/tarantool';
 initGolos();
 
 let challenges = new Map();
-let sessions = new Map();
 
 let handler = nextConnect({ attachParams: true, })
     .use(authCors())
@@ -53,10 +52,12 @@ let handler = nextConnect({ attachParams: true, })
                 throwErr(req, 400, originErr);
             }
 
-            const alreadyAuthorized = sessions.get(authSession);
+            const alreadyAuthorized = authSessions()[authSession]
 
             if (!login_challenge) {
-                authSession = secureRandom.randomBuffer(16).toString('hex')
+                if (!alreadyAuthorized) {
+                    authSession = secureRandom.randomBuffer(16).toString('hex')
+                }
                 login_challenge = secureRandom.randomBuffer(16).toString('hex');
                 challenges.set(authSession, login_challenge);
             }
@@ -107,7 +108,7 @@ let handler = nextConnect({ attachParams: true, })
             }
 
             challenges.delete(authSession);
-            sessions.set(authSession, account);
+            authSessions()[authSession] = account
 
             let data = {
                 status: 'ok',
@@ -128,7 +129,8 @@ let handler = nextConnect({ attachParams: true, })
 
     .get('/api/logout_account', (req, res) => {
         const authSession = req.headers['x-auth-session'];
-        const was_logged_in = sessions.delete(authSession);
+        const was_logged_in = !!(authSessions()[authSession])
+        delete authSessions()[authSession]
         challenges.delete(authSession);
         res.json({
             status: 'ok',
