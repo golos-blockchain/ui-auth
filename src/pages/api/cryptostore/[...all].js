@@ -117,7 +117,7 @@ async function decrypt(req, res, xauthsession) {
             if (obj.active) {
                 authors.add(obj.author)
             } else {
-                inactiveAuthors.add(obj.author, {
+                inactiveAuthors.set(obj.author, {
                     cost: obj.cost,
                     tip_cost: obj.tip_cost,
                 })
