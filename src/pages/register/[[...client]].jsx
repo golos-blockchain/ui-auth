@@ -400,7 +400,7 @@ class Register extends React.Component {
                             <span style={{ color: 'red' }}>
                                 *
                             </span>{' '}
-                            {tt('register_jsx.enter_email')}<a target='_blank' rel='noopener noreferrer' href='https://accounts.google.com/signup/v2/webcreateaccount?hl=ru&flowName=GlifWebSignIn&flowEntry=SignUp'>{tt('register_jsx.here')}</a>{')'} 
+                            {tt('register_jsx.enter_email')} 
                             <input
                                 type='text'
                                 name='email'
