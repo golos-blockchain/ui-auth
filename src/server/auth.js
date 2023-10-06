@@ -1,5 +1,7 @@
 import cors from 'cors';
 
+global._authSessions = global._authSessions || {}
+
 export function authCors(opts = {}) {
     return cors({
         origin: true,
@@ -7,4 +9,8 @@ export function authCors(opts = {}) {
         exposedHeaders: ['X-Auth-Session'],
         ...opts,
     })
+}
+
+export function authSessions() {
+    return global._authSessions
 }
