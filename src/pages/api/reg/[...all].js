@@ -231,10 +231,11 @@ let handler = nextConnect({ attachParams: true, })
             verification_way: 'social-undefined',
             step: (soc_id_type && !soc_error) ? 'verified' : 'sending',
         }
-        if (!soc_id) {
+        if (!soc_id && soc_error) {
+            const se = soc_error
             delete req.session.soc_error // To do not prevent another tries
             await req.session.save()
-            throwErr(req, soc_error.status, [soc_error.message], soc_error.exception, state)
+            throwErr(req, se.status, [se.message], se.exception, state)
         }
         state.status = 'ok'
         res.json({

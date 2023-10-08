@@ -26,6 +26,7 @@
     "enter_invite_code": "Enter invite code",
     "enter_invite_code_optional": "You also can use invite code, if you have it:",
     "or_use_socsite": "...or use social site",
+    "or_use_telegram": "...or use your Telegram account",
     "invite_secret_cannot_be_empty": "Invite code cannot be empty",
     "invite_new_account_will_receive": "Account will have %(amount)s in Golos Power",
     "enter_account_name": "Enter your account name",
@@ -67,7 +68,13 @@
     "phone_number_has_been_verified": "E-mail has been verified, please continue the registration.",
     "authorizing_with": "Authorizing with ",
     "authorized_with_": "Аuthorized with ",
-    "email_exceed": "Currently limit of free registration is exceed. You can use invite or transfer."
+    "email_exceed": "Currently limit of free registration is exceed. You can use invite or transfer.",
+    "free_remain": "",
+    "free_remain2": {
+      "zero": "0 free registrations remain.",
+      "one": "1 free registration remains.",
+      "other": "%(count)s free registrations remain."
+    }
   },
   "transfer_register_jsx": {
     "please_send_transfer": "Please send at least ",
@@ -302,7 +309,7 @@
     "frozen3": "this form."
   },
   "verify_way_tabs_jsx": {
-    "email": "With Gmail",
+    "social": "Social",
     "invite_code": "Invite-code",
     "transfer": "Transfer"
   },
