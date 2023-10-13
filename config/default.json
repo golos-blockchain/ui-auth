@@ -33,8 +33,8 @@
   "helmet": {
     "directives": {
       "defaultSrc": "'self'",
-      "childSrc": "'self' www.google.com",
-      "scriptSrc": "'self' 'unsafe-inline' 'unsafe-eval' www.google.com www.gstatic.com",
+      "childSrc": "'self' www.google.com telegram.org *.telegram.org",
+      "scriptSrc": "'self' 'unsafe-inline' 'unsafe-eval' www.google.com www.gstatic.com telegram.org *.telegram.org",
       "styleSrc": "'self' 'unsafe-inline' fonts.googleapis.com",
       "imgSrc": "* data:",
       "fontSrc": "data: fonts.gstatic.com",
@@ -69,6 +69,10 @@
       "enabled": true,
       "key": "9e9787bd59204b95812bc7e438939616",
       "secret": "ca10592646784980a11179cc72146344"
+    },
+    "telegram": {
+      "enabled": true,
+      "bot_token": "6390290192:AAEGipeCa4P0V4HZzoXvITCij8on6OItsGM"
     }
   },
   "default_client": "blogs",

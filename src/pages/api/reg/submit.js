@@ -116,6 +116,12 @@ let handler = nextConnect()
             throwErr(req, 403, ['daily_reg_limit_exceed'], null, state)
         }
 
+        if (req.session.soc_id) {
+            delete req.session.soc_id
+            delete req.session.soc_id_type
+            await req.session.save()
+        }
+
         console.log('-- /submit creating account');
 
         const delegation = config.get('registrar.delegation')

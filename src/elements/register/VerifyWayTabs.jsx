@@ -21,11 +21,11 @@ class VerifyWayTabs extends React.Component {
 
         const path = this.getPath()
 
-        let email = tt('verify_way_tabs_jsx.email')
-        if (currentWay === 'email') {
-            email = <span>{email}</span>
+        let social = tt('verify_way_tabs_jsx.social')
+        if (currentWay === 'social') {
+            social = <span>{social}</span>
         } else {
-            email = <Link href={path}>{email}</Link>
+            social = <Link href={path}>{social}</Link>
         }
 
         let invite = tt('verify_way_tabs_jsx.invite_code')
@@ -43,7 +43,7 @@ class VerifyWayTabs extends React.Component {
         }
 
         return <div style={{ marginBottom: '1.0rem' }}>
-                {email}
+                {social}
                 &nbsp;|&nbsp;
                 {invite}
                 &nbsp;|&nbsp;

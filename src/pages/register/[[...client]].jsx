@@ -5,6 +5,7 @@ import cn from 'classnames';
 import { PrivateKey, } from 'golos-lib-js/lib/auth/ecc';
 import Head from 'next/head';
 import ReCAPTCHA from 'react-google-recaptcha';
+import TelegramLoginButton from 'react-telegram-login'
 
 import { SUPPORT_EMAIL } from '@/client_config';
 import GeneratedPasswordInput from '@/elements/GeneratedPasswordInput';
@@ -44,19 +45,16 @@ class Register extends React.Component {
     state = {
         fetching: false,
         step: 'sending',
-        verificationWay: 'email',
+        verificationWay: 'social',
         message: '',
 
         name: '',
-        email: '',
         referrer: '',
         invite_code: '',
         code: '',
         password: '',
         passwordValid: '',
         nameError: '',
-        emailHint: '',
-        emailError: '',
         inviteHint: '',
         inviteError: '',
         recaptcha_v2: '',
@@ -75,15 +73,18 @@ class Register extends React.Component {
                     this.setState({referrer: invite});
             } else {
                 const verificationWay = 'invite_code'
-                if (this.state.invite_code !== invite ||
-                    this.state.verificationWay !== verificationWay)
+                if (this.state.verificationWay !== verificationWay) {
+                    this.setState({
+                        verificationWay,
+                    })
+                }
+                if (invite && this.state.invite_code !== invite) {
                     this.setState({
                         invite_code: invite,
-                        verificationWay,
                     }, () => {
-                        if (invite)
-                            this.validateInviteCode(invite);
-                    });
+                        this.validateInviteCode(invite);
+                    })
+                }
             }
         } else if (params.has('transfer')) {
             const verificationWay = 'transfer'
@@ -92,8 +93,8 @@ class Register extends React.Component {
                     verificationWay,
                 })
         } else {
-            const verificationWay = 'email'
-            if (this.state.verificationWay !== verificationWay)
+            const verificationWay = 'social'
+            if (!this.state.verificationWay.startsWith(verificationWay))
                 this.setState({
                     verificationWay,
                 })
@@ -145,7 +146,6 @@ class Register extends React.Component {
     }
 
     checkSocAuth = async (event) => {
-        console.log('checkSocAuth');
         window.addEventListener('focus', this.checkSocAuth, {once: true});
 
         const response = await callApi('/api/reg/check_soc_auth');
@@ -169,32 +169,46 @@ class Register extends React.Component {
             verificationWay: 'social-' + socName,
             message: (<div>
                 <LoadingIndicator type='circle' size='20px' inline />
-                {tt('register_jsx.authorizing_with') + socName + '...'}
-                {this._renderSocialButtons()}
+                <span style={{ display: 'inline-block', marginTop: '0.35rem', marginLeft: '0.5rem' }}>
+                    {tt('register_jsx.authorizing_with') + socName + '...'}
+                </span>
+                {this._renderSocialButtons(false)}
             </div>),
-
-            email: '',
         });
 
         this.checkSocAuth();
     };
 
-    useSocialLogin = (result, socName) => {
+    useSocialLogin = (result, socIdType) => {
+        let socName = 'unknown'
+        if (socIdType) {
+            socIdType = socIdType.split('_')[0]
+            if (socIdType === 'vk') {
+                socName = 'ВКонтакте'
+            } else if (socIdType === 'facebook') {
+                socName = 'Facebook'
+            }  else if (socIdType === 'mailru') {
+                socName = 'Mail.Ru'
+            }  else if (socIdType === 'yandex') {
+                socName = 'Яндекс'
+            }  else if (socIdType === 'telegram') {
+                socName = 'Telegram'
+            } 
+        }
+
         this.updateApiState(result, () => {
             if (result.error) {
                 this.setState({
-                    verificationWay: 'email' // to show social buttons again
+                    verificationWay: 'social' // to show social buttons again
                 })
             } else {
                 this.setState({
                     fetching: false,
                     message: (<div>
-                        {tt('register_jsx.authorized_with_') + this.state.authType + '.'}
-                        {this._renderSocialButtons()}
+                        {tt('register_jsx.authorized_with_') + socName + '.'}
+                        {this._renderSocialButtons(false)}
                     </div>),
                     verificationWay: 'social-' + socName,
-
-                    email: '',
                 })
             }
         })
@@ -228,6 +242,16 @@ class Register extends React.Component {
         });
         this.startSocialLoading(authType);
         window.open(`/api/reg/modal/mailru`, '_blank');
+    };
+
+    useTelegram = (e) => {
+        e.preventDefault();
+        const authType = 'Telegram'
+        this.setState({
+            authType
+        })
+        this.startSocialLoading(authType)
+        window.open(`/api/reg/modal/telegram`, '_blank');
     };
 
     useYandex = (e) => {
@@ -294,12 +318,9 @@ class Register extends React.Component {
 
         const { state, } = this;
         const {
-            email,
             name,
             passwordValid,
             nameError,
-            emailHint,
-            emailError,
             inviteHint,
             inviteError,
             submitting,
@@ -312,17 +333,15 @@ class Register extends React.Component {
             return <CryptoFailure />
         }
 
-        let emailConfirmStep = null;
+        let socialConfirmStep = null;
         let showMailForm =
             state.step === 'sending'
             && !state.verificationWay.startsWith('social-');
 
         let isInviteWay = state.verificationWay === 'invite_code';
 
-        if (state.step === 'sent' && state.verificationWay === 'email') {
-            emailConfirmStep = this._renderCodeWaiting();
-        } else if (state.message) {
-            emailConfirmStep = (
+        if (state.message) {
+            socialConfirmStep = (
                 <div
                     className={cn('callout', {
                         success: state.step === 'verified',
@@ -360,7 +379,6 @@ class Register extends React.Component {
             !allBoxChecked ||
             !okStatus;
 
-        const disableGetCode = okStatus || !emailHint || state.fetching;
         const disableContinueInvite = !inviteHint;
 
         let form
@@ -369,11 +387,11 @@ class Register extends React.Component {
                 clientCfg={this.props.clientCfg}
                 afterRedirect={this.state.afterRedirect}
             />
-        } else if (state.verificationWay === 'email') {
+        } else if (state.verificationWay === 'social') {
             const { dailyLimit } = this.props
             if (dailyLimit && dailyLimit.exceed) {
                 form = <div>
-                    <VerifyWayTabs currentWay='email' />
+                    <VerifyWayTabs currentWay='social' />
                     <div className='callout alert'>
                         {tt('register_jsx.email_exceed')}
                     </div>
@@ -395,54 +413,10 @@ class Register extends React.Component {
                             {this._renderInviteCodeField(true)}
                         </label>
                     </div>}
-                    {!isInviteWay && <div>
-                        <label>
-                            <span style={{ color: 'red' }}>
-                                *
-                            </span>{' '}
-                            {tt('register_jsx.enter_email')} 
-                            <input
-                                type='text'
-                                name='email'
-                                autoComplete='off'
-                                disabled={state.fetching}
-                                onChange={this.onEmailChange}
-                                value={email}
-                            />
-                            <div
-                                className={cn({
-                                    error: emailError,
-                                    success: emailHint,
-                                })}
-                            >
-                                <p>{emailError || emailHint}</p>
-                            </div>
-                        </label>
-                    </div>}
-                    {this._renderSocialButtons()}
+                    {!isInviteWay && this._renderSocialButtons(!(state.verificationWay === 'social'), !(state.verificationWay === 'social'))}
                 </div>
             )}
-            {emailConfirmStep}
-            {showMailForm && !isInviteWay && (
-                <div>
-                    {state.fetching
-                        && <LoadingIndicator type='circle' size='20px' inline />}
-                    <p className='Register__send-code-block'>
-                        <a
-                            className={cn('button', {
-                                disabled: disableGetCode,
-                            })}
-                            onClick={
-                                !disableGetCode
-                                    ? this.onClickSendCode
-                                    : null
-                            }
-                        >
-                            {tt('g.continue')}
-                        </a>
-                    </p>
-                </div>
-            )}
+            {socialConfirmStep}
             {showMailForm && isInviteWay && (
                 <div>
                     <p>
@@ -533,53 +507,23 @@ class Register extends React.Component {
         );
     }
 
-    _renderCodeWaiting() {
-        const { state, } = this;
-
-        return (
-            <div className='callout'>
-                <div className='Register__confirm-email-block'>
-                    {tt('mobilevalidation_js.enter_confirm_code')}
-                    <input
-                        type='email'
-                        name='email'
-                        autoComplete='off'
-                        onChange={this.onCodeChange}
-                    />
-                </div>
-                <div>{tt('mobilevalidation_js.waiting_from_you_line_2')}</div>
-
-
-                <p>
-                    <small>
-                        {tt('mobilevalidation_js.you_can_change_your_number') +
-                            ' '}
-                        <a onClick={this.onClickSelectAnotherPhone}>
-                            {tt('mobilevalidation_js.select_another_number')}
-                        </a>.
-                    </small>
-                </p>
-
-
-                <div className={cn({
-                        error: state.status === 'err',
-                        success: state.status === 'ok' })}>
-                    <p>{state.message}</p>
-                </div>
-
-                <a
-                    className={cn('button', {
-                        disabled: false,
-                    })}
-                    onClick={this.onCheckCode}
-                >
-                    {tt('g.continue')}
-                </a>
-            </div>
-        );
+    onTelegramAuth = async (user) => {
+        let dataAuthUrl = '/api/reg/modal/telegram/callback?'
+        for (const [k, v] of Object.entries(user)) {
+            dataAuthUrl += k + '=' + v + '&'
+        }
+        const response = await callApi(dataAuthUrl);
+        if (response.ok || response.status === 400) {
+            const result = await response.json();
+            this.setState({
+                authType: 'Telegram',
+            }, () => {
+                this.useSocialLogin(result, result.soc_id_type)
+            })
+        }
     }
 
-    _renderSocialButtons() {
+    _renderSocialButtons(showTitle = true, center = true) {
         const { config } = this.state;
         if (!config || !config.grants) {
             return null;
@@ -592,11 +536,20 @@ class Register extends React.Component {
         const facebook = hasGrant('facebook');
         const yandex = hasGrant('yandex');
         const mailru = hasGrant('mailru');
-        const empty = !vk && !facebook && !yandex && !mailru;
+        const telegram = hasGrant('telegram')
+        const empty = !vk && !facebook && !yandex && !mailru && !telegram
+
+        if (!this.state.authType && !empty) {
+            const { dailyLimit } = this.props
+            if (dailyLimit && dailyLimit.exceed) {
+                return null
+            }
+        }
 
         return (
-            <div align='center'>
-                {!this.state.authType && !empty && tt('register_jsx.or_use_socsite')}<br/>
+            <div align={center ? 'center' : ''}>
+                {showTitle && !this.state.authType && !empty && tt('register_jsx.or_use_socsite')}
+                {showTitle ? <br /> : null}
                 {vk && <Tooltip t='VK'>
                     <span onClick={this.useVk} style={{cursor: 'pointer', marginRight: '5px' }}>
                         <img src='/images/icon-vk.png' alt='VK' />
@@ -617,6 +570,21 @@ class Register extends React.Component {
                         <img src='/images/icon-mail.png' alt='Mail.Ru' />
                     </span>
                 </Tooltip>}
+                {telegram && !showTitle && <div style={{ marginTop: '0.5rem' }}>
+                    {tt('register_jsx.or_use_telegram')}
+                </div>}
+                {telegram && <div style={{ marginTop: '0.5rem' }}>
+                    <TelegramLoginButton botName='testgolos2_bot'
+                        buttonSize='medium'
+                        dataOnauth={this.onTelegramAuth}
+                        usePic={false} />
+                </div>}
+                {dailyLimit ? <div style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>
+                    {tt('register_jsx.free_remain')}
+                    {tt('register_jsx.free_remain2', {
+                        count: dailyLimit.per_day - dailyLimit.regs
+                    })}
+                </div> : null}
             </div>
         );
     }
@@ -682,7 +650,7 @@ class Register extends React.Component {
     _onSubmit = async e => {
         e.preventDefault();
         this.setState({ submitting: true });
-        const { email, invite_code, name, password, passwordValid, referrer, recaptcha_v2, } = this.state;
+        const { verificationWay, invite_code, name, password, passwordValid, referrer, recaptcha_v2, } = this.state;
         if (!name || !password || !passwordValid) return;
 
         let publicKeys;
@@ -707,8 +675,7 @@ class Register extends React.Component {
         try {
             // create account
             const res = await callApi('/api/reg/submit', {
-                email: email !== '' ? email : undefined,
-                invite_code: email === '' ? invite_code : undefined,
+                invite_code: verificationWay === 'invite_code' ? invite_code : undefined,
                 name,
                 owner_key: publicKeys[0],
                 active_key: publicKeys[1],
@@ -753,30 +720,6 @@ class Register extends React.Component {
     onCodeChange = e => {
         const code = e.target.value.trim().toLowerCase();
         this.setState({ code });
-    };
-
-    validateEmail = (value, isFinal) => {
-        const { config, } = this.state;
-
-        const fakeEmailsAllowed = config && config.fake_emails_allowed;
-
-        let emailError = null;
-        let emailHint = null;
-
-        if (!value) {
-            emailError = tt('mobilevalidation_js.email_cannot_be_empty');
-        } else if (!fakeEmailsAllowed && !/^[a-z0-9](\.?[a-z0-9]){5,}@g(oogle)?mail\.com$/.test(value)) {
-            emailError = tt('mobilevalidation_js.email_must_be_gmail');
-        }
-
-        if (emailError) {
-            emailError =
-                '' + emailError;
-        } else {
-            emailHint = 'Google email: ' + value;
-        }
-
-        this.setState({ emailError, emailHint });
     };
 
     validateInviteCode = async (value, isFinal) => {
@@ -830,7 +773,7 @@ class Register extends React.Component {
         if (error_str) {
             newState.message = error_str;
         }
-        if (verification_way === 'email' && step === 'verified') {
+        if (verification_way === 'social' && step === 'verified') {
             newState.message = tt(
                 'register_jsx.phone_number_has_been_verified'
             );
@@ -839,44 +782,10 @@ class Register extends React.Component {
         this.setState(newState, after);
     }
 
-    onClickSelectAnotherPhone = () => {
-        this.setState({
-            fetching: false,
-            step: 'sending',
-        });
-    };
-
-    onClickSendCode = async () => {
-        const { email } = this.state;
-
-        this.setState({
-            fetching: true,
-        });
-
-        try {
-            const res = await callApi('/api/reg/send_code', {
-                email
-            });
-
-            let data = await res.json();
-
-            this.updateApiState(data);
-        } catch (err) {
-            console.error('Caught /send_code server error', err);
-
-            this.updateApiState({
-                status: 'err',
-                error_str: err.message ? err.message : err,
-            });
-        }
-    };
-
     onClickContinueInvite = async () => {
         this.setState({ 
             fetching: true,
             message: '',
-
-            email: '',
         });
 
         const res = await callApi('/api/reg/use_invite', {
@@ -886,35 +795,6 @@ class Register extends React.Component {
         let data = await res.json();
 
         this.updateApiState(data);
-    };
-
-    onCheckCode = async () => {
-        try {
-            const res = await callApi('/api/reg/verify_code', {
-                confirmation_code: this.state.code,
-                email: this.state.email
-            });
-
-            let data = await res.json();
-
-            this.updateApiState(data);
-        } catch (err) {
-            console.error('Caught /verify_code server error:', err);
-            this.updateApiState({
-                status: 'err',
-                error_str: err.message ? err.message : err,
-            });
-        }
-    };
-
-    onEmailChange = e => {
-        // продолжаем let 
-        let email = e.target.value.trim().toLowerCase()
-        this.validateEmail(email)
-
-        this.setState({
-            email
-        });
     };
 
     onInviteCodeChange = e => {
