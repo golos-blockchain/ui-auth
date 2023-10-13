@@ -10,8 +10,6 @@
       "posting": "5K1aJ8JayUA7c2Ptg9Y2DetKxSvXGXa5GCcvYeHtn1Xh3v4egPS",
       "active": "5JFZC7AtEe1wF2ce6vPAUxDeevzYkPgmtR14z9ZVgvCCtrFAaLw"
     },
-    "img_proxy_prefix": "https://devimages.golos.today",
-    "img_proxy_backup_prefix": "https://steemitimages.com",
     "allowed_clients": {
       "localfile": {
         "origins": ["null"],
