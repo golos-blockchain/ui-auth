@@ -16,6 +16,7 @@ import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import Tooltip from '@/elements/Tooltip';
 import Header from '@/modules/Header';
 import TransferRegister from '@/modules/register/TransferRegister'
+import UIARegister from '@/modules/register/UIARegister'
 import { obtainUid, getClientCfg, getDailyLimit, } from '@/server/reg';
 import { initRegSession, } from '@/server/regSession';
 import { withSecureHeadersSSR, } from '@/server/security';
@@ -88,6 +89,12 @@ class Register extends React.Component {
             }
         } else if (params.has('transfer')) {
             const verificationWay = 'transfer'
+            if (this.state.verificationWay !== verificationWay)
+                this.setState({
+                    verificationWay,
+                })
+        } else if (params.has('uia')) {
+            const verificationWay = 'uia'
             if (this.state.verificationWay !== verificationWay)
                 this.setState({
                     verificationWay,
@@ -397,6 +404,11 @@ class Register extends React.Component {
                     </div>
                 </div>
             }
+        } else if (state.verificationWay === 'uia') {
+            form = <UIARegister
+                clientCfg={this.props.clientCfg}
+                afterRedirect={this.state.afterRedirect}
+            />
         }
 
         form = form || (<form

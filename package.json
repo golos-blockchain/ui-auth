@@ -34,6 +34,7 @@
     "passport-yandex": "^0.0.5",
     "querystring": "^0.2.1",
     "react": "^17.0.2",
+    "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "^17.0.2",
     "react-foundation-components": "git+https://github.com/golos-blockchain/react-foundation-components.git#5dbfb800aff45988c57bb7d09c1c235a8b49b418",
     "react-google-recaptcha": "^2.1.0",

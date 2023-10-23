@@ -130,6 +130,10 @@ export function getClientCfg(req, params, locale = '') {
     cfg.fake_emails_allowed = config.has('fake_emails_allowed')
         && config.get('fake_emails_allowed');
 
+    cfg.registrar = config.has('registrar') ? config.get('registrar') : {}
+    if (!cfg.registrar.uias)
+        cfg.registrar.uias = []
+
     let data = {
         config: cfg,
         oauthEnabled: config.has('oauth'),

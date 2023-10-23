@@ -93,6 +93,18 @@
     "cannot_reset": "Unfortunately, something went wrong. We cannot set your password. But everything is under control - it is your temporary key. Save it, and contact us: ",
     "unload_warning": "Do you saved the key? Or you want to cancel registration? If transfer already sent, there are no refund possible."
   },
+  "uia_register_jsx": {
+    "select_uia": "Choose cryptocurrencу",
+    "register_with": "Register with...",
+    "no_such_asset": " - no such UIA.",
+    "deposit_unavailable": " - deposit temporarily unavailable.",
+    "min_amount": "Min amount",
+    "fee": "Fee",
+    "memo_fixed": "Memo",
+    "to": "Send tokens to address/account",
+    "api_error": "Cannot get address. Try again later. If problem still occurs, contact the issuer of ",
+    "api_error_details": "and send the error details:"
+  },
   "invites_jsx": {
     "claim_wrong_secret": "Wrong secret",
     "claim_wrong_secret_fatal": "No such invite check",
@@ -239,8 +251,7 @@
     "worker_request_vote": "Voting for worker requests",
     "proposal_create": "Creating transaction proposals",
     "proposal_delete": "Removing transaction proposals",
-    "proposal_update": "Voting in transaction proposals",
-    "proposal_update_active": "Voting in transaction proposals with active authorities"
+    "proposal_update": "Voting in transaction proposals"
   },
   "recovery": {
     "change_title": "Change recovery account",
@@ -311,7 +322,8 @@
   "verify_way_tabs_jsx": {
     "social": "Social",
     "invite_code": "Invite-code",
-    "transfer": "Transfer"
+    "transfer": "Transfer",
+    "with_uia": "With cryptocurrencies"
   },
   "g": {
     "APP_NAME": "Golos",

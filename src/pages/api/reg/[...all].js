@@ -1,7 +1,8 @@
 import config from 'config';
 import gmailSend from 'gmail-send';
-import golos from 'golos-lib-js';
+import golos, { api } from 'golos-lib-js'
 import { hash, } from 'golos-lib-js/lib/auth/ecc';
+import { Asset } from 'golos-lib-js/lib/utils'
 import secureRandom from 'secure-random';
 import nextConnect from '@/server/nextConnect';
 import { throwErr, } from '@/server/error';
@@ -14,6 +15,8 @@ import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 
 initGolos();
+
+global.pollIntervals = {}
 
 let handler = nextConnect({ attachParams: true, })
     .use(regSessionMiddleware)
@@ -302,6 +305,65 @@ let handler = nextConnect({ attachParams: true, })
         res.json({
             ...state,
         });
+    })
+
+    .get('/api/reg/wait_for_transfer/:sym', async (req, res) => {
+        const { sym } = req.params
+
+        if (global.pollIntervals[sym]) throwErr(req, 400, ['Someone already waits for the transfer'])
+
+        const username = config.get('registrar.account')
+        if (!username) throwErr(req, 400, ['No registrar.account in config'])
+
+        const getBalance = async () => {
+            const balances = await api.getAccountsBalancesAsync([username], {
+                symbols: [sym]
+            })
+            let bal = balances[0][sym]
+            if (bal) {
+                bal = bal.balance
+                return Asset(bal)
+            } else {
+                const assets = await api.getAssetsAsync('', [sym])
+                if (!assets[0]) throwErr(req, 400, ['No such asset'])
+                bal = Asset(assets[0].supply)
+                bal.amount = 0
+                return bal
+            }
+        }
+
+        const stop = () => {
+            if (global.pollIntervals[sym]) {
+                clearInterval(global.pollIntervals[sym].interval)
+                delete global.pollIntervals[sym]
+            }
+        }
+
+        const initBal = await getBalance()
+        const pollMsec = process.env.NODE_ENV === 'development' ? 1000 : 30000
+        let tries = 0
+        global.pollIntervals[sym] = { created: Date.now(), interval: setInterval(async () => {
+            if (tries > 2) {
+                stop()
+                res.json({
+                    status: 'err',
+                    error: 'Timeouted'
+                })
+                return
+            }
+            ++tries
+
+            const bal = await getBalance()
+            console.log('wait_for_transfer', initBal.toString(), bal.toString())
+            if (bal.amount > initBal.amount) {
+                stop()
+                const delta = Asset(bal.amount - initBal.amount, bal.precision, bal.symbol)
+                res.json({
+                    status: 'ok',
+                    delta: delta.toString()
+                })
+            }
+        }, pollMsec) }
     })
 
 handler = addModalRoutes(handler);
