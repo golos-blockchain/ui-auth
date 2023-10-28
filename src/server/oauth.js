@@ -159,6 +159,15 @@ async function getChainData(account, action = 'transfer') {
     if (data.balances['GBG'])
         data.balances['GBG'] = acc.sbd_balance;
 
+    if (action === 'transfer_nft') {
+        data.nft_tokens = await golos.api.getNftTokensAsync({
+            owner: account,
+            state: 'not_selling_only',
+            limit: 100,
+        })
+        return data;
+    }
+
     let uia = await golos.api.getAccountsBalancesAsync([account]);
     if (!uia[0]) {
         return data;

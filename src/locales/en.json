@@ -172,6 +172,7 @@
     "transfer": "Transfer tokens",
     "donate": "Donate to user",
     "delegate_vs": "Delegate vesting shares",
+    "transfer_nft": "Transfer NFT-token",
     "unfreeze": "Unfreeze account",
     "apps_title": "Apps",
     "apps_empty": "You are not authorized in any app.",
@@ -189,6 +190,11 @@
     "memo": "Memo",
     "memo_is_public": "This memo is public.",
     "submit": "Transfer"
+  },
+  "oauth_transfer_nft": {
+    "no_tokens": "You have not yet any NFT-tokens.",
+    "token_not_exist": "No such token in your wallet. You can transfer any of these tokens:",
+    "token_is_not_your": "This token is not your. You can transfer any of these tokens:"
   },
   "oauth_donate": {
     "submit": "Donate",
@@ -251,7 +257,15 @@
     "worker_request_vote": "Voting for worker requests",
     "proposal_create": "Creating transaction proposals",
     "proposal_delete": "Removing transaction proposals",
-    "proposal_update": "Voting in transaction proposals"
+    "proposal_update": "Voting in transaction proposals",
+    "proposal_update_active": "Voting in transaction proposals with active authorities",
+    "paid_subscription_create": "Creating, deleting, updating paid subscriptions",
+    "paid_subscription_transfer": "Buying paid subscriptions",
+    "paid_subscription_cancel": "Canceling of paid subscriptions",
+    "nft_collection": "Creating and deleting NFT-collections",
+    "nft_issue": "Issueing of NFT-tokens",
+    "nft_transfer": "Transferring of NFT-tokens",
+    "nft_orders": "Selling, buying NFT-tokens"
   },
   "recovery": {
     "change_title": "Change recovery account",
