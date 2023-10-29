@@ -1,3 +1,7 @@
+export async function delay(msec) {
+    await new Promise(resolve => setTimeout(resolve, msec))
+}
+
 export const toAsset = (value) => {
     const [ amount, symbol ] = value.split(' ')
     return { amount: parseFloat(amount), symbol }

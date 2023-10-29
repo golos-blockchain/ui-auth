@@ -10,8 +10,8 @@ import LoginForm from '@/modules/LoginForm';
 import { getOAuthCfg, getChainData, } from '@/server/oauth';
 import { getOAuthSession, } from '@/server/oauthSession';
 import { withSecureHeadersSSR, } from '@/server/security';
+import { steemToVests, } from '@/utils/misc'
 import { callApi, } from '@/utils/OAuthClient';
-import { steemToVests, } from '@/utils/State';
 import validate_account_name from '@/utils/validate_account_name';
 
 function calcMaxInterest(cprops) {

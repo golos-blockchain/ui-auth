@@ -3,6 +3,7 @@ require 'guid'
 require 'oauth'
 require 'server_tokens'
 require 'cryptostore'
+require 'reg_pollers'
 
 io.output():setvbuf('no')
 
@@ -91,4 +92,5 @@ box.once('bootstrap', function()
     oauth_bootstrap()
     server_tokens_bootstrap()
     cryptostore_bootstrap()
+    reg_pollers_bootstrap()
 end)

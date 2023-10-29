@@ -134,6 +134,9 @@ export function getClientCfg(req, params, locale = '') {
     if (!cfg.registrar.uias)
         cfg.registrar.uias = []
 
+    cfg.apidex_service = config.has('apidex_service')
+        && config.get('apidex_service')
+
     let data = {
         config: cfg,
         oauthEnabled: config.has('oauth'),

@@ -1,22 +1,22 @@
 import config from 'config';
 import gmailSend from 'gmail-send';
-import golos, { api } from 'golos-lib-js'
+import golos, { api, broadcast } from 'golos-lib-js'
 import { hash, } from 'golos-lib-js/lib/auth/ecc';
 import { Asset } from 'golos-lib-js/lib/utils'
 import secureRandom from 'secure-random';
+
 import nextConnect from '@/server/nextConnect';
 import { throwErr, } from '@/server/error';
 import { initGolos, } from '@/server/initGolos';
-import { getVersion, rateLimitReq, getRemoteIp,
+import { getVersion, rateLimitReq, slowDownLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
 import passport, { addModalRoutes, checkAlreadyUsed } from '@/server/passport';
 import { getDailyLimit, obtainUid, getClientCfg, } from '@/server/reg';
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
+import { delay, } from '@/utils/misc'
 
 initGolos();
-
-global.pollIntervals = {}
 
 let handler = nextConnect({ attachParams: true, })
     .use(regSessionMiddleware)
@@ -307,44 +307,129 @@ let handler = nextConnect({ attachParams: true, })
         });
     })
 
-    .get('/api/reg/wait_for_transfer/:sym', async (req, res) => {
-        const { sym } = req.params
+    .get('/api/reg/get_free_poller/:amount', async (req, res) => {
+        await slowDownLimitReq(req)
 
-        if (global.pollIntervals[sym]) throwErr(req, 400, ['Someone already waits for the transfer'])
+        const amountStr = req.params.amount.split('%20').join(' ')
+        let amount
+        try {
+            amount = await Asset(amountStr)
+        } catch (err) {
+            res.json({
+                status: 'err',
+                error: 'Asset parse error'
+            })
+            return
+        }
+
+        let freeAmount
+        try {
+            freeAmount = await Tarantool.instance('tarantool')
+            .call('get_free_reg_poller',
+                parseFloat(amount.amountFloat),
+                amount.symbol,
+                Date.now()
+            )
+            freeAmount = freeAmount[0][0]
+        } catch (err) {
+            console.error('ERROR: cannot get_free_reg_poller', err);
+        }
+
+        if (freeAmount) {
+            const ret = await Asset(0, amount.precision, amount.symbol)
+            ret.amountFloat = freeAmount.toString()
+            res.json({
+                status: 'ok',
+                amount: ret.toString()
+            })
+            return
+        }
+
+        res.json({
+            status: 'err',
+            error: 'Tarantool error'
+        })
+    })
+
+    .get('/api/reg/wait_for_transfer/:amount', async (req, res) => {
+        await slowDownLimitReq(req)
+
+        const amountStr = req.params.amount.split('%20').join(' ')
+        let amount
+        try {
+            amount = await Asset(amountStr)
+        } catch (err) {
+            res.json({
+                status: 'err',
+                error: 'Asset parse error'
+            })
+            return
+        }
+
+        const uid = req.session.uid
+
+        if (!uid) throwErr(rew, 400, ['Not authorized - no uid in session'])
 
         const username = config.get('registrar.account')
         if (!username) throwErr(req, 400, ['No registrar.account in config'])
 
         const getBalance = async () => {
             const balances = await api.getAccountsBalancesAsync([username], {
-                symbols: [sym]
+                symbols: [amount.symbol]
             })
-            let bal = balances[0][sym]
+            let bal = balances[0][amount.symbol]
             if (bal) {
                 bal = bal.balance
-                return Asset(bal)
+                return await Asset(bal)
             } else {
-                const assets = await api.getAssetsAsync('', [sym])
+                const assets = await api.getAssetsAsync('', [amount.symbol])
                 if (!assets[0]) throwErr(req, 400, ['No such asset'])
-                bal = Asset(assets[0].supply)
+                bal = await Asset(assets[0].supply)
                 bal.amount = 0
                 return bal
             }
         }
 
-        const stop = () => {
-            if (global.pollIntervals[sym]) {
-                clearInterval(global.pollIntervals[sym].interval)
-                delete global.pollIntervals[sym]
+        const stop = async () => {
+            let delRes
+            try {
+                delRes = await Tarantool.instance('tarantool')
+                .call('delete_reg_poller',
+                    parseFloat(amount.amountFloat), amount.symbol
+                )
+                delRes = delRes[0][0]
+            } catch (err) {
+                console.error('ERROR: cannot delete reg poller', err);
             }
         }
 
-        const initBal = await getBalance()
+        let initBal
+        try {
+            initBal = await getBalance()
+        } catch (err) {
+            console.error('wait_for_transfer getBalance', err)
+            throwErr(req, 400, ['Blockchain unavailable'])
+        }
+
+        let pollerRes
+        try {
+            pollerRes = await Tarantool.instance('tarantool')
+            .call('upsert_reg_poller',
+                parseFloat(amount.amountFloat), amount.symbol, uid, parseFloat(initBal.amountFloat), Date.now()
+            )
+            pollerRes = pollerRes[0][0]
+        } catch (err) {
+            console.error('ERROR: cannot upsert_reg_poller', err);
+        }
+
+        if (pollerRes.err) {
+            throwErr(req, 400, [pollerRes.err])
+        }
+
         const pollMsec = process.env.NODE_ENV === 'development' ? 1000 : 30000
         let tries = 0
-        global.pollIntervals[sym] = { created: Date.now(), interval: setInterval(async () => {
+        for ( ;; ) {
             if (tries > 2) {
-                stop()
                 res.json({
                     status: 'err',
                     error: 'Timeouted'
@@ -353,17 +438,175 @@ let handler = nextConnect({ attachParams: true, })
             }
             ++tries
 
-            const bal = await getBalance()
-            console.log('wait_for_transfer', initBal.toString(), bal.toString())
-            if (bal.amount > initBal.amount) {
-                stop()
-                const delta = Asset(bal.amount - initBal.amount, bal.precision, bal.symbol)
-                res.json({
-                    status: 'ok',
-                    delta: delta.toString()
-                })
+            let bal
+            try {
+                bal = await getBalance()
+            } catch (err) {
+                throwErr(req, 400, ['Blockchain unavailable'])
             }
-        }, pollMsec) }
+
+            initBal.amountFloat = pollerRes.res.init_bal.toString()
+
+            console.log('wait_for_transfer', initBal.toString(), bal.toString())
+            const delta = bal.minus(initBal)
+            if (delta.gte(amount)) {
+                let stopMe = false
+
+                let hist
+                try {
+                    hist = await api.getAccountHistoryAsync(username, -1, 1000, {select_ops: ['transfer']})
+                } catch (err) {
+                    console.error('/api/reg/wait_for_transfer - getAccountHistoryAsync', err)
+                    throwErr(req, 400, ['Blockchain unavailable'])
+                }
+
+                const created = pollerRes.res.created
+                for (let i = hist.length - 1; i >= 0; --i) {
+                    const timestamp = +new Date(hist[i][1].timestamp + 'Z')
+                    if (timestamp < created) {
+                        break
+                    }
+
+                    const [ opType, opData ] = hist[i][1].op
+                    if (opType === 'transfer') {
+                        if (opData.to === username && opData.amount === amountStr) {
+                            stopMe = true
+                            break
+                        }
+                    }
+                }
+
+                if (stopMe) {
+                    if (!req.session.deposited) {
+                        req.session.deposited = {}
+                    }
+                    req.session.deposited[amount.symbol] = delta.toString()
+                    await req.session.save()
+
+                    await stop()
+
+                    res.json({
+                        status: 'ok',
+                        deposited: delta.toString()
+                    })
+                    return
+                }
+            }
+
+            await delay(pollMsec)
+        }
+    })
+
+    .post('/api/reg/place_order/:amount', async (req, res) => {
+        await slowDownLimitReq(req)
+
+        const amountStr = req.params.amount.split('%20').join(' ')
+        let amount
+        try {
+            amount = await Asset(amountStr)
+        } catch (err) {
+            res.json({
+                status: 'err',
+                error: 'Asset parse error'
+            })
+            return
+        }
+
+        if (!req.session.deposited) {
+            throwErr(req, 400, ['You have no deposited'])
+        }
+        const deposited = req.session.deposited[amount.symbol]
+        if (!deposited) {
+            throwErr(req, 400, ['You have no deposited in ' + amount.symbol])
+        }
+        if (deposited !== amountStr) {
+            throwErr(req, 400, ['You have wrong deposited in ' + amount.symbol])
+        }
+
+        let chainProps
+        for (let i = 0; i < 3; ++i) {
+            try {
+                chainProps = await api.getChainPropertiesAsync()
+                break
+            } catch (err) {
+                console.error('/api/reg/place_order - getChainPropertiesAsync', err)
+                await delay(3000)
+            }
+        }
+        if (!chainProps) {
+            throwErr(req, 503, ['/api/reg/place_order - Blockchain node unavailable - cannot getChainPropertiesAsync'])
+        }
+        if (!chainProps.chain_status) {
+            throwErr(req, 503, ['/api/reg/place_order - Blockchain node is stopped - chain_status is false'])
+        }
+
+        const username = config.get('registrar.account')
+
+        const signingKey = config.get('registrar.signing_key')
+        const orderid = Math.floor(Date.now() / 1000)
+        let operations = [['limit_order_create', {
+            owner: username,
+            orderid,
+            amount_to_sell: amountStr,
+            min_to_receive: chainProps.create_account_min_golos_fee,
+            fill_or_kill: true,
+            expiration: 0xffffffff
+        }]]
+        try {
+            await broadcast.sendAsync({
+                extensions: [],
+                operations
+            }, [signingKey])
+        } catch (err) {
+            console.error('/api/reg/place_order - Cannot sell tokens', err)
+            throwErr(req, 400, ['Cannot sell tokens'])
+        }
+
+        delete req.session.deposited[amount.symbol]
+        await req.session.save()
+
+        await delay(1500)
+
+        let hist
+        try {
+            hist = await api.getAccountHistoryAsync(username, -1, 1000, {select_ops: ['fill_order']})
+        } catch (err) {
+            console.error('/api/reg/place_order - getAccountHistoryAsync', err)
+            throwErr(req, 400, ['Blockchain unavailable'])
+        }
+
+        let golos_received
+        for (let i = hist.length - 1; i >= 0; --i) {
+            const timestamp = +new Date(hist[i][1].timestamp + 'Z') / 1000
+            if (orderid - timestamp > 10) {
+                break
+            }
+
+            const [ opType, opData ] = hist[i][1].op
+            if (opType === 'fill_order') {
+                if (opData.current_orderid == orderid || opData.open_orderid == orderid) {
+                    const golosAmount = await Asset(opData.current_orderid == orderid ?
+                        opData.open_pays : opData.current_pays)
+
+                    golos_received = golos_received || await Asset('0.000 GOLOS')
+                    golos_received = golos_received.plus(golosAmount)
+                    req.session.golos_received = golos_received.toString()
+                    await req.session.save()
+                }
+            }
+        }
+
+        if (golos_received) {
+            res.json({
+                status: 'ok',
+                golos_received,
+                step: 'verified',
+                verification_way: 'uia'
+            })
+            return
+        }
+
+        throwErr(req, 400, ['Cannot find fill_order operation'])
     })
 
 handler = addModalRoutes(handler);

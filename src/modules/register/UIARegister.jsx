@@ -2,7 +2,7 @@ import React from 'react'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import tt from 'counterpart'
 import cn from 'classnames'
-import golos, { api, broadcast } from 'golos-lib-js'
+import golos, { api, } from 'golos-lib-js'
 import { Asset } from 'golos-lib-js/lib/utils';
 import { key_utils, PrivateKey } from 'golos-lib-js/lib/auth/ecc'
 import Link from 'next/link'
@@ -11,7 +11,9 @@ import LoadingIndicator from '@/elements/LoadingIndicator'
 import AccountName from '@/elements/register/AccountName'
 import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import TransferWaiter from '@/modules/register/TransferWaiter'
+import { apidexGetPrices, } from '@/utils/ApidexApiClient'
 import KeyFile from '@/utils/KeyFile'
+import { delay, } from '@/utils/misc'
 import { emptyAuthority } from '@/utils/RecoveryUtils'
 import { callApi, } from '@/utils/RegApiClient'
 import { withRouterHelpers, } from '@/utils/routing'
@@ -39,14 +41,6 @@ function getAssetMeta(asset) {
     return res
 }
 
-const TransferState = {
-    initial: 0,
-    transferring: 1,
-    waiting: 2,
-    received: 3,
-    timeouted: 4,
-};
-
 class APIError extends Error {
     constructor(errReason, errData) {
         super('API Error')
@@ -68,6 +62,7 @@ class UIARegister extends React.Component {
         if (clientCfg.config.chain_id)
             golos.config.set('chain_id', clientCfg.config.chain_id)
 
+        const { apidex_service } = clientCfg.config
         const { uias } = clientCfg.config.registrar
 
         const path = this.getPath()
@@ -83,7 +78,8 @@ class UIARegister extends React.Component {
                     error = sym + tt('uia_register_jsx.no_such_asset')
                 } else {
                     for (const asset of assets) {
-                        const symbol = Asset(asset.supply).symbol
+                        const supply = Asset(asset.supply)
+                        const symbol = supply.symbol
                         if (sym === symbol) {
                             const meta = getAssetMeta(asset)
                             const { deposit, telegram } = meta
@@ -96,23 +92,67 @@ class UIARegister extends React.Component {
                             let registrar = await golos.api.getAccounts([accName])
                             registrar = registrar[0]
 
-                            const { to_type, to_api, } = deposit
+                            const { to_type, to_api, fee, } = deposit
+                            if (fee && (isNaN(fee) || parseFloat(fee) !== 0)) {
+                                error = sym + tt('uia_register_jsx.transfer_not_supported')
+                                break
+                            }
                             if (to_type === 'transfer') {
-                                /*clearOldAddresses();
-                                const addr = loadAddress(sym, asset.creator);
-                                if (addr) {
-                                    this.setState({
-                                        transferState: TransferState.received,
-                                        receivedTransfer: {
-                                            memo: addr,
-                                        },
-                                    });
-                                }*/
+                                error = sym + tt('uia_register_jsx.transfer_not_supported')
+                                break
+                            }
+
+                            let minAmount = Asset(0, supply.precision, supply.symbol)
+
+                            let cmc
+                            try {
+                                cmc = await apidexGetPrices(apidex_service, sym)
+                                if (!cmc.price_usd) {
+                                    console.error('Cannot obtain price_usd', cmc)
+                                    throw Error('Cannot obtain price_usd')
+                                }
+                                const priceUsd = parseFloat(cmc.price_usd)
+                                let minFloat = 1 / priceUsd
+                                if (minFloat >= 0.99 && minFloat < 1) {
+                                    minFloat = 1
+                                }
+
+                                minAmount.amountFloat = minFloat.toString()
+                            } catch (err) {
+                                console.error(err)
+                                error = sym + tt('uia_register_jsx.cmc_error')
+                                break
+                            }
+
+                            const min_amount = parseFloat(deposit.min_amount)
+                            if (min_amount != NaN) {
+                                const minAmountRules = Asset(0, supply.precision, supply.symbol)
+                                minAmountRules.amountFloat = min_amount.toString()
+                                if (minAmountRules.gt(minAmount)) {
+                                    minAmount = minAmountRules
+                                }
+                            }
+
+                            for (let i = 0; i < 3; ++i) {
+                                try {
+                                    let fp = await callApi('/api/reg/get_free_poller/' + minAmount.toString())
+                                    fp = await fp.json()
+                                    if (fp.error) {
+                                        throw new Error(fp.error)
+                                    }
+                                    minAmount = Asset(fp.amount)
+                                    error = null
+                                    break
+                                } catch (err) {
+                                    console.error('get_free_poller', err)
+                                    error = tt('uia_register_jsx.free_poller')
+                                }
+                                await delay(2000)
                             }
 
                             this.setState({
-                                transferState: TransferState.initial,
                                 rules: { ...deposit, creator: asset.creator, telegram },
+                                minAmount,
                                 registrar,
                                 sym,
                                 copied_addr: false,
@@ -177,7 +217,7 @@ class UIARegister extends React.Component {
                             || res.error === 'cannot_connect_gateway')) {
                         console.error('Repeating /uia_address', res)
                         ++retried
-                        await new Promise(resolve => setTimeout(resolve, 1100))
+                        await delay(1100)
                         await retryReq()
                         return
                     }
@@ -222,55 +262,6 @@ class UIARegister extends React.Component {
         return Asset(this.balanceValue()).gte(Asset('0.001 GOLOS'));
     }
 
-    transfer = async () => {
-        this.setState({
-            transferState: TransferState.transferring,
-        }, () => {
-            this.transferAndWait()
-        })
-    }
-
-    waitingTimeout = (10 + 1) * 60 * 1000
-
-    transferAndWait = async () => {
-        const { sym, rules, registrar } = this.state
-        const { to_transfer, memo_transfer, } = rules
-        let stopper
-        let stopStream = api.streamOperations((err, op) => {
-            if (op[0] === 'transfer' && op[1].from === to_transfer
-                && op[1].to === registrar.name) {
-                stopStream();
-                clearTimeout(stopper);
-                saveAddress(sym, rules.creator, op[1].memo);
-                this.setState({
-                    transferState: TransferState.received,
-                    receivedTransfer: op[1],
-                });
-            }
-        })
-
-        try {
-            const res = await broadcast.transferAsync(registrar.name, to_transfer, '0.001 GOLOS', memo_transfer)
-        } catch (err) {
-            console.error(err)
-            this.setState({
-                transferState: TransferState.initial,
-            })
-            stopStream()
-            return
-        }
-
-        this.setState({
-            transferState: TransferState.waiting,
-        });
-        stopper = setTimeout(() => {
-            if (stopStream) stopStream();
-            this.setState({
-                transferState: TransferState.timeouted,
-            })
-        }, this.waitingTimeout)
-    }
-
     _renderTo = (to, to_fixed, username) => {
         let addr = to || to_fixed;
         if (username)
@@ -291,9 +282,9 @@ class UIARegister extends React.Component {
     }
 
     _renderParams = () => {
-        const { rules, sym, registrar } = this.state
+        const { rules, sym, registrar, minAmount } = this.state
         const username = registrar.name
-        const { min_amount, fee, memo_fixed } = rules
+        const { memo_fixed } = rules
         let details = rules.details
         if (memo_fixed) {
             details = details.split('<account>').join(username)
@@ -303,10 +294,8 @@ class UIARegister extends React.Component {
             {details && <div style={{ whiteSpace: 'pre-line', }}>
                 {details}
             <br/><br/></div>}
-            {min_amount && <div>
-                {tt('uia_register_jsx.min_amount')} <b>{min_amount} {sym || ''}</b></div>}
-            {fee && <div>
-                {tt('uia_register_jsx.fee') + ': '}<b>{fee} {sym || ''}</b></div>}
+            {minAmount && <div>
+                {tt('uia_register_jsx.min_amount')} <b>{minAmount.floatString}</b></div>}
         </div>;
     }
 
@@ -351,72 +340,41 @@ class UIARegister extends React.Component {
         </div>)
     }
 
-    _renderTransfer = () => {
-        const { rules, sym, transferState, receivedTransfer, } = this.state
-        const { to_transfer, memo_transfer, } = rules
-
-        const transferring = transferState === TransferState.transferring
-
-        const enough = this.enoughBalance()
-
-        if (transferState === TransferState.received) {
-            const { registrar, } = this.state
-            const { memo, } = receivedTransfer;
-            return (<div>
-                {this._renderTo(receivedTransfer.memo, null, registrar.name)}
-                {this._renderParams(false)}
-            </div>);
-        }
-
-        if (transferState === TransferState.timeouted) {
-            return (<div>
-                {tt('asset_edit_deposit_jsx.timeouted')}
-                {sym || ''}
-                .
-            </div>);
-        }
-
-        if (transferState === TransferState.waiting) {
-            return (<div>
-                {tt('asset_edit_deposit_jsx.waiting')}
-                <br />
-                <br />
-                <center>
-                    <LoadingIndicator type='circle' size='70px' />
-                </center>
-                <br />
-            </div>);
-        }
-
-        return (<div>
-            {tt('uia_register_jsx.transfer_desc')}
-            <b>{to_transfer || ''}</b>
-            {tt('uia_register_jsx.transfer_desc_2')}
-            <b>{memo_transfer || ''}</b>
-            {transferring ?
-                <span><LoadingIndicator type='circle' /></span> : null}
-            <button type='submit' disabled={!enough || transferring} className='button float-center' onClick={this.transfer}>
-                {tt('g.submit')}
-            </button>
-            {!enough ? <div className='error'>
-                {tt('transfer_jsx.insufficient_funds')}
-            </div> : null}
-            {this._renderParams()}
-        </div>);
-    }
-
     _renderWaiter = () => {
-        const { sym, registrar, onTransfer } = this.state
+        const { minAmount, registrar, onTransfer } = this.state
         if (!onTransfer) {
-            onTransfer = (delta) => {
+            onTransfer = async (deposited) => {
                 this.setState({
-                    deposited: delta
+                    deposited
+                })
+
+                let error
+                for (let tr = 1; tr <= 10; ++tr) {
+                    try {
+                        let orr = await callApi('/api/reg/place_order/' + deposited.toString(), {})
+                        orr = await orr.json()
+                        if (orr.status === 'ok') {
+                            console.log(orr)
+                            this.props.updateApiState(orr)
+                            return
+                        }
+                        console.error('place_order', orr)
+                        throw new Error(orr.error)
+                    } catch (err) {
+                        console.error('place_order throws', err)
+                        error = (err && err.toString) && err.toString()
+                    }
+                    await delay(3000)
+                }
+
+                this.setState({
+                    error: tt('uia_register_jsx.cannot_place_order') + error
                 })
             }
         }
         return <TransferWaiter
             username={registrar.name}
-            sym={sym} title={''} onTransfer={onTransfer} />
+            minAmount={minAmount} title={''} onTransfer={onTransfer} />
     }
 
     render() {
@@ -436,10 +394,11 @@ class UIARegister extends React.Component {
                 const meta = getAssetMeta(asset)
                 if (meta.deposit) {
                     const symbol = Asset(asset.supply).symbol
+                    const displaySym = symbol.startsWith('YM') ? symbol.substring(2) : symbol
                     syms.push(<a href={path + '?uia=' + symbol} key={symbol}>
                         <div className={'uia' + (symbol === sym ? ' selected' : '')}>
                             <img src={meta.image_url} />
-                            {symbol}
+                            {displaySym}
                         </div>
                     </a>)
                 }
@@ -453,24 +412,18 @@ class UIARegister extends React.Component {
                 if (deposited) {
                     form = <div>
                         <center>
-                        {!embed ? <h4>
-                            {tt('asset_edit_deposit_jsx.transfer_title_SYM', {
-                                SYM: sym || ' ',
-                            })}
-                        </h4> : null}
-                        <br /><br />
-                        {tt('asset_edit_deposit_jsx.you_received')}
-                        <b>{deposited.toString()}</b>. {tt('asset_edit_deposit_jsx.you_received2')}
+                            {tt('uia_register_jsx.deposited')}
+                            <b>{deposited.floatString}</b>
+                            {tt('uia_register_jsx.deposited2')}
+                            <br />
+                            <LoadingIndicator type='circle' />
                         </center>
                     </div>
                 } else {
                     const { rules, registrar, } = this.state
-                    const { to, to_type, to_fixed, to_transfer,
-                        min_amount, fee, details, } = rules
+                    const { to, to_type, to_fixed, details, } = rules
                     if (to_type === 'api') {
                         form = this._renderApi()
-                    } else if (to_type === 'transfer') {
-                        form = this._renderTransfer()
                     } else {
                         let memo_fixed = rules.memo_fixed
                         if (memo_fixed) {

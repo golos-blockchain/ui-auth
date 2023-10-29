@@ -3,6 +3,7 @@ import tt from 'counterpart'
 import { Asset } from 'golos-lib-js/lib/utils';
 
 import LoadingIndicator from '@/elements/LoadingIndicator'
+import { delay, } from '@/utils/misc'
 import { callApi, } from '@/utils/RegApiClient'
 
 class TransferWaiter extends React.Component {
@@ -13,18 +14,20 @@ class TransferWaiter extends React.Component {
         super(props)
     }
 
-    poll = async (sym) => {
+    poll = async (minAmount) => {
         const retry = async () => {
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            if (!this.state.stopped)
-                this.poll(sym)
+            await delay(1000)
+            if (!this.stopped)
+                this.poll(minAmount)
+            else
+                this.stoppedPolling = true
         }
         try {
-            let res = await callApi('/api/reg/wait_for_transfer/' + sym)
+            let res = await callApi('/api/reg/wait_for_transfer/' + minAmount.toString())
             res = await res.json()
             if (res.status === 'ok') {
                 const { onTransfer } = this.props
-                onTransfer(Asset(res.delta))
+                onTransfer(Asset(res.deposited))
             } else {
                 console.error(res)
                 await retry()
@@ -36,9 +39,10 @@ class TransferWaiter extends React.Component {
     }
 
     start = async () => {
+        this.stopped = false
+        this.stoppedPolling = false
         this.setState({
-            seconds: 30*60,
-            stopped: false
+            seconds: 15*60,
         })
 
         this.countdown = setInterval(() => {
@@ -53,29 +57,34 @@ class TransferWaiter extends React.Component {
             })
         }, 1000)
 
-        const { sym, } = this.props
+        const { minAmount, } = this.props
 
-        this.poll(sym)
+        this.poll(minAmount)
     }
 
     componentDidMount() {
         this.start()
     }
 
-    stop = () => {
+    stop = async () => {
         if (this.countdown) clearInterval(this.countdown)
-        this.setState({
-            stopped: true
-        })
+        this.stopped = true
+        await delay(1000)
+        if (!this.stoppedPolling) {
+            await delay(3000)
+        }
     }
 
     componentWillUnmount() {
         this.stop()
     }
 
-    componentDidUpdate(prevProps) {
-        if (this.props.sym !== prevProps.sym) {
-            this.stop()
+    async componentDidUpdate(prevProps) {
+        const { minAmount } = this.props
+        if (minAmount && (!prevProps.minAmount ||
+            minAmount.symbol !== prevProps.minAmount.symbol ||
+            minAmount.amount !== prevProps.minAmount.amount)) {
+            await this.stop()
             this.start()
         }
     }
@@ -86,7 +95,7 @@ class TransferWaiter extends React.Component {
         const min = Math.floor(seconds / 60)
         const sec = seconds % 60
         const remaining = min.toString().padStart(2, '0') + ':' + sec.toString().padStart(2, '0')
-        const { sym, title } = this.props
+        const { title } = this.props
         return <div align="center" style={{ marginTop: '1rem', }}>
             {title}
             <div style={{ marginTop: '0.5rem', }}>

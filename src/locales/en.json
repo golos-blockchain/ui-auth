@@ -98,12 +98,18 @@
     "register_with": "Register with...",
     "no_such_asset": " - no such UIA.",
     "deposit_unavailable": " - deposit temporarily unavailable.",
+    "cmc_error": " - cannot get min amount from CoinMarketCap.",
+    "transfer_not_supported": " - not yet supported.",
     "min_amount": "Min amount",
     "fee": "Fee",
     "memo_fixed": "Memo",
     "to": "Send tokens to address/account",
     "api_error": "Cannot get address. Try again later. If problem still occurs, contact the issuer of ",
-    "api_error_details": "and send the error details:"
+    "api_error_details": "and send the error details:",
+    "free_poller": "Cannot calculate minimal amount. Try again later, please. Or try another currency.",
+    "deposited": "Received ",
+    "deposited2": ". Placing limit order to exchange it to GOLOS to register your account.",
+    "cannot_place_order": "Cannot place order: "
   },
   "invites_jsx": {
     "claim_wrong_secret": "Wrong secret",

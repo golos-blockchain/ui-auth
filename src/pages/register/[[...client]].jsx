@@ -404,10 +404,11 @@ class Register extends React.Component {
                     </div>
                 </div>
             }
-        } else if (state.verificationWay === 'uia') {
+        } else if (state.verificationWay === 'uia' && state.step !== 'verified') {
             form = <UIARegister
                 clientCfg={this.props.clientCfg}
                 afterRedirect={this.state.afterRedirect}
+                updateApiState={this.updateApiState}
             />
         }
 
@@ -685,17 +686,29 @@ class Register extends React.Component {
         const keyFile = new KeyFile(name, {password, ...privateKeys});
 
         try {
+            let res
             // create account
-            const res = await callApi('/api/reg/submit', {
-                invite_code: verificationWay === 'invite_code' ? invite_code : undefined,
-                name,
-                owner_key: publicKeys[0],
-                active_key: publicKeys[1],
-                posting_key: publicKeys[2],
-                memo_key: publicKeys[3],
-                referrer,
-                recaptcha_v2,
-            });
+            if (this.state.verificationWay === 'uia') {
+                res = await callApi('/api/reg/submit_uia', {
+                    name,
+                    owner_key: publicKeys[0],
+                    active_key: publicKeys[1],
+                    posting_key: publicKeys[2],
+                    memo_key: publicKeys[3],
+                    recaptcha_v2,
+                })
+            } else {
+                res = await callApi('/api/reg/submit', {
+                    invite_code: verificationWay === 'invite_code' ? invite_code : undefined,
+                    name,
+                    owner_key: publicKeys[0],
+                    active_key: publicKeys[1],
+                    posting_key: publicKeys[2],
+                    memo_key: publicKeys[3],
+                    referrer,
+                    recaptcha_v2,
+                })
+            }
 
             const data = await res.json();
 
@@ -768,7 +781,7 @@ class Register extends React.Component {
         this.setState({ inviteError, inviteHint });
     };
 
-    updateApiState(res, after) {
+    updateApiState = (res, after) => {
         const { step, verification_way, error_str, } = res;
 
         let newState = {};
