@@ -396,7 +396,7 @@ class Register extends React.Component {
             />
         } else if (state.verificationWay === 'social') {
             const { dailyLimit } = this.props
-            if (dailyLimit && dailyLimit.exceed) {
+            if (dailyLimit.limit && dailyLimit.limit.exceed) {
                 form = <div>
                     <VerifyWayTabs currentWay='social' />
                     <div className='callout alert'>
@@ -554,7 +554,7 @@ class Register extends React.Component {
 
         if (!this.state.authType && !empty) {
             const { dailyLimit } = this.props
-            if (dailyLimit && dailyLimit.exceed) {
+            if (dailyLimit.limit && dailyLimit.limit.exceed) {
                 return null
             }
         }
@@ -592,10 +592,10 @@ class Register extends React.Component {
                         dataOnauth={this.onTelegramAuth}
                         usePic={false} />
                 </div>}
-                {dailyLimit ? <div style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>
+                {dailyLimit.limit ? <div style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>
                     {tt('register_jsx.free_remain')}
                     {tt('register_jsx.free_remain2', {
-                        count: dailyLimit.per_day - dailyLimit.regs
+                        count: dailyLimit.limit.per_day - dailyLimit.limit.regs.length
                     })}
                 </div> : null}
             </div>

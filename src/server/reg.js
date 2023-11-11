@@ -23,36 +23,46 @@ export function obtainUid(req) {
 }
 
 export function getDailyLimit() {
+    const now = Date.now()
     if (config.has('registrar.free_regs_per_day')) {
-        const now = Date.now()
         const per_day = parseInt(config.get('registrar.free_regs_per_day'))
         const dailyLimit = global.dailyLimit
-        let regs = (dailyLimit && dailyLimit.regs) || 0
-        let first = (dailyLimit && dailyLimit.first) || now
-        const full = regs >= per_day
-        const exceed = full && (now - first) < 1000*60*60*24
-        if (full && !exceed) {
-            regs = 0
-            first = now
+        let regs = []
+        if (dailyLimit) {
+            let toShift = 0
+            for (const reg of dailyLimit.regs) {
+                if ((now - reg) >= 1000*60*60*24) {
+                    ++toShift
+                } else {
+                    break
+                }
+            }
+            regs = dailyLimit.regs.slice(toShift)
         }
+        let first = regs[0] || now
+        const exceed = regs.length >= per_day
         return {
-            regs,
-            first,
-            exceed,
-            per_day
+            limit: {
+                regs,
+                first,
+                exceed,
+                per_day
+            },
+            now
         }
     }
-    return null
+    return { limit: null, now }
 }
 
 export function useDailyLimit() {
-    const limit = getDailyLimit()
+    const { limit, now } = getDailyLimit()
     if (!limit) return true
     if (limit.exceed) return false
     global.dailyLimit = {
-        regs: limit.regs + 1,
+        regs: limit.regs || [],
         first: limit.first
     }
+    global.dailyLimit.regs.push(now)
     return true
 }
 

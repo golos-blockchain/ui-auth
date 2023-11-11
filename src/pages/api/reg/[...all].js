@@ -29,7 +29,7 @@ let handler = nextConnect({ attachParams: true, })
         res.json({
             status: 'ok',
             version: getVersion(),
-            free_limit: getDailyLimit()
+            free_limit: getDailyLimit().limit
         })
     })
 

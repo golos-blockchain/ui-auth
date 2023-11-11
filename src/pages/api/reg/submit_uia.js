@@ -7,7 +7,6 @@ import nextConnect from '@/server/nextConnect';
 import { throwErr, } from '@/server/error';
 import { rateLimitReq,
         noBodyParser, bodyParams, } from '@/server/misc';
-import { useDailyLimit } from '@/server/reg'
 import { regSessionMiddleware, } from '@/server/regSession';
 
 let handler = nextConnect()
