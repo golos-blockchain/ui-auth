@@ -1,6 +1,9 @@
 fiber = require 'fiber'
 
-function reg_pollers_bootstrap()
+function reg_pollers_migration_v1()
+    if box.space.reg_pollers ~= nil then
+        return
+    end
     box.schema.sequence.create('reg_pollers')
     reg_pollers = box.schema.create_space('reg_pollers', {
         format = {

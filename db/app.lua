@@ -92,5 +92,7 @@ box.once('bootstrap', function()
     oauth_bootstrap()
     server_tokens_bootstrap()
     cryptostore_bootstrap()
-    reg_pollers_bootstrap()
 end)
+
+print('applying migrations...')
+reg_pollers_migration_v1()
