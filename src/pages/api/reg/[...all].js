@@ -420,16 +420,17 @@ let handler = nextConnect({ attachParams: true, })
             pollerRes = pollerRes[0][0]
         } catch (err) {
             console.error('ERROR: cannot upsert_reg_poller', err);
+            throwErr(req, 400, ['Cannot upsert reg_poller: ' + err.toString()])
         }
 
         if (pollerRes.err) {
             throwErr(req, 400, [pollerRes.err])
         }
 
-        const pollMsec = process.env.NODE_ENV === 'development' ? 1000 : 30000
+        const pollMsec = process.env.NODE_ENV === 'development' ? 1000 : 5000
         let tries = 0
         for ( ;; ) {
-            if (tries > 2) {
+            if (tries > 10) {
                 res.json({
                     status: 'err',
                     error: 'Timeouted'

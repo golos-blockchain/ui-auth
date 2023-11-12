@@ -100,7 +100,7 @@
     "deposit_unavailable": " - deposit temporarily unavailable.",
     "cmc_error": " - cannot get min amount from CoinMarketCap.",
     "transfer_not_supported": " - not yet supported.",
-    "min_amount": "Min amount",
+    "req_amount": "Amount should be strictly equal to ",
     "fee": "Fee",
     "memo_fixed": "Memo",
     "to": "Send tokens to address/account",

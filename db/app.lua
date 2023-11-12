@@ -9,7 +9,6 @@ io.output():setvbuf('no')
 
 box.cfg {
     log_level = 5,
-    listen = '0.0.0.0:3301',
     memtx_memory = 1 * 1024 * 1024 * 1024,
     wal_dir   = '/var/lib/tarantool',
     memtx_dir  = '/var/lib/tarantool',
@@ -96,3 +95,7 @@ end)
 
 print('applying migrations...')
 reg_pollers_migration_v1()
+
+print('listening...')
+
+box.cfg { listen = '0.0.0.0:3301' }

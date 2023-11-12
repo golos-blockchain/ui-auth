@@ -295,7 +295,7 @@ class UIARegister extends React.Component {
                 {details}
             <br/><br/></div>}
             {minAmount && <div>
-                {tt('uia_register_jsx.min_amount')} <b>{minAmount.floatString}</b></div>}
+                {tt('uia_register_jsx.req_amount')} <b>{minAmount.floatString}</b></div>}
         </div>;
     }
 

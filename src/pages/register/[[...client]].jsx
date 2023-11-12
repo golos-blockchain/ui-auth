@@ -552,8 +552,9 @@ class Register extends React.Component {
         const telegram = hasGrant('telegram')
         const empty = !vk && !facebook && !yandex && !mailru && !telegram
 
+        const { dailyLimit } = this.props
+
         if (!this.state.authType && !empty) {
-            const { dailyLimit } = this.props
             if (dailyLimit.limit && dailyLimit.limit.exceed) {
                 return null
             }
