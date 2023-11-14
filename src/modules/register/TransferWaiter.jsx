@@ -14,16 +14,16 @@ class TransferWaiter extends React.Component {
         super(props)
     }
 
-    poll = async (minAmount) => {
+    poll = async (amount) => {
         const retry = async () => {
             await delay(1000)
             if (!this.stopped)
-                this.poll(minAmount)
+                this.poll(amount)
             else
                 this.stoppedPolling = true
         }
         try {
-            let res = await callApi('/api/reg/wait_for_transfer/' + minAmount.toString())
+            let res = await callApi('/api/reg/wait_for_transfer/' + amount.toString())
             res = await res.json()
             if (res.status === 'ok') {
                 const { onTransfer } = this.props
@@ -57,9 +57,9 @@ class TransferWaiter extends React.Component {
             })
         }, 1000)
 
-        const { minAmount, } = this.props
+        const { amount, } = this.props
 
-        this.poll(minAmount)
+        this.poll(amount)
     }
 
     componentDidMount() {
@@ -80,10 +80,10 @@ class TransferWaiter extends React.Component {
     }
 
     async componentDidUpdate(prevProps) {
-        const { minAmount } = this.props
-        if (minAmount && (!prevProps.minAmount ||
-            minAmount.symbol !== prevProps.minAmount.symbol ||
-            minAmount.amount !== prevProps.minAmount.amount)) {
+        const { amount } = this.props
+        if (amount && (!prevProps.amount ||
+            amount.symbol !== prevProps.amount.symbol ||
+            amount.amount !== prevProps.amount.amount)) {
             await this.stop()
             this.start()
         }

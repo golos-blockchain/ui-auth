@@ -3,11 +3,13 @@ import CopyToClipboard from 'react-copy-to-clipboard'
 import tt from 'counterpart'
 import cn from 'classnames'
 import golos, { api, } from 'golos-lib-js'
-import { Asset } from 'golos-lib-js/lib/utils';
+import { Asset, AssetEditor } from 'golos-lib-js/lib/utils';
 import { key_utils, PrivateKey } from 'golos-lib-js/lib/auth/ecc'
 import Link from 'next/link'
+import { Formik, ErrorMessage, } from 'formik'
 
 import LoadingIndicator from '@/elements/LoadingIndicator'
+import AmountField from '@/elements/forms/AmountField'
 import AccountName from '@/elements/register/AccountName'
 import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import TransferWaiter from '@/modules/register/TransferWaiter'
@@ -153,6 +155,9 @@ class UIARegister extends React.Component {
                             this.setState({
                                 rules: { ...deposit, creator: asset.creator, telegram },
                                 minAmount,
+                                initialForm: {
+                                    amount: AssetEditor(minAmount),
+                                },
                                 registrar,
                                 sym,
                                 copied_addr: false,
@@ -282,7 +287,7 @@ class UIARegister extends React.Component {
     }
 
     _renderParams = () => {
-        const { rules, sym, registrar, minAmount } = this.state
+        const { rules, sym, registrar, minAmount, waiting } = this.state
         const username = registrar.name
         const { memo_fixed } = rules
         let details = rules.details
@@ -290,17 +295,17 @@ class UIARegister extends React.Component {
             details = details.split('<account>').join(username)
         }
         return <div style={{fontSize: "90%"}}>
-            <hr />
-            {details && <div style={{ whiteSpace: 'pre-line', }}>
+            {waiting && <hr />}
+            {waiting && details && <div style={{ whiteSpace: 'pre-line', }}>
                 {details}
             <br/><br/></div>}
-            {minAmount && <div>
-                {tt('uia_register_jsx.req_amount')} <b>{minAmount.floatString}</b></div>}
+            {!waiting && minAmount && <div>
+                {tt('uia_register_jsx.min_amount')} <b>{minAmount.floatString}</b>.</div>}
         </div>;
     }
 
     _renderApi = () => {
-        const { sym, apiLoaded  } = this.state
+        const { sym, apiLoaded, waiting } = this.state
         if (!apiLoaded) {
             return (<div>
                 <br />
@@ -334,14 +339,14 @@ class UIARegister extends React.Component {
         }
         const { address } = apiLoaded
         return (<div>
-            {this._renderTo(address, null)}
+            {waiting && this._renderTo(address, null)}
             {this._renderParams(false)}
-            {this._renderWaiter()}
+            {waiting ? this._renderWaiter() : this._renderForm()}
         </div>)
     }
 
     _renderWaiter = () => {
-        const { minAmount, registrar, onTransfer } = this.state
+        const { waitAmount, registrar, onTransfer } = this.state
         if (!onTransfer) {
             onTransfer = async (deposited) => {
                 this.setState({
@@ -372,9 +377,85 @@ class UIARegister extends React.Component {
                 })
             }
         }
-        return <TransferWaiter
-            username={registrar.name}
-            minAmount={minAmount} title={''} onTransfer={onTransfer} />
+        return <div>
+            <div style={{ fontSize: '90%', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
+                {tt('uia_register_jsx.enter_amount')}<b>{waitAmount.floatString}</b>.
+            </div>
+            <TransferWaiter
+                username={registrar.name}
+                amount={waitAmount} title={''} onTransfer={onTransfer} />
+        </div>
+    }
+
+    amountValidate = (values) => {
+        const errors = {}
+        const { minAmount } = this.state
+        if (values.amount.asset.lt(minAmount)) {
+            errors.amount = tt('uia_register_jsx.min_amount') + minAmount.floatString
+        }
+        this.setState({
+            amountSubmitError: ''
+        })
+        return errors
+    }
+
+    _onAmountSubmit = async (values) => {
+        const waitAmount = values.amount.asset
+        try {
+            let fp = await callApi('/api/reg/get_free_poller/' + waitAmount.toString())
+            fp = await fp.json()
+            if (fp.status !== 'ok') {
+                throw new Error(fp.error || 'Unknown error')
+            }
+            if (fp.amount !== waitAmount.toString()) {
+                throw new Error('Slot is used')
+            }
+        } catch (err) {
+            this.setState({
+                amountSubmitError: err.message === 'Slot is used' ? tt('uia_register_jsx.slot_is_used') : err.message
+            })
+            return
+        }
+        this.setState({
+            waiting: true,
+            waitAmount
+        })
+    }
+
+    _renderForm = () => {
+        const { initialForm, amountSubmitError } = this.state
+        return <Formik
+            initialValues={initialForm}
+            validate={this.amountValidate}
+            onSubmit={this._onAmountSubmit}
+        >
+        {({
+            handleSubmit, isSubmitting, isValid, dirty, errors, touched, values, handleChange, setFieldValue,
+        }) => (
+            <form
+                onSubmit={handleSubmit}
+                autoComplete='off'
+            >
+                <div style={{ fontSize: '90%', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
+                    {tt('uia_register_jsx.enter_amount')}
+                </div>
+                <div className='input-group'>
+                    <AmountField
+                        name='amount'
+                        className='input-group-field'
+                    />
+                </div>
+                <ErrorMessage name='amount' component='div' className='error' />
+                {amountSubmitError && <div className='error'>{amountSubmitError}</div>}
+
+                {isSubmitting && <LoadingIndicator type='circle' />}
+                <button className={'button ' + (isSubmitting || !isValid ? ' disabled' : '')}
+                    type='submit' disabled={isSubmitting || !isValid}>
+                    {tt('g.continue')}
+                </button>
+            </form>
+        )}
+        </Formik>
     }
 
     render() {
@@ -385,7 +466,7 @@ class UIARegister extends React.Component {
         if (loading) {
             content = <LoadingIndicator type='circle' />
         } else {
-            const { assets, sym } = this.state
+            const { assets, sym, waiting } = this.state
 
             const path = this.getPath()[0]
 
@@ -431,8 +512,8 @@ class UIARegister extends React.Component {
                             memo_fixed = memo_fixed.split('<account>').join(username)
                         }
                         form = <div>
-                            {this._renderTo(to, to_fixed)}
-                            {memo_fixed ? <div>
+                            {waiting && this._renderTo(to, to_fixed)}
+                            {(waiting && memo_fixed) ? <div>
                                     {tt('uia_register_jsx.memo_fixed')}:<br/>
                                     <span style={{wordWrap: 'break-word', color: '#4BA2F2', fontSize: '120%'}}>
                                         {memo_fixed}
@@ -445,7 +526,7 @@ class UIARegister extends React.Component {
                                     <br/>
                                 </div> : null}
                             {this._renderParams()}
-                            {this._renderWaiter()}
+                            {waiting ? this._renderWaiter() : this._renderForm()}
                         </div>
                     }
                 }
