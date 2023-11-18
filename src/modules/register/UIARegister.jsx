@@ -379,7 +379,7 @@ class UIARegister extends React.Component {
         }
         return <div>
             <div style={{ fontSize: '90%', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
-                {tt('uia_register_jsx.enter_amount')}<b>{waitAmount.floatString}</b>.
+                {tt('uia_register_jsx.enter_amount')}<span style={{ fontSize: '130%' }}><b>{waitAmount.floatString}</b></span>
             </div>
             <TransferWaiter
                 username={registrar.name}
@@ -533,8 +533,6 @@ class UIARegister extends React.Component {
             }
 
             content = <div>
-                {this.state.sym ? <h4>{tt('uia_register_jsx.register_with')}</h4> :
-                <h4>{tt('uia_register_jsx.select_uia')}</h4>}
                 {syms}
                 {this.state.sym && <hr />}
                 {form}

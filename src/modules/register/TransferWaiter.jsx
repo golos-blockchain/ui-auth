@@ -42,7 +42,7 @@ class TransferWaiter extends React.Component {
         this.stopped = false
         this.stoppedPolling = false
         this.setState({
-            seconds: 15*60,
+            seconds: 30*60,
         })
 
         this.countdown = setInterval(() => {
