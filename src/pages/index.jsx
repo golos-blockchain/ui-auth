@@ -54,13 +54,11 @@ class Index extends React.Component {
         const { service_account, sign_endpoint, } = oauthCfg;
         let actions = [];
         for (let action of [
-            'transfer', 'donate', 'delegate_vs']) {
+            'transfer', 'donate', 'delegate_vs', 'transfer_nft']) {
             actions.push(<Link href={`/sign/${action}`} key={action}>
-                    <a>
-                        <button className='button hollow' style={{ marginRight: '10px', }}>
-                            {tt(`oauth_main_jsx.${action}`)}
-                        </button>
-                    </a>
+                    <button className='button hollow' style={{ marginRight: '10px', }}>
+                        {tt(`oauth_main_jsx.${action}`)}
+                    </button>
                 </Link>);
         }
         let clientList = [];

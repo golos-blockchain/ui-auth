@@ -1,6 +1,5 @@
 import config from 'config';
 import { api, broadcast, } from 'golos-lib-js';
-import { Signature, } from 'golos-lib-js/lib/auth/ecc';
 
 import { checkCaptcha } from '@/server/captcha'
 import nextConnect from '@/server/nextConnect';
@@ -235,4 +234,3 @@ var createAccount = async function createAccount({
         operations
     }, [signingKey])
 }
-const parseSig = hexSig => {try {return Signature.fromHex(hexSig)} catch(e) {return null}}

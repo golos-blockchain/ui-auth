@@ -13,7 +13,8 @@
     "add_to_fee": "1.000 GOLOS",
     "signing_key": "5K67PNheLkmxkgJ5UjvR8Nyt3GVPoLEN1dMZjFuNETzrNyMecPG",
     "delegation": "75000.000000 GESTS",
-    "free_regs_per_day": 10
+    "free_regs_per_day": 10,
+    "uias": ["YMUSDT", "YMPZM", "YMHIVE", "TESTF"]
   },
   "server_session_secret": "exiKdyF+IwRIXJDmtGIl4vWUz4i3eVSISpfZoeYc0s4=",
   "session_cookie_key": "X-Reg-ISession",
@@ -38,7 +39,7 @@
       "styleSrc": "'self' 'unsafe-inline' fonts.googleapis.com",
       "imgSrc": "* data:",
       "fontSrc": "data: fonts.gstatic.com",
-      "connectSrc": "'self' apibeta.golos.today wss://apibeta.golos.today",
+      "connectSrc": "'self' apibeta.golos.today wss://apibeta.golos.today *.golos.app",
       "frameAncestors": "'none'"
     }
   },
@@ -75,6 +76,9 @@
       "bot_name": "testgolos2_bot",
       "bot_token": "6390290192:AAEGipeCa4P0V4HZzoXvITCij8on6OItsGM"
     }
+  },
+  "apidex_service": {
+    "host": "https://api-dex.golos.app"
   },
   "default_client": "blogs",
   "clients": {

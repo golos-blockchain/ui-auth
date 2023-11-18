@@ -413,6 +413,70 @@ let permissions = {
         },
         internal: true,
     },
+    paid_subscription_create: {
+        ops: [
+            'paid_subscription_create',
+            'paid_subscription_update',
+            'paid_subscription_delete',
+        ],
+        cond: (op) => {
+            return [POSTING, op.author];
+        },
+    },
+    paid_subscription_transfer: {
+        ops: [
+            'paid_subscription_transfer',
+        ],
+        cond: (op) => {
+            if (op.from_tip) {
+                return [POSTING, op.from]
+            }
+            return [ACTIVE, op.from]
+        },
+    },
+    paid_subscription_cancel: {
+        ops: [
+            'paid_subscription_cancel',
+        ],
+        cond: (op) => {
+            return [POSTING, op.subscriber]
+        },
+    },
+    nft_collection: {
+        ops: [
+            'nft_collection',
+            'nft_collection_delete',
+        ],
+        cond: (op) => {
+            return [ACTIVE, op.creator]
+        },
+    },
+    nft_issue: {
+        ops: [
+            'nft_issue',
+        ],
+        cond: (op) => {
+            return [ACTIVE, op.creator]
+        },
+    },
+    nft_transfer: {
+        ops: [
+            'nft_transfer',
+        ],
+        cond: (op) => {
+            return [ACTIVE, op.from]
+        },
+    },
+    nft_orders: {
+        ops: [
+            'nft_sell',
+            'nft_buy',
+            'nft_cancel_order',
+        ],
+        cond: (op) => {
+            return [ACTIVE, op.seller || op.owner || op.buyer]
+        },
+    },
 };
 
 module.exports = {

@@ -42,12 +42,21 @@ class VerifyWayTabs extends React.Component {
             transfer = <Link href={path + '?transfer'}>{transfer}</Link>
         }
 
+        let uia = tt('verify_way_tabs_jsx.with_uia')
+        if (currentWay === 'uia') {
+            uia = <span>{uia}</span>
+        } else {
+            uia = <Link href={path + '?uia'}>{uia}</Link>
+        }
+
         return <div style={{ marginBottom: '1.0rem' }}>
                 {social}
                 &nbsp;|&nbsp;
                 {invite}
                 &nbsp;|&nbsp;
                 {transfer}
+                &nbsp;|&nbsp;
+                {uia}
             </div>
     }
 }

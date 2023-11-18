@@ -6,21 +6,27 @@
 @include foundation-everything(true);
 
 @import "./elements/AccountMenu";
+@import "./elements/DropdownMenu";
 @import "./elements/GeneratedPasswordInput";
 @import "./elements/Expandable";
 @import "./elements/LoadingIndicator";
+@import "./elements/nft/NFTSmallIcon";
+@import "./elements/nft/NFTTokens";
+@import "./elements/PagedDropdownMenu";
+@import "./elements/VerticalMenu";
 
 @import "./modules/Header";
 @import "./modules/LoginForm";
 @import "./modules/PendingTx";
 @import "./modules/PermissionsList";
+@import "./modules/register/UIARegister";
 
 @import "./pages/_common";
 @import "./pages/index";
 @import "./pages/login";
 @import "./pages/register";
 @import "./pages/sign/transfer";
-@import "./pages/sign/transfer";
+@import "./pages/sign/transfer_nft";
 @import "./pages/oauth/[client]/[perms]";
 
 @import "./foundation-overrides";

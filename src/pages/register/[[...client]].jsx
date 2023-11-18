@@ -16,6 +16,7 @@ import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import Tooltip from '@/elements/Tooltip';
 import Header from '@/modules/Header';
 import TransferRegister from '@/modules/register/TransferRegister'
+import UIARegister from '@/modules/register/UIARegister'
 import { obtainUid, getClientCfg, getDailyLimit, } from '@/server/reg';
 import { initRegSession, } from '@/server/regSession';
 import { withSecureHeadersSSR, } from '@/server/security';
@@ -88,6 +89,12 @@ class Register extends React.Component {
             }
         } else if (params.has('transfer')) {
             const verificationWay = 'transfer'
+            if (this.state.verificationWay !== verificationWay)
+                this.setState({
+                    verificationWay,
+                })
+        } else if (params.has('uia')) {
+            const verificationWay = 'uia'
             if (this.state.verificationWay !== verificationWay)
                 this.setState({
                     verificationWay,
@@ -389,7 +396,7 @@ class Register extends React.Component {
             />
         } else if (state.verificationWay === 'social') {
             const { dailyLimit } = this.props
-            if (dailyLimit && dailyLimit.exceed) {
+            if (dailyLimit.limit && dailyLimit.limit.exceed) {
                 form = <div>
                     <VerifyWayTabs currentWay='social' />
                     <div className='callout alert'>
@@ -397,6 +404,12 @@ class Register extends React.Component {
                     </div>
                 </div>
             }
+        } else if (state.verificationWay === 'uia' && state.step !== 'verified') {
+            form = <UIARegister
+                clientCfg={this.props.clientCfg}
+                afterRedirect={this.state.afterRedirect}
+                updateApiState={this.updateApiState}
+            />
         }
 
         form = form || (<form
@@ -539,9 +552,10 @@ class Register extends React.Component {
         const telegram = hasGrant('telegram')
         const empty = !vk && !facebook && !yandex && !mailru && !telegram
 
+        const { dailyLimit } = this.props
+
         if (!this.state.authType && !empty) {
-            const { dailyLimit } = this.props
-            if (dailyLimit && dailyLimit.exceed) {
+            if (dailyLimit.limit && dailyLimit.limit.exceed) {
                 return null
             }
         }
@@ -579,10 +593,10 @@ class Register extends React.Component {
                         dataOnauth={this.onTelegramAuth}
                         usePic={false} />
                 </div>}
-                {dailyLimit ? <div style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>
+                {dailyLimit.limit ? <div style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>
                     {tt('register_jsx.free_remain')}
                     {tt('register_jsx.free_remain2', {
-                        count: dailyLimit.per_day - dailyLimit.regs
+                        count: dailyLimit.limit.per_day - dailyLimit.limit.regs.length
                     })}
                 </div> : null}
             </div>
@@ -673,17 +687,29 @@ class Register extends React.Component {
         const keyFile = new KeyFile(name, {password, ...privateKeys});
 
         try {
+            let res
             // create account
-            const res = await callApi('/api/reg/submit', {
-                invite_code: verificationWay === 'invite_code' ? invite_code : undefined,
-                name,
-                owner_key: publicKeys[0],
-                active_key: publicKeys[1],
-                posting_key: publicKeys[2],
-                memo_key: publicKeys[3],
-                referrer,
-                recaptcha_v2,
-            });
+            if (this.state.verificationWay === 'uia') {
+                res = await callApi('/api/reg/submit_uia', {
+                    name,
+                    owner_key: publicKeys[0],
+                    active_key: publicKeys[1],
+                    posting_key: publicKeys[2],
+                    memo_key: publicKeys[3],
+                    recaptcha_v2,
+                })
+            } else {
+                res = await callApi('/api/reg/submit', {
+                    invite_code: verificationWay === 'invite_code' ? invite_code : undefined,
+                    name,
+                    owner_key: publicKeys[0],
+                    active_key: publicKeys[1],
+                    posting_key: publicKeys[2],
+                    memo_key: publicKeys[3],
+                    referrer,
+                    recaptcha_v2,
+                })
+            }
 
             const data = await res.json();
 
@@ -756,7 +782,7 @@ class Register extends React.Component {
         this.setState({ inviteError, inviteHint });
     };
 
-    updateApiState(res, after) {
+    updateApiState = (res, after) => {
         const { step, verification_way, error_str, } = res;
 
         let newState = {};

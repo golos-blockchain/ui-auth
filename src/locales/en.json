@@ -93,6 +93,26 @@
     "cannot_reset": "Unfortunately, something went wrong. We cannot set your password. But everything is under control - it is your temporary key. Save it, and contact us: ",
     "unload_warning": "Do you saved the key? Or you want to cancel registration? If transfer already sent, there are no refund possible."
   },
+  "uia_register_jsx": {
+    "select_uia": "Choose cryptocurrencу",
+    "register_with": "Register with...",
+    "no_such_asset": " - no such UIA.",
+    "deposit_unavailable": " - deposit temporarily unavailable.",
+    "cmc_error": " - cannot get min amount from CoinMarketCap.",
+    "transfer_not_supported": " - not yet supported.",
+    "min_amount": "Minimal amount is ",
+    "enter_amount": "Exact amount, which will be transferred by gate: ",
+    "slot_is_used": "Try another amount.",
+    "fee": "Fee",
+    "memo_fixed": "Memo",
+    "to": "Send tokens to address/account",
+    "api_error": "Cannot get address. Try again later. If problem still occurs, contact the issuer of ",
+    "api_error_details": "and send the error details:",
+    "free_poller": "Cannot calculate minimal amount. Try again later, please. Or try another currency.",
+    "deposited": "Received ",
+    "deposited2": ". Placing limit order to exchange it to GOLOS to register your account.",
+    "cannot_place_order": "Cannot place order: "
+  },
   "invites_jsx": {
     "claim_wrong_secret": "Wrong secret",
     "claim_wrong_secret_fatal": "No such invite check",
@@ -160,6 +180,7 @@
     "transfer": "Transfer tokens",
     "donate": "Donate to user",
     "delegate_vs": "Delegate vesting shares",
+    "transfer_nft": "Transfer NFT-token",
     "unfreeze": "Unfreeze account",
     "apps_title": "Apps",
     "apps_empty": "You are not authorized in any app.",
@@ -177,6 +198,11 @@
     "memo": "Memo",
     "memo_is_public": "This memo is public.",
     "submit": "Transfer"
+  },
+  "oauth_transfer_nft": {
+    "no_tokens": "You have not yet any NFT-tokens.",
+    "token_not_exist": "No such token in your wallet. You can transfer any of these tokens:",
+    "token_is_not_your": "This token is not your. You can transfer any of these tokens:"
   },
   "oauth_donate": {
     "submit": "Donate",
@@ -240,7 +266,14 @@
     "proposal_create": "Creating transaction proposals",
     "proposal_delete": "Removing transaction proposals",
     "proposal_update": "Voting in transaction proposals",
-    "proposal_update_active": "Voting in transaction proposals with active authorities"
+    "proposal_update_active": "Voting in transaction proposals with active authorities",
+    "paid_subscription_create": "Creating, deleting, updating paid subscriptions",
+    "paid_subscription_transfer": "Buying paid subscriptions",
+    "paid_subscription_cancel": "Canceling of paid subscriptions",
+    "nft_collection": "Creating and deleting NFT-collections",
+    "nft_issue": "Issueing of NFT-tokens",
+    "nft_transfer": "Transferring of NFT-tokens",
+    "nft_orders": "Selling, buying NFT-tokens"
   },
   "recovery": {
     "change_title": "Change recovery account",
@@ -311,7 +344,8 @@
   "verify_way_tabs_jsx": {
     "social": "Social",
     "invite_code": "Invite-code",
-    "transfer": "Transfer"
+    "transfer": "Transfer",
+    "with_uia": "With cryptocurrencies"
   },
   "g": {
     "APP_NAME": "Golos",
@@ -352,7 +386,7 @@
     "close": "Close",
     "collapse": "Collapse",
     "comments": "Comments",
-    "continue": "continue",
+    "continue": "Continue",
     "convert": "Convert",
     "date": "Date",
     "delete": "Delete",
