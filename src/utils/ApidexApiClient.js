@@ -1,4 +1,4 @@
-import { fetchEx } from 'golos-lib-js/lib/utils'
+import { fetchEx, Asset } from 'golos-lib-js/lib/utils'
 
 const request_base = {
     timeout: 2000,
@@ -80,5 +80,18 @@ export async function apidexGetAll(apidex_service) {
     } catch (err) {
         console.error('apidexGetAll', err)
         return empty
+    }
+}
+
+export async function apidexExchange(apidex_service, sell, buySym) {
+    if (!apidex_service || !apidex_service.host) return empty
+    let request = Object.assign({}, request_base)
+    try {
+        let resp = await fetchEx(apidexUrl(apidex_service, `/api/v1/exchange/` + sell.toString() + '/' + buySym), request)
+        resp = await resp.json()
+        return await Asset(resp.receive)
+    } catch (err) {
+        console.error('apidexExchange', err)
+        return null
     }
 }

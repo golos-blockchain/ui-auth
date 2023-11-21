@@ -111,7 +111,8 @@
     "free_poller": "Cannot calculate minimal amount. Try again later, please. Or try another currency.",
     "deposited": "Received ",
     "deposited2": ". Placing limit order to exchange it to GOLOS to register your account.",
-    "cannot_place_order": "Cannot place order: "
+    "cannot_place_order": "Cannot place order: ",
+    "you_will_receive": "You will receive "
   },
   "invites_jsx": {
     "claim_wrong_secret": "Wrong secret",
