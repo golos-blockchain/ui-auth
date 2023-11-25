@@ -73,6 +73,7 @@
     },
     "telegram": {
       "enabled": true,
+      "bot_name": "testgolos2_bot",
       "bot_token": "6390290192:AAEGipeCa4P0V4HZzoXvITCij8on6OItsGM"
     }
   },

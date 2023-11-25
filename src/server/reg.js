@@ -132,9 +132,13 @@ export function getClientCfg(req, params, locale = '') {
     cfg.grants = {};
     const grant = config.get('grant') || {};
     for (const [key, val] of Object.entries(grant)) {
-        cfg.grants[key] = {
+        const obj = {
             enabled: val.enabled,
-        };
+        }
+        if (key === 'telegram') {
+            obj.bot_name = val.bot_name
+        }
+        cfg.grants[key] = obj
     }
 
     cfg.fake_emails_allowed = config.has('fake_emails_allowed')

@@ -427,7 +427,7 @@ let handler = nextConnect({ attachParams: true, })
             throwErr(req, 400, [pollerRes.err])
         }
 
-        const pollMsec = process.env.NODE_ENV === 'development' ? 1000 : 5000
+        const pollMsec = process.env.NODE_ENV === 'development' ? 1000 : 20000
         let tries = 0
         for ( ;; ) {
             if (tries > 10) {

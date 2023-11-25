@@ -588,7 +588,7 @@ class Register extends React.Component {
                     {tt('register_jsx.or_use_telegram')}
                 </div>}
                 {telegram && <div style={{ marginTop: '0.5rem' }}>
-                    <TelegramLoginButton botName='testgolos2_bot'
+                    <TelegramLoginButton botName={grants.telegram.bot_name || ''}
                         buttonSize='medium'
                         dataOnauth={this.onTelegramAuth}
                         usePic={false} />
