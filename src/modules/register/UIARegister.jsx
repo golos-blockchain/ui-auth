@@ -13,7 +13,7 @@ import AmountField from '@/elements/forms/AmountField'
 import AccountName from '@/elements/register/AccountName'
 import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import TransferWaiter from '@/modules/register/TransferWaiter'
-import { apidexGetPrices, } from '@/utils/ApidexApiClient'
+import { apidexGetPrices, apidexExchange } from '@/utils/ApidexApiClient'
 import KeyFile from '@/utils/KeyFile'
 import { delay, } from '@/utils/misc'
 import { emptyAuthority } from '@/utils/RecoveryUtils'
@@ -163,6 +163,11 @@ class UIARegister extends React.Component {
                                 copied_addr: false,
                                 copied_memo: false,
                             }, () => {
+                                try {
+                                    this._onAmountChange(minAmount)
+                                } catch (err) {
+                                    console.error(err)
+                                }
                                 if (to_type === 'api') {
                                     this.doAPI()
                                 }
@@ -399,6 +404,22 @@ class UIARegister extends React.Component {
         return errors
     }
 
+    _onAmountChange = async (amount) => {
+        const { clientCfg } = this.props
+        const { apidex_service } = clientCfg.config
+        let res
+        try {
+            res = await apidexExchange(apidex_service, amount, 'GOLOS')
+        } catch (err) {
+            console.error(err)
+        }
+        if (res) {
+            this.setState({
+                receive: res
+            })
+        }
+    }
+
     _onAmountSubmit = async (values) => {
         const waitAmount = values.amount.asset
         try {
@@ -423,7 +444,7 @@ class UIARegister extends React.Component {
     }
 
     _renderForm = () => {
-        const { initialForm, amountSubmitError } = this.state
+        const { initialForm, amountSubmitError, receive } = this.state
         return <Formik
             initialValues={initialForm}
             validate={this.amountValidate}
@@ -443,10 +464,14 @@ class UIARegister extends React.Component {
                     <AmountField
                         name='amount'
                         className='input-group-field'
+                        onChange={this._onAmountChange}
                     />
                 </div>
                 <ErrorMessage name='amount' component='div' className='error' />
                 {amountSubmitError && <div className='error'>{amountSubmitError}</div>}
+                {!errors.amount && !amountSubmitError && receive ? <div style={{marginBottom:'0.5rem'}}>
+                    {tt('uia_register_jsx.you_will_receive')}<b>~{receive.floatString}.</b>
+                </div> : null}
 
                 {isSubmitting && <LoadingIndicator type='circle' />}
                 <button className={'button ' + (isSubmitting || !isValid ? ' disabled' : '')}

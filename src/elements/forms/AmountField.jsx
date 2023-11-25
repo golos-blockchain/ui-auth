@@ -23,11 +23,14 @@ class AmountField extends React.Component {
         if (newAmount.hasChange && newAmount.asset.amount >= 0) {
             setFieldValue(name, newAmount)
             setFieldTouched(name, true, false)
+            if (this.props.onChange) {
+                this.props.onChange(newAmount.asset)
+            }
         }
     }
 
     render() {
-        const { placeholder, name, ...rest } = this.props
+        const { placeholder, name, onChange, ...rest } = this.props
         return (<Field name={name} type='text'
             placeholder={placeholder}
             autoComplete='off' autoCorrect='off' spellCheck='false' {...rest}>
