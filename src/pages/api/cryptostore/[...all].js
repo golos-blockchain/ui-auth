@@ -1,7 +1,7 @@
 import secureRandom from 'secure-random';
 import crypto from 'browserify-aes'
 import golos, { api } from 'golos-lib-js';
-import { validateAccountName } from 'golos-lib-js/lib/utils'
+import { validateAccountName, Asset } from 'golos-lib-js/lib/utils'
 import { hash } from 'golos-lib-js/lib/auth/ecc'
 
 import config from 'config';
@@ -128,16 +128,49 @@ async function decrypt(req, res, xauthsession) {
         }
     } while (subs.length >= 100)
 
+    const decrypt = async (author, _body) => {
+        let key = keys[author] || await getKey(author)
+        keys[author] = key
+
+        if (!key) {
+            return { author, err: 'no_key' }
+        } else {
+            try {
+                const buff = new Buffer(_body, 'base64')
+                const keySha = hash.sha512(key)
+                const cKey = keySha.slice(0, 32)
+                const iv = keySha.slice(32, 48)
+                const decipher = crypto.createDecipheriv('aes-256-cbc', cKey, iv)
+                const msg = Buffer.concat([decipher.update(buff), decipher.final()])
+                const body = new TextDecoder('utf-8', { fatal: true }).decode(msg)
+                return { author, body }
+            } catch (err) {
+                console.error('cryptostore - Cannot decrypt:', err)
+                return { author, err: 'cannot_decrypt' }
+            }
+        }
+    }
+
     const pso = {}
     const keys = {}
     const result = []
+    const targets = []
+    const hashTargets = []
+    const body = []
     for (const entry of entries) {
-        const { author, body } = entry
+        const { author, permlink, body } = entry
+
+        const addTarget = () => {
+            targets.push({ author, permlink })
+            hashTargets.push({ author, hashlink: entry.hashlink })
+            bodies[author + '|' + permlink] = body
+        }
 
         if (account !== author && !authors.has(author)) {
             let sub = inactiveAuthors.get(author)
             if (sub) {
-                result.push({ author, err: 'inactive', sub })
+                result.push({ author, permlink, err: 'inactive', sub })
+                addTarget()
                 continue
             }
 
@@ -146,34 +179,57 @@ async function decrypt(req, res, xauthsession) {
             })
             pso[author] = opts
             if (opts.author) {
-                result.push({ author, err: 'no_sponsor', sub: {
+                result.push({ author, permlink, err: 'no_sponsor', sub: {
                     cost: opts.cost,
                     tip_cost: opts.tip_cost
                 }})
+                addTarget()
             } else {
-                result.push({ author, err: 'no_sub' })
+                result.push({ author, permlink, err: 'no_sub' })
+                addTarget()
             }
             continue
         }
 
-        let key = keys[author] || await getKey(author)
-        keys[author] = key
+        result.push(await decrypt(author, entry.body))
+    }
 
-        if (!key) {
-            result.push({ author, err: 'no_key' })
-        } else {
-            try {
-                const buff = new Buffer(entry.body, 'base64')
-                const keySha = hash.sha512(key)
-                const cKey = keySha.slice(0, 32)
-                const iv = keySha.slice(32, 48)
-                const decipher = crypto.createDecipheriv('aes-256-cbc', cKey, iv)
-                const msg = Buffer.concat([decipher.update(buff), decipher.final()])
-                const body = new TextDecoder('utf-8', { fatal: true }).decode(msg)
-                result.push({ author, body })
-            } catch (err) {
-                console.error('cryptostore - Cannot decrypt:', err)
-                result.push({ author, err: 'cannot_decrypt' })
+    let donates = []
+    const fees = {}
+    if (targets.length) {
+        donates = await api.getDonatesForTargetsAsync(targets, 1000, 0, true, false)
+        const previews = await api.getContentPreviewsAsync(hashTargets, 1, true)
+        for (const preview of previews) {
+            fees[preview.author + '|' + preview.permlink] = preview.decrypt_fee && await Asset(preview.decrypt_fee)
+        }
+    }
+
+    const amounts = {}
+    for (const donate of donates) {
+        if (donate.from !== account || donate.uia) continue
+        let target
+        try {
+            target = JSON.parse(donate.target)
+            if (!target.author || !target.permlink) throw new Error('Wrong target format')
+        } catch (err) {
+            console.error('cryptostore decrypt - cannot parse donate:', donate.target, err)
+            continue
+        }
+        amounts[target.author + '|' + target.permlink] = donate.amount
+    }
+
+    for (const res of result) {
+        if (res.permlink) {
+            const id = res.author + '|' + res.permlink
+            const fee = fees[id]
+            const amount = amounts[id]
+            if (fee && fee.amount > 0) {
+                if (amount && fee.lte(amount)) {
+                    delete res.err
+                    const dec = await decrypt(res.author, res.body)
+                    res = {...res, ...}
+                }
+                res.or_donate = true
             }
         }
     }
