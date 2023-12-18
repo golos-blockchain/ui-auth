@@ -105,7 +105,7 @@ let handler = nextConnect({ attachParams: true, })
             throwErr(req, 400, 'wrong_email')
         }
 
-        if (!checkCaptcha(recaptcha_v2, 'recovery.captcha')) {
+        if (!await checkCaptcha(recaptcha_v2, 'recovery.captcha')) {
             console.error('-- /recovery/request: try to recovery without ReCaptcha v2 solving, username:', username)
             throwErr(req, 403, ['recaptcha_v2_failed'])
         }

@@ -431,6 +431,7 @@ let handler = nextConnect({ attachParams: true, })
         let tries = 0
         for ( ;; ) {
             if (tries > 10) {
+                console.log('wait_for_transfer timeouted', uid)
                 res.json({
                     status: 'err',
                     error: 'Timeouted'
@@ -455,7 +456,7 @@ let handler = nextConnect({ attachParams: true, })
 
                 let hist
                 try {
-                    hist = await api.getAccountHistoryAsync(username, -1, 1000, {select_ops: ['transfer']})
+                    hist = await api.getAccountHistoryAsync(username, -1, 1000, {select_ops: ['transfer', 'asset_issue']})
                 } catch (err) {
                     console.error('/api/reg/wait_for_transfer - getAccountHistoryAsync', err)
                     throwErr(req, 400, ['Blockchain unavailable'])
@@ -469,8 +470,9 @@ let handler = nextConnect({ attachParams: true, })
                     }
 
                     const [ opType, opData ] = hist[i][1].op
-                    if (opType === 'transfer') {
-                        if (opData.to === username && opData.amount === amountStr) {
+                    if (opType === 'transfer' || opType === 'asset_issue') {
+                        if ((opData.to === username || (opData.to === '' && opData.from === username))
+                            && opData.amount === amountStr) {
                             stopMe = true
                             break
                         }
