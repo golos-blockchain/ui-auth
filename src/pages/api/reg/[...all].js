@@ -427,19 +427,9 @@ let handler = nextConnect({ attachParams: true, })
             throwErr(req, 400, [pollerRes.err])
         }
 
-        const pollMsec = process.env.NODE_ENV === 'development' ? 1000 : 20000
+        const pollMsec = process.env.NODE_ENV === 'development' ? 1000 : 5000
         let tries = 0
         for ( ;; ) {
-            if (tries > 10) {
-                console.log('wait_for_transfer timeouted', uid)
-                res.json({
-                    status: 'err',
-                    error: 'Timeouted'
-                })
-                return
-            }
-            ++tries
-
             let bal
             try {
                 bal = await getBalance()
@@ -449,7 +439,20 @@ let handler = nextConnect({ attachParams: true, })
 
             initBal.amountFloat = pollerRes.res.init_bal.toString()
 
-            console.log('wait_for_transfer', initBal.toString(), bal.toString())
+            if (tries > 3) {
+                console.log('wait_for_transfer timeouted', uid)
+                res.json({
+                    status: 'err',
+                    error: 'Timeouted',
+                    username,
+                    init_bal: initBal.toString(),
+                    bal: bal.toString()
+                })
+                return
+            }
+            ++tries
+
+            console.log('wait_for_transfer', username, initBal.toString(), bal.toString(), amount.toString())
             const delta = bal.minus(initBal)
             if (delta.gte(amount)) {
                 let stopMe = false
@@ -493,6 +496,8 @@ let handler = nextConnect({ attachParams: true, })
                         deposited: delta.toString()
                     })
                     return
+                } else {
+                    console.warn('wait_for_transfer - amount increased but no op in history', JSON.stringify(hist))
                 }
             }
 

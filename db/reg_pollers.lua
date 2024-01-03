@@ -61,7 +61,7 @@ end
 local function clean_reg_pollers(now)
     for i,rp in box.space.reg_pollers.index.by_created:pairs(0, {iterator = 'GT', limit = 100}) do
         local rp = wrap_rp(rp)
-        if (now - rp['created']) > 20*60*1000 then
+        if (now - rp['created']) > 90*60*1000 then
             box.space.reg_pollers:delete(rp['id'])
         else
             break
