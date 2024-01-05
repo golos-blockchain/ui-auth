@@ -4,6 +4,7 @@ import golos, { api, broadcast } from 'golos-lib-js'
 import { hash, } from 'golos-lib-js/lib/auth/ecc';
 import { Asset } from 'golos-lib-js/lib/utils'
 import secureRandom from 'secure-random';
+import tt from 'counterpart'
 
 import nextConnect from '@/server/nextConnect';
 import { throwErr, } from '@/server/error';
@@ -15,6 +16,7 @@ import { getDailyLimit, obtainUid, getClientCfg, } from '@/server/reg';
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 import { delay, } from '@/utils/misc'
+import { apidexExchange } from '@/utils/ApidexApiClient'
 
 initGolos();
 
@@ -507,10 +509,86 @@ let handler = nextConnect({ attachParams: true, })
         }
     })
 
-    .post('/api/reg/place_order/:amount', async (req, res) => {
+    .get('/api/reg/make_order_receipt/:amount/:submitting', async (req, res) => {
         await slowDownLimitReq(req)
 
-        const amountStr = req.params.amount.split('%20').join(' ')
+        const clientCfg = getClientCfg(req, req.params)
+        const { apidex_service } = clientCfg.config
+        const { uias } = clientCfg.config.registrar
+
+        const amount = await Asset(req.params.amount.split('%20').join(' '))
+        let exAmount = amount.clone()
+        const exchanges = uias[exAmount.symbol]
+        let error = null
+        let result = null
+        let order_receipts = []
+        for (const ex of exchanges) {
+            const [ sym1, sym2 ] = ex.split('/')
+            let resEx
+            try {
+                resEx = await apidexExchange(apidex_service, exAmount, sym2)
+            } catch (err) {
+                console.error(err)
+            }
+            if (!resEx) {
+                error = tt('uia_register_jsx.cannot_check_orders') + exAmount.symbol + '/' + sym2
+            }
+            if (error) break
+            if (resEx.remain) {
+                error = tt('uia_register_jsx.too_low_orders') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
+                break
+            }
+            if (resEx.error === 'no_orders') {
+                error = tt('uia_register_jsx.no_orders') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
+                break
+            } else if (resEx.error) {
+                error = resEx.error + tt('uia_register_jsx.unknown_error') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
+                break
+            }
+            const pair = [exAmount.toString(), resEx.result.toString()]
+            order_receipts.push(pair)
+            exAmount = resEx.result.clone()
+            result = exAmount.clone()
+        }
+
+        const deposited = req.session.deposited && req.session.deposited[amount.symbol]
+        if (deposited && deposited === amount.toString()) {
+            req.session.order_receipts = order_receipts
+            req.session.order_receipt_time = Date.now()
+
+            delete req.session.deposited[amount.symbol]
+
+            await req.session.save()
+        } else {
+            order_receipts = []
+        }
+
+        if (req.params.submitting === 'true' && !order_receipts.length) {
+            console.error('make_order_receipt error:', req.session.deposited, amount.symbol)
+            error = 'wrong deposited'
+            result = null
+        }
+
+        res.json({
+            status: 'ok',
+            result: result && result.toString(),
+            error,
+            order_receipts
+        })
+    })
+
+    .post('/api/reg/place_order', async (req, res) => {
+        await slowDownLimitReq(req)
+
+        const { order_receipts, order_receipt_time } = req.session
+        if (!order_receipts || !order_receipts.length || !order_receipt_time) {
+            throwErr(req, 400, ['You have no deposited'])
+        }
+        if (Date.now() - order_receipt_time > 60*60*1000) {
+            throwErr(req, 400, ['You timeouted order receipt'])
+        }
+
+        const amountStr = order_receipts[0][0]
         let amount
         try {
             amount = await Asset(amountStr)
@@ -520,17 +598,6 @@ let handler = nextConnect({ attachParams: true, })
                 error: 'Asset parse error'
             })
             return
-        }
-
-        if (!req.session.deposited) {
-            throwErr(req, 400, ['You have no deposited'])
-        }
-        const deposited = req.session.deposited[amount.symbol]
-        if (!deposited) {
-            throwErr(req, 400, ['You have no deposited in ' + amount.symbol])
-        }
-        if (deposited !== amountStr) {
-            throwErr(req, 400, ['You have wrong deposited in ' + amount.symbol])
         }
 
         let chainProps
@@ -558,7 +625,7 @@ let handler = nextConnect({ attachParams: true, })
             owner: username,
             orderid,
             amount_to_sell: amountStr,
-            min_to_receive: chainProps.create_account_min_golos_fee,
+            min_to_receive: order_receipts[0][1],
             fill_or_kill: true,
             expiration: 0xffffffff
         }]]
@@ -568,12 +635,9 @@ let handler = nextConnect({ attachParams: true, })
                 operations
             }, [signingKey])
         } catch (err) {
-            console.error('/api/reg/place_order - Cannot sell tokens', err)
+            console.error('/api/reg/place_order - Cannot sell tokens', err, amountStr, order_receipts[0][1])
             throwErr(req, 400, ['Cannot sell tokens'])
         }
-
-        delete req.session.deposited[amount.symbol]
-        await req.session.save()
 
         await delay(1500)
 
@@ -585,7 +649,9 @@ let handler = nextConnect({ attachParams: true, })
             throwErr(req, 400, ['Blockchain unavailable'])
         }
 
-        let golos_received
+        const toReceive = await Asset(order_receipts[0][1])
+
+        let received, new_receipts
         for (let i = hist.length - 1; i >= 0; --i) {
             const timestamp = +new Date(hist[i][1].timestamp + 'Z') / 1000
             if (orderid - timestamp > 10) {
@@ -595,23 +661,38 @@ let handler = nextConnect({ attachParams: true, })
             const [ opType, opData ] = hist[i][1].op
             if (opType === 'fill_order') {
                 if (opData.current_orderid == orderid || opData.open_orderid == orderid) {
-                    const golosAmount = await Asset(opData.current_orderid == orderid ?
-                        opData.open_pays : opData.current_pays)
+                    if (order_receipts[0][1].split(' ')[1] === 'GOLOS') {
+                        const golosAmount = await Asset(opData.current_orderid == orderid ?
+                            opData.open_pays : opData.current_pays)
 
-                    golos_received = golos_received || await Asset('0.000 GOLOS')
-                    golos_received = golos_received.plus(golosAmount)
-                    req.session.golos_received = golos_received.toString()
-                    await req.session.save()
+                        if (!received) {
+                            received = await Asset(0, toReceive.precision, toReceive.symbol)
+                        }
+                        received = received.plus(golosAmount)
+                        req.session.golos_received = received.toString()
+                        delete req.session.order_receipts
+                        await req.session.save()
+                    } else {
+                        req.session.order_receipts.shift()
+                        await req.session.save()
+                        new_receipts = req.session.order_receipts
+                    }
                 }
             }
         }
 
-        if (golos_received) {
+        if (received) {
             res.json({
                 status: 'ok',
-                golos_received,
+                received,
                 step: 'verified',
                 verification_way: 'uia'
+            })
+            return
+        } else if (new_receipts) {
+            res.json({
+                status: 'ok',
+                order_receipts: new_receipts
             })
             return
         }

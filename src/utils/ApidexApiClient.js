@@ -89,7 +89,11 @@ export async function apidexExchange(apidex_service, sell, buySym) {
     try {
         let resp = await fetchEx(apidexUrl(apidex_service, `/api/v1/exchange/` + sell.toString() + '/' + buySym), request)
         resp = await resp.json()
-        return await Asset(resp.result)
+        return {
+            result: resp.result ? await Asset(resp.result) : null,
+            remain: resp.remain ? await Asset(resp.remain) : null,
+            error: resp.error
+        }
     } catch (err) {
         console.error('apidexExchange', err)
         return null

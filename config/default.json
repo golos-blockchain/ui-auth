@@ -1,5 +1,5 @@
 {
-  "rest_api": "https://dev.golos.app",
+  "rest_api": "http://89.22.173.104:3000",
   "allowed_clients": [
     "dev.golos.app",
     "devnotify.golos.app",
@@ -14,7 +14,10 @@
     "signing_key": "5K67PNheLkmxkgJ5UjvR8Nyt3GVPoLEN1dMZjFuNETzrNyMecPG",
     "delegation": "75000.000000 GESTS",
     "free_regs_per_day": 10,
-    "uias": ["YMUSDT", "YMPZM", "YMHIVE", "TESTF"]
+    "uias": {
+      "assets": ["YMUSDT", "YMPZM", "YMHIVE", "YMXMR", "TESTF"],
+      "YMXMR": ["YMXHR/YMPZM", "YMPZM/YMUSDT", "YMUSDT/GOLOS"]
+    }
   },
   "server_session_secret": "exiKdyF+IwRIXJDmtGIl4vWUz4i3eVSISpfZoeYc0s4=",
   "session_cookie_key": "X-Reg-ISession",
