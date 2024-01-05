@@ -324,10 +324,12 @@ let handler = nextConnect({ attachParams: true, })
 
         let freeAmount
         try {
+            const amountStep = 1 / Math.pow(10, amount.precision || 1)
             freeAmount = await Tarantool.instance('tarantool')
             .call('get_free_reg_poller',
                 parseFloat(amount.amountFloat),
                 amount.symbol,
+                amountStep,
                 Date.now()
             )
             freeAmount = freeAmount[0][0]
