@@ -145,8 +145,12 @@ export function getClientCfg(req, params, locale = '') {
         && config.get('fake_emails_allowed');
 
     cfg.registrar = config.has('registrar') ? config.get('registrar') : {}
-    if (!cfg.registrar.uias)
-        cfg.registrar.uias = []
+    const { registrar } = cfg
+    if (!registrar.uias) registrar.uias = {}
+    if (!registrar.uias.assets) registrar.uias.assets = []
+    for (const sym of registrar.uias.assets) {
+        if (!registrar.uias[sym]) registrar.uias[sym] = [sym + '/GOLOS']
+    }
 
     cfg.apidex_service = config.has('apidex_service')
         && config.get('apidex_service')

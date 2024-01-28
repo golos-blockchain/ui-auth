@@ -13,18 +13,19 @@ class AmountField extends React.Component {
         const { value, } = field
         const { values, setFieldTouched, setFieldValue } = form
         return <input type='text' value={value.amountStr} placeholder={placeholder}
-            {...rest} onChange={(e) => this.onChange(e, values, setFieldTouched, setFieldValue)}
+            {...rest} onChange={(e) => this.onChange(e, values, form)}
             />
     }
 
-    onChange = (e, values, setFieldTouched, setFieldValue) => {
+    onChange = (e, values, form) => {
         const { name } = this.props
         const newAmount = values[name].withChange(e.target.value)
         if (newAmount.hasChange && newAmount.asset.amount >= 0) {
+            const { setFieldTouched, setFieldValue } = form
             setFieldValue(name, newAmount)
             setFieldTouched(name, true, false)
             if (this.props.onChange) {
-                this.props.onChange(newAmount.asset)
+                this.props.onChange(newAmount.asset, form)
             }
         }
     }

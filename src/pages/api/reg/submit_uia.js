@@ -39,7 +39,7 @@ let handler = nextConnect()
 
         const account = await bodyParams(req)
 
-        if (!checkCaptcha(account.recaptcha_v2)) {
+        if (!await checkCaptcha(account.recaptcha_v2)) {
             console.error('-- /submit: try to register without ReCaptcha v2 solving, data:', res.data, ', form fields:', account)
             throwErr(req, 403, ['recaptcha_v2_failed'], null, state)
         }

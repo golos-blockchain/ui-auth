@@ -13,7 +13,7 @@ import AmountField from '@/elements/forms/AmountField'
 import AccountName from '@/elements/register/AccountName'
 import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import TransferWaiter from '@/modules/register/TransferWaiter'
-import { apidexGetPrices, apidexExchange } from '@/utils/ApidexApiClient'
+import { apidexGetPrices } from '@/utils/ApidexApiClient'
 import KeyFile from '@/utils/KeyFile'
 import { delay, } from '@/utils/misc'
 import { emptyAuthority } from '@/utils/RecoveryUtils'
@@ -57,6 +57,10 @@ class UIARegister extends React.Component {
         error: '',
     }
 
+    constructor(props) {
+        super(props)
+    }
+
     async componentDidMount() {
         const { clientCfg } = this.props
 
@@ -66,6 +70,7 @@ class UIARegister extends React.Component {
 
         const { apidex_service } = clientCfg.config
         const { uias } = clientCfg.config.registrar
+        const syms = uias.assets
 
         const path = this.getPath()
         if (path[1]) {
@@ -73,10 +78,10 @@ class UIARegister extends React.Component {
             const sym = params.get('uia')
             if (sym) {
                 let assets
-                assets = await golos.api.getAssetsAsync('', uias)
+                assets = await golos.api.getAssetsAsync('', syms)
 
                 let error
-                if (!uias.includes(sym)) {
+                if (!syms.includes(sym)) {
                     error = sym + tt('uia_register_jsx.no_such_asset')
                 } else {
                     for (const asset of assets) {
@@ -188,8 +193,8 @@ class UIARegister extends React.Component {
         }
 
         let assets = []
-        if (uias.length) {
-            assets = await golos.api.getAssetsAsync('', uias)
+        if (syms.length) {
+            assets = await golos.api.getAssetsAsync('', syms)
         }
         this.setState({
             loading: false,
@@ -354,32 +359,63 @@ class UIARegister extends React.Component {
         const { waitAmount, registrar, onTransfer } = this.state
         if (!onTransfer) {
             onTransfer = async (deposited) => {
-                this.setState({
-                    deposited
-                })
-
-                let error
-                for (let tr = 1; tr <= 10; ++tr) {
-                    try {
-                        let orr = await callApi('/api/reg/place_order/' + deposited.toString(), {})
-                        orr = await orr.json()
-                        if (orr.status === 'ok') {
-                            console.log(orr)
-                            this.props.updateApiState(orr)
-                            return
-                        }
-                        console.error('place_order', orr)
-                        throw new Error(orr.error)
-                    } catch (err) {
-                        console.error('place_order throws', err)
-                        error = (err && err.toString) && err.toString()
+                let order_receipts
+                try {
+                    let mor = await callApi('/api/reg/make_order_receipt/' + deposited.toString() + '/true')
+                    mor = await mor.json()
+                    if (mor.status !== 'ok' || mor.error) {
+                        throw new Error(mor.error || 'Unknown error')
                     }
-                    await delay(3000)
+
+                    order_receipts = mor.order_receipts
+                    this.setState({
+                        deposited,
+                        depositedToSym: order_receipts[0][1].split(' ')[1]
+                    })
+                } catch (err) {
+                    console.error(err)
+                    this.setState({
+                        deposited,
+                        error: err.message || err.toString()
+                    })
+                    return
                 }
 
-                this.setState({
-                    error: tt('uia_register_jsx.cannot_place_order') + error
-                })
+                while (order_receipts.length) {
+                    let error
+                    for (let tr = 1; tr <= 10; ++tr) {
+                        try {
+                            let orr = await callApi('/api/reg/place_order', {})
+                            orr = await orr.json()
+                            if (orr.status === 'ok') {
+                                console.log(orr)
+                                if (orr.order_receipts && orr.order_receipts[0]) {
+                                    order_receipts = orr.order_receipts
+                                    this.setState({
+                                        depositedToSym: order_receipts[0][1].split(' ')[1]
+                                    })
+                                } else {
+                                    this.props.updateApiState(orr)
+                                    return
+                                }
+                                break
+                            }
+                            console.error('place_order', orr)
+                            throw new Error(orr.error)
+                        } catch (err) {
+                            console.error('place_order throws', err)
+                            error = (err && err.toString) && err.toString()
+                        }
+                        await delay(3000)
+                    }
+
+                    if (error) {
+                        this.setState({
+                            error: tt('uia_register_jsx.cannot_place_order') + error
+                        })
+                        break
+                    }
+                }
             }
         }
         return <div>
@@ -392,7 +428,7 @@ class UIARegister extends React.Component {
         </div>
     }
 
-    amountValidate = (values) => {
+    amountValidate = async (values) => {
         const errors = {}
         const { minAmount } = this.state
         if (values.amount.asset.lt(minAmount)) {
@@ -401,23 +437,39 @@ class UIARegister extends React.Component {
         this.setState({
             amountSubmitError: ''
         })
+
+        if (!errors.amount) {
+            try {
+                let fp = await callApi('/api/reg/make_order_receipt/' + values.amount.asset.toString() + '/false')
+                fp = await fp.json()
+                let receive
+                if (fp.error) {
+                    errors.amount = fp.error
+                } else {
+                    receive = await Asset(fp.result)
+
+                    const cprops = await golos.api.getChainPropertiesAsync()
+                    let { create_account_min_golos_fee } = cprops
+                    create_account_min_golos_fee = await Asset(create_account_min_golos_fee)
+                    if (create_account_min_golos_fee.gt(receive)) {
+                        errors.amount = tt('uia_register_jsx.too_low_amount_to_register')
+                    }
+                }
+                if (receive)
+                    this.setState({
+                        receive,
+                    })
+            } catch (err) {
+                console.error(err)
+                errors.amount = 'Internal error'
+                return
+            }
+        }
+
         return errors
     }
 
-    _onAmountChange = async (amount) => {
-        const { clientCfg } = this.props
-        const { apidex_service } = clientCfg.config
-        let res
-        try {
-            res = await apidexExchange(apidex_service, amount, 'GOLOS')
-        } catch (err) {
-            console.error(err)
-        }
-        if (res) {
-            this.setState({
-                receive: res
-            })
-        }
+    _onAmountChange = async (amount, form) => {
     }
 
     _onAmountSubmit = async (values) => {
@@ -449,37 +501,40 @@ class UIARegister extends React.Component {
             initialValues={initialForm}
             validate={this.amountValidate}
             onSubmit={this._onAmountSubmit}
+            validateOnMount={true}
         >
         {({
-            handleSubmit, isSubmitting, isValid, dirty, errors, touched, values, handleChange, setFieldValue,
-        }) => (
-            <form
-                onSubmit={handleSubmit}
-                autoComplete='off'
-            >
-                <div style={{ fontSize: '90%', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
-                    {tt('uia_register_jsx.enter_amount')}
-                </div>
-                <div className='input-group'>
-                    <AmountField
-                        name='amount'
-                        className='input-group-field'
-                        onChange={this._onAmountChange}
-                    />
-                </div>
-                <ErrorMessage name='amount' component='div' className='error' />
-                {amountSubmitError && <div className='error'>{amountSubmitError}</div>}
-                {!errors.amount && !amountSubmitError && receive ? <div style={{marginBottom:'0.5rem'}}>
-                    {tt('uia_register_jsx.you_will_receive')}<b>~{receive.floatString}.</b>
-                </div> : null}
+            handleSubmit, isSubmitting, isValid, dirty, errors, touched, values, handleChange, setFieldValue, setFieldError,
+        }) => {
+            return (
+                <form
+                    onSubmit={handleSubmit}
+                    autoComplete='off'
+                >
+                    <div style={{ fontSize: '90%', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
+                        {tt('uia_register_jsx.enter_amount')}
+                    </div>
+                    <div className='input-group'>
+                        <AmountField
+                            name='amount'
+                            className='input-group-field'
+                            onChange={this._onAmountChange}
+                        />
+                    </div>
+                    {errors.amount && <div className='error'>{errors.amount}</div>}
+                    {amountSubmitError && <div className='error'>{amountSubmitError}</div>}
+                    {!errors.amount && !amountSubmitError && receive ? <div style={{marginBottom:'0.5rem'}}>
+                        {tt('uia_register_jsx.you_will_receive')}<b>~{receive.floatString}.</b>
+                    </div> : null}
 
-                {isSubmitting && <LoadingIndicator type='circle' />}
-                <button className={'button ' + (isSubmitting || !isValid ? ' disabled' : '')}
-                    type='submit' disabled={isSubmitting || !isValid}>
-                    {tt('g.continue')}
-                </button>
-            </form>
-        )}
+                    {isSubmitting && <LoadingIndicator type='circle' />}
+                    <button className={'button ' + (isSubmitting || !isValid ? ' disabled' : '')}
+                        type='submit' disabled={isSubmitting || !isValid}>
+                        {tt('g.continue')}
+                    </button>
+                </form>
+            )
+        }}
         </Formik>
     }
 
@@ -514,13 +569,15 @@ class UIARegister extends React.Component {
             if (error) {
                 form = <div className='error'>{error}</div>
             } else if (sym) {
-                const { deposited } = this.state
+                const { deposited, depositedToSym } = this.state
                 if (deposited) {
                     form = <div>
                         <center>
                             {tt('uia_register_jsx.deposited')}
                             <b>{deposited.floatString}</b>
-                            {tt('uia_register_jsx.deposited2')}
+                            {tt('uia_register_jsx.deposited2_SYM', {
+                                SYM: depositedToSym || 'GOLOS'
+                            })}
                             <br />
                             <LoadingIndicator type='circle' />
                         </center>

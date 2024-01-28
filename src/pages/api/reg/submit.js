@@ -33,7 +33,7 @@ let handler = nextConnect()
             throwErr(req, 403, ['not_verified'], null, state);
         }
 
-        if (!checkCaptcha(account.recaptcha_v2)) {
+        if (!await checkCaptcha(account.recaptcha_v2)) {
             console.error('-- /submit: try to register without ReCaptcha v2 solving, data:', res.data, ', user-id:', user_id, ', form fields:', account);
             throwErr(req, 403, ['recaptcha_v2_failed'], null, state);
         }

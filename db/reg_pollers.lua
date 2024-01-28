@@ -42,7 +42,7 @@ local function wrap_rp(rp)
     }
 end
 
-function get_free_reg_poller(amount, sym, now)
+function get_free_reg_poller(amount, sym, step, now)
     local rps = nil
     repeat
         if rps ~= nil then
@@ -51,7 +51,7 @@ function get_free_reg_poller(amount, sym, now)
                 box.space.reg_pollers:delete(rp['id'])
                 break
             end
-            amount = amount + 1
+            amount = amount + step
         end
         rps = box.space.reg_pollers.index.by_amount:select{sym, amount}
     until #rps == 0
@@ -61,7 +61,7 @@ end
 local function clean_reg_pollers(now)
     for i,rp in box.space.reg_pollers.index.by_created:pairs(0, {iterator = 'GT', limit = 100}) do
         local rp = wrap_rp(rp)
-        if (now - rp['created']) > 20*60*1000 then
+        if (now - rp['created']) > 90*60*1000 then
             box.space.reg_pollers:delete(rp['id'])
         else
             break
