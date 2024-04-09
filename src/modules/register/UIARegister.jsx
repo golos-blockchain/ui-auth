@@ -5,6 +5,7 @@ import cn from 'classnames'
 import golos, { api, } from 'golos-lib-js'
 import { Asset, AssetEditor } from 'golos-lib-js/lib/utils';
 import { key_utils, PrivateKey } from 'golos-lib-js/lib/auth/ecc'
+import GolosDexApi from 'golos-dex-lib-js'
 import Link from 'next/link'
 import { Formik, ErrorMessage, } from 'formik'
 
@@ -13,7 +14,6 @@ import AmountField from '@/elements/forms/AmountField'
 import AccountName from '@/elements/register/AccountName'
 import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import TransferWaiter from '@/modules/register/TransferWaiter'
-import { apidexGetPrices } from '@/utils/ApidexApiClient'
 import KeyFile from '@/utils/KeyFile'
 import { delay, } from '@/utils/misc'
 import { emptyAuthority } from '@/utils/RecoveryUtils'
@@ -69,6 +69,14 @@ class UIARegister extends React.Component {
             golos.config.set('chain_id', clientCfg.config.chain_id)
 
         const { apidex_service } = clientCfg.config
+        try {
+            new GolosDexApi(golos, {
+                host: apidex_service.host
+            })
+        } catch (err) {
+            console.error('GolosDexApi init error:', err)
+        }
+
         const { uias } = clientCfg.config.registrar
         const syms = uias.assets
 
@@ -113,7 +121,7 @@ class UIARegister extends React.Component {
 
                             let cmc
                             try {
-                                cmc = await apidexGetPrices(apidex_service, sym)
+                                cmc = await golos.libs.dex.apidexGetPrices({ sym })
                                 if (!cmc.price_usd) {
                                     console.error('Cannot obtain price_usd', cmc)
                                     throw Error('Cannot obtain price_usd')
@@ -618,6 +626,7 @@ class UIARegister extends React.Component {
                 {syms}
                 {this.state.sym && <hr />}
                 {form}
+                {!syms.length && !form ? <div>{tt('uia_register_jsx.no_assets_available')}</div> : null}
             </div>
         }
 

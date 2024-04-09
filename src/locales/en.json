@@ -118,7 +118,8 @@
     "cannot_register_with_it": ", cannot register.",
     "too_low_orders": "Too low orders in ",
     "unknown_error": " - error in ",
-    "too_low_amount_to_register": "Too low amount to register."
+    "too_low_amount_to_register": "Too low amount to register.",
+    "no_assets_available": "No UIA assets available now."
   },
   "invites_jsx": {
     "claim_wrong_secret": "Wrong secret",

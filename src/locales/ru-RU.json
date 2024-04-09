@@ -118,7 +118,8 @@
     "cannot_register_with_it": ", не можем зарегистрировать за такую сумму.",
     "too_low_orders": "Слишком мало ордеров по направлению ",
     "unknown_error": " - ошибка по направлению ",
-    "too_low_amount_to_register": "Слишком малая сумма для регистрации."
+    "too_low_amount_to_register": "Слишком малая сумма для регистрации.",
+    "no_assets_available": "Регистрация через криптовалюту сейчас не работает."
   },
   "invites_jsx": {
     "claim_wrong_secret": "Неверно указан ключ",

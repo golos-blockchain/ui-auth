@@ -1,4 +1,5 @@
-const golos = require('golos-lib-js');
+const golos = require('golos-lib-js')
+const GolosDexApi = require('golos-dex-lib-js').default
 const config = require('config');
 
 function initGolos() {
@@ -9,6 +10,15 @@ function initGolos() {
     }
 
     golos.config.set('broadcast_transaction_with_callback', true);
+
+    const apidex_service = config.get('apidex_service')
+    try {
+        new GolosDexApi(golos, {
+            host: apidex_service.host
+        })
+    } catch (err) {
+        console.error('GolosDexApi init error:', err)
+    }
 }
 
 module.exports = {

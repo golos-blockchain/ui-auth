@@ -16,7 +16,6 @@ import { getDailyLimit, obtainUid, getClientCfg, } from '@/server/reg';
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 import { delay, } from '@/utils/misc'
-import { apidexExchange } from '@/utils/ApidexApiClient'
 
 initGolos();
 
@@ -526,7 +525,8 @@ let handler = nextConnect({ attachParams: true, })
             const [ sym1, sym2 ] = ex.split('/')
             let resEx
             try {
-                resEx = await apidexExchange(apidex_service, exAmount, sym2)
+                const { dex } = golos.libs
+                resEx = await dex.apidexExchange({sell: exAmount, buySym: sym2})
             } catch (err) {
                 console.error(err)
             }
