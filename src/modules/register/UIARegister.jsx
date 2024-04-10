@@ -123,8 +123,12 @@ class UIARegister extends React.Component {
                             try {
                                 cmc = await golos.libs.dex.apidexGetPrices({ sym })
                                 if (!cmc.price_usd) {
-                                    console.error('Cannot obtain price_usd', cmc)
-                                    throw Error('Cannot obtain price_usd')
+                                    if (sym === 'SUPERCOIN') {
+                                        cmc.price_usd = 1.0000437327709328
+                                    } else {
+                                        console.error('Cannot obtain price_usd', cmc)
+                                        throw Error('Cannot obtain price_usd')
+                                    }
                                 }
                                 const priceUsd = parseFloat(cmc.price_usd)
                                 let minFloat = 1 / priceUsd
@@ -426,13 +430,19 @@ class UIARegister extends React.Component {
                 }
             }
         }
+        const onReached = () => {
+            this.setState({
+                reached: true
+            })
+        }
         return <div>
             <div style={{ fontSize: '90%', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
                 {tt('uia_register_jsx.enter_amount')}<span style={{ fontSize: '130%' }}><b>{waitAmount.floatString}</b></span>
             </div>
             <TransferWaiter
                 username={registrar.name}
-                amount={waitAmount} title={''} onTransfer={onTransfer} />
+                amount={waitAmount} title={''} onTransfer={onTransfer}
+                onReached={onReached} />
         </div>
     }
 
@@ -501,6 +511,11 @@ class UIARegister extends React.Component {
             waiting: true,
             waitAmount
         })
+    }
+
+    reachedBtnClick = (e) => {
+        e.preventDefault()
+
     }
 
     _renderForm = () => {
@@ -577,7 +592,7 @@ class UIARegister extends React.Component {
             if (error) {
                 form = <div className='error'>{error}</div>
             } else if (sym) {
-                const { deposited, depositedToSym } = this.state
+                const { deposited, depositedToSym, reached } = this.state
                 if (deposited) {
                     form = <div>
                         <center>
@@ -588,6 +603,16 @@ class UIARegister extends React.Component {
                             })}
                             <br />
                             <LoadingIndicator type='circle' />
+                        </center>
+                    </div>
+                } else if (reached) {
+                    form = <div>
+                        <center>
+                            <b>{tt('uia_register_jsx.reached_desc')}</b>
+                            <br />
+                            {tt('uia_register_jsx.reached_desc2')}
+                            <br />
+                            <div style={{marginTop: '0.5rem'}} className='button' onClick={this.reachedBtnClick}>{tt('uia_register_jsx.reached_btn')}</div>
                         </center>
                     </div>
                 } else {

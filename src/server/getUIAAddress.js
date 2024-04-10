@@ -44,6 +44,7 @@ export default async function getUIAAddress(accName, symbol, okResp, errResp) {
 
         let resp
         try {
+            console.log('apiURL', apiURL)
             resp = await fetchEx(apiURL, { timeout: 10000 })
         } catch (err) {
             return errResp('cannot_connect_gateway', [meta.deposit, err])

@@ -119,7 +119,10 @@
     "too_low_orders": "Too low orders in ",
     "unknown_error": " - error in ",
     "too_low_amount_to_register": "Too low amount to register.",
-    "no_assets_available": "No UIA assets available now."
+    "no_assets_available": "No UIA assets available now.",
+    "reached_desc": "You can pass to account creation.",
+    "reached_desc2": "And your Golos Power deposit will be processed in the nearest future...",
+    "reached_btn": "Register account"
   },
   "invites_jsx": {
     "claim_wrong_secret": "Wrong secret",
