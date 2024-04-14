@@ -12,7 +12,7 @@ import { initGolos, } from '@/server/initGolos';
 import { getVersion, rateLimitReq, slowDownLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
 import passport, { addModalRoutes, checkAlreadyUsed } from '@/server/passport';
-import { getDailyLimit, obtainUid, getClientCfg, } from '@/server/reg';
+import { getDailyLimit, obtainUid, getClientCfg, startWait } from '@/server/reg';
 import { regSessionMiddleware, } from '@/server/regSession';
 import Tarantool from '@/server/tarantool';
 import { delay, } from '@/utils/misc'
@@ -375,6 +375,8 @@ let handler = nextConnect({ attachParams: true, })
 
         const username = config.get('registrar.account')
         if (!username) throwErr(req, 400, ['No registrar.account in config'])
+
+        await startWait(req.session, amount)
 
         const getBalance = async () => {
             const balances = await api.getAccountsBalancesAsync([username], {

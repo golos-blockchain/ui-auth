@@ -435,12 +435,14 @@ class UIARegister extends React.Component {
                 reached: true
             })
         }
+        const { clientCfg } = this.props
         return <div>
             <div style={{ fontSize: '90%', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
                 {tt('uia_register_jsx.enter_amount')}<span style={{ fontSize: '130%' }}><b>{waitAmount.floatString}</b></span>
             </div>
             <TransferWaiter
                 username={registrar.name}
+                waitingSec={clientCfg.config.registrar.uias.waiting_sec}
                 amount={waitAmount} title={''} onTransfer={onTransfer}
                 onReached={onReached} />
         </div>
@@ -515,7 +517,11 @@ class UIARegister extends React.Component {
 
     reachedBtnClick = (e) => {
         e.preventDefault()
-
+        this.props.updateApiState({
+            step: 'verified',
+            verification_way: 'uia',
+            status: 'ok'
+        })
     }
 
     _renderForm = () => {

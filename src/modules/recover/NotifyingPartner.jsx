@@ -76,18 +76,29 @@ class RecoveryStep2 extends React.Component {
         })
     }
 
-    _renderCaptcha = () => {
+    _getCaptcha = () => {
         const { captcha } = this.props.recoveryCfg
         if (!captcha && !captcha.recaptcha_v2 || !captcha.recaptcha_v2.enabled) {
+            return { show: false }
+        }
+        if (!captcha.recaptcha_v2.site_key) {
+            return { show: false, error: 'site_key' }
+        }
+        return { show: true, site_key: captcha.recaptcha_v2.site_key }
+    }
+
+    _renderCaptcha = () => {
+        const captcha = this._getCaptcha()
+        if (!captcha.show) {
+            if (captcha.error === 'site_key') {
+                console.warn('captcha.recaptcha_v2 has no site_key')
+                return
+            }
             console.warn('captcha.recaptcha_v2 is disabled')
             return
         }
-        if (!captcha.recaptcha_v2.site_key) {
-            console.warn('captcha.recaptcha_v2 has no site_key')
-            return
-        }
         return (<ReCAPTCHA
-            sitekey={captcha.recaptcha_v2.site_key}
+            sitekey={captcha.site_key}
             onChange={this._onRecaptchaChange} />)
     }
 
@@ -107,7 +118,7 @@ class RecoveryStep2 extends React.Component {
             {({
                 handleSubmit, isSubmitting, isValid, dirty, errors, touched, values, handleChange, setFieldValue,
             }) => {
-                const isDisabled = !dirty || !isValid || !captchaValue
+                const isDisabled = !dirty || !isValid || (!captchaValue && this._getCaptcha().show)
                 const { errorMessage } = this.state
                 return (<form
                     onSubmit={handleSubmit}
