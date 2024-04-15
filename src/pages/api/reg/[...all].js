@@ -536,7 +536,6 @@ let handler = nextConnect({ attachParams: true, })
                 error = tt('uia_register_jsx.cannot_check_orders') + exAmount.symbol + '/' + sym2
             }
             if (error) break
-            console.log(exAmount.toString(), sym2, JSON.stringify(resEx))
             if (resEx.remain) {
                 error = tt('uia_register_jsx.too_low_orders') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
                 break

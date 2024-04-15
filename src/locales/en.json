@@ -103,6 +103,7 @@
     "min_amount": "Minimal amount is ",
     "enter_amount": "Exact amount, which will be transferred by gate: ",
     "slot_is_used": "Try another amount.",
+    "eg": " E.g.: ",
     "fee": "Fee",
     "memo_fixed": "Memo",
     "to": "Send tokens to address/account",

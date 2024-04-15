@@ -494,6 +494,7 @@ class UIARegister extends React.Component {
 
     _onAmountSubmit = async (values) => {
         const waitAmount = values.amount.asset
+        let freeAmount
         try {
             let fp = await callApi('/api/reg/get_free_poller/' + waitAmount.toString())
             fp = await fp.json()
@@ -501,11 +502,14 @@ class UIARegister extends React.Component {
                 throw new Error(fp.error || 'Unknown error')
             }
             if (fp.amount !== waitAmount.toString()) {
+                freeAmount = parseFloat(fp.amount)
                 throw new Error('Slot is used')
             }
         } catch (err) {
             this.setState({
-                amountSubmitError: err.message === 'Slot is used' ? tt('uia_register_jsx.slot_is_used') : err.message
+                amountSubmitError: err.message === 'Slot is used' ?
+                    tt('uia_register_jsx.slot_is_used') + (freeAmount ? (tt('uia_register_jsx.eg') + freeAmount + '.') : '' )
+                    : err.message
             })
             return
         }
