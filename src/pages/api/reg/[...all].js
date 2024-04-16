@@ -8,7 +8,7 @@ import tt from 'counterpart'
 
 import nextConnect from '@/server/nextConnect';
 import { throwErr, } from '@/server/error';
-import { initGolos, } from '@/server/initGolos';
+import { initGolos, exchangeNode, } from '@/server/initGolos';
 import { getVersion, rateLimitReq, slowDownLimitReq, getRemoteIp,
         noBodyParser, bodyParams, } from '@/server/misc';
 import passport, { addModalRoutes, checkAlreadyUsed } from '@/server/passport';
@@ -510,7 +510,7 @@ let handler = nextConnect({ attachParams: true, })
         }
     })
 
-    .get('/api/reg/make_order_receipt/:amount/:submitting', async (req, res) => {
+    .get('/api/reg/make_order_receipt/:amount/:submitting/:use_new?', async (req, res) => {
         await slowDownLimitReq(req)
 
         const clientCfg = getClientCfg(req, req.params)
@@ -519,38 +519,100 @@ let handler = nextConnect({ attachParams: true, })
 
         const amount = await Asset(req.params.amount.split('%20').join(' '))
         let exAmount = amount.clone()
-        const exchanges = uias[exAmount.symbol]
+
+        const { dex } = golos.libs
+        let resMul
+        const exNode = exchangeNode()
+        const mulParams = {
+            node: exNode,
+            amount: exAmount.toString(),
+            symbol: 'GOLOS',
+            direction: 'sell',
+        }
+        if (req.params.use_new !== 'false') {
+            try {
+                resMul = await dex.getExchange(mulParams)
+            } catch (err) {
+                console.error('make_order_receipt getExchange (call 1):', err)
+            }
+        }
+
         let error = null
         let result = null
         let order_receipts = []
-        for (const ex of exchanges) {
-            const [ sym1, sym2 ] = ex.split('/')
-            let resEx
-            try {
-                const { dex } = golos.libs
-                resEx = await dex.apidexExchange({sell: exAmount, buySym: sym2})
-            } catch (err) {
-                console.error(err)
+        let usedNode = false
+
+        if (resMul) {
+            const { best } = resMul
+            if (!best) {
+                error = tt('uia_register_jsx.no_orders') + exAmount.symbol + '/GOLOS' + tt('uia_register_jsx.cannot_register_with_it')
+            } else {
+                mulParams.remain = {
+                    direct: 'ignore',
+                    multi: 'ignore'
+                }
+                try {
+                    resMul = await dex.getExchange(mulParams)
+                } catch (err) {
+                    console.error('make_order_receipt getExchange (call 2):', err)
+                }
             }
-            if (!resEx) {
-                error = tt('uia_register_jsx.cannot_check_orders') + exAmount.symbol + '/' + sym2
+        }
+
+        if (resMul) {
+            const { best } = resMul
+            if (!best) {
+                error = tt('uia_register_jsx.too_low_orders') + exAmount.symbol + '/GOLOS' + tt('uia_register_jsx.cannot_register_with_it')
+            } else {
+                let tx
+                try {
+                    tx = await dex.makeExchangeTx(best.steps, { owner: 'null' })
+                    if (tx) {
+                        if (!tx.length) throw new Error('makeExchangeTx returned empty array')
+                        for (const op of tx) {
+                            const { amount_to_sell, min_to_receive } = op[1]
+                            order_receipts.push([amount_to_sell, min_to_receive])
+                        }
+                    }
+                    result = best.res
+                    usedNode = true
+                } catch (err) {
+                    console.error('make_order_receipt makeExchangeTx:', err)
+                }
             }
-            if (error) break
-            if (resEx.remain) {
-                error = tt('uia_register_jsx.too_low_orders') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
-                break
+        }
+
+        if (!order_receipts.length) {
+            const exchanges = uias[exAmount.symbol]
+            for (const ex of exchanges) {
+                const [ sym1, sym2 ] = ex.split('/')
+                let resEx
+                try {
+                    resEx = await dex.apidexExchange({sell: exAmount, buySym: sym2})
+                } catch (err) {
+                    console.error(err)
+                }
+                if (!resEx) {
+                    error = tt('uia_register_jsx.cannot_check_orders') + exAmount.symbol + '/' + sym2
+                }
+                if (error) break
+                if (resEx.remain) {
+                    error = tt('uia_register_jsx.too_low_orders') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
+                    break
+                }
+                if (resEx.error === 'no_orders') {
+                    error = tt('uia_register_jsx.no_orders') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
+                    break
+                } else if (resEx.error) {
+                    error = resEx.error + tt('uia_register_jsx.unknown_error') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
+                    break
+                }
+                const min_to_receive = exAmount.mul(resEx.limit_price)
+                const pair = [exAmount.toString(), min_to_receive]
+                order_receipts.push(pair)
+                exAmount = resEx.result.clone()
+                result = exAmount.clone()
             }
-            if (resEx.error === 'no_orders') {
-                error = tt('uia_register_jsx.no_orders') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
-                break
-            } else if (resEx.error) {
-                error = resEx.error + tt('uia_register_jsx.unknown_error') + exAmount.symbol + '/' + sym2 + tt('uia_register_jsx.cannot_register_with_it')
-                break
-            }
-            const pair = [exAmount.toString(), resEx.result.toString()]
-            order_receipts.push(pair)
-            exAmount = resEx.result.clone()
-            result = exAmount.clone()
         }
 
         const deposited = req.session.deposited && req.session.deposited[amount.symbol]
@@ -562,12 +624,14 @@ let handler = nextConnect({ attachParams: true, })
 
             await req.session.save()
         } else {
-            order_receipts = []
+            if (req.params.submitting === 'true') {
+                console.error('make_order_receipt error:', req.session.deposited, amount.symbol)
+                error = 'wrong deposited'
+                order_receipts = []
+            }
         }
 
-        if (req.params.submitting === 'true' && !order_receipts.length) {
-            console.error('make_order_receipt error:', req.session.deposited, amount.symbol)
-            error = 'wrong deposited'
+        if (error) {
             result = null
         }
 
@@ -575,7 +639,8 @@ let handler = nextConnect({ attachParams: true, })
             status: 'ok',
             result: result && result.toString(),
             error,
-            order_receipts
+            order_receipts,
+            get_exchange: usedNode && resMul
         })
     })
 

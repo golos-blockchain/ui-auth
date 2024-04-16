@@ -2,8 +2,17 @@ const golos = require('golos-lib-js')
 const GolosDexApi = require('golos-dex-lib-js').default
 const config = require('config');
 
+function serverNode() {
+    return config.get('ws_connection_server') || 'https://api.golos.id'
+}
+
+function exchangeNode() {
+    return config.has('ws_connection_exchange') ?
+        config.get('ws_connection_exchange') : serverNode()
+}
+
 function initGolos() {
-    golos.config.set('websocket', config.get('ws_connection_server') || 'https://api.golos.id');
+    golos.config.set('websocket', serverNode())
     const CHAIN_ID = config.get('chain_id');
     if (CHAIN_ID) {
         golos.config.set('chain_id', CHAIN_ID);
@@ -22,5 +31,6 @@ function initGolos() {
 }
 
 module.exports = {
+    exchangeNode,
     initGolos,
 };
