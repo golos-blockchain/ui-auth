@@ -214,7 +214,7 @@ class TransferRegister extends React.Component {
             noValidate
             method='post'
         >
-            <VerifyWayTabs currentWay={'transfer'} />
+            <VerifyWayTabs clientCfg={this.props.clientCfg} currentWay={'transfer'} />
             {this.renderStep1()}
             {this.renderStep2()}
             {this.renderStep3()}

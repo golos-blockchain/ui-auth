@@ -666,7 +666,9 @@ class UIARegister extends React.Component {
         }
 
         return <div className='UIARegister'>
-            <VerifyWayTabs currentWay={'uia'} />
+            <VerifyWayTabs
+                clientCfg={this.props.clientCfg}
+                currentWay={'uia'} />
             {content}
         </div>
     }

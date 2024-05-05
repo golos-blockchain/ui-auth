@@ -74,7 +74,8 @@
       "zero": "0 free registrations remain.",
       "one": "1 free registration remains.",
       "other": "%(count)s free registrations remain."
-    }
+    },
+    "no_registration": "Registration closed."
   },
   "transfer_register_jsx": {
     "please_send_transfer": "Please send at least ",

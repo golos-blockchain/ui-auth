@@ -14,6 +14,12 @@
     "signing_key": "5K67PNheLkmxkgJ5UjvR8Nyt3GVPoLEN1dMZjFuNETzrNyMecPG",
     "delegation": "75000.000000 GESTS",
     "free_regs_per_day": 10,
+    "methods": {
+      "social": true,
+      "invite_code": true,
+      "transfer": true,
+      "uia": true
+    },
     "uias": {
       "assets": ["YMUSDT", "YMPZM", "YMHIVE", "YMXMR", "TESTF"],
       "YMXMR": ["YMXHR/YMPZM", "YMPZM/YMUSDT", "YMUSDT/GOLOS"]
