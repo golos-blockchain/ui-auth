@@ -1,4 +1,4 @@
-import golos, { auth, messages } from 'golos-lib-js'
+import golos from 'golos-lib-js'
 import config from 'config'
 
 import { checkCaptcha } from '@/server/captcha'
@@ -6,6 +6,7 @@ import { initGolos, } from '@/server/initGolos'
 import nextConnect from '@/server/nextConnect'
 import { throwErr, } from '@/server/error'
 import { emailRegex, slowDownLimitReq, noBodyParser, bodyParams, } from '@/server/misc'
+import { sendMsgAsync, } from '@/server/messages'
 import { getHistoryAuthority } from '@/utils/RecoveryUtils'
 
 initGolos()
@@ -17,22 +18,18 @@ const sendMessage = async (notifier_account, acc, recoveryAcc,email) => {
     text += url.toString()
     text += ' Для связи пользователь указал e-mail ' + email
 
-    let msg = messages.newTextMsg(text, 'golos-messenger', 1)
-
-    let data = messages.encode(notifier_account.memo, recoveryAcc[0].memo_key, msg)
-
-    const json = JSON.stringify(['private_message', {
-        from: notifier_account.name,
-        to: recoveryAcc[0].name,
-        nonce: data.nonce,
-        from_memo_key: auth.wifToPublic(notifier_account.memo),
-        to_memo_key: recoveryAcc[0].memo_key,
-        checksum: data.checksum,
-        update: false,
-        encrypted_message: data.encrypted_message,
-    }])
-
-    await golos.broadcast.customJsonAsync(notifier_account.posting, [], [notifier_account.name], 'private_message', json)
+    await sendMsgAsync({
+        msg: text,
+        encode: {
+            from_key: notifier_account.memo,
+            to: recoveryAcc[0].memo_key
+        },
+        op: {
+            from: notifier_account.name,
+            to: recoveryAcc[0].name,
+            posting: notifier_account.posting
+        }
+    })
 }
 
 const afterSecToDate = (afterSec) => {

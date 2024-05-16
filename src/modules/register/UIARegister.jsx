@@ -5,6 +5,7 @@ import cn from 'classnames'
 import golos, { api, } from 'golos-lib-js'
 import { Asset, AssetEditor } from 'golos-lib-js/lib/utils';
 import { key_utils, PrivateKey } from 'golos-lib-js/lib/auth/ecc'
+import GolosDexApi from 'golos-dex-lib-js'
 import Link from 'next/link'
 import { Formik, ErrorMessage, } from 'formik'
 
@@ -13,7 +14,6 @@ import AmountField from '@/elements/forms/AmountField'
 import AccountName from '@/elements/register/AccountName'
 import VerifyWayTabs from '@/elements/register/VerifyWayTabs'
 import TransferWaiter from '@/modules/register/TransferWaiter'
-import { apidexGetPrices } from '@/utils/ApidexApiClient'
 import KeyFile from '@/utils/KeyFile'
 import { delay, } from '@/utils/misc'
 import { emptyAuthority } from '@/utils/RecoveryUtils'
@@ -69,6 +69,14 @@ class UIARegister extends React.Component {
             golos.config.set('chain_id', clientCfg.config.chain_id)
 
         const { apidex_service } = clientCfg.config
+        try {
+            new GolosDexApi(golos, {
+                host: apidex_service.host
+            })
+        } catch (err) {
+            console.error('GolosDexApi init error:', err)
+        }
+
         const { uias } = clientCfg.config.registrar
         const syms = uias.assets
 
@@ -113,10 +121,14 @@ class UIARegister extends React.Component {
 
                             let cmc
                             try {
-                                cmc = await apidexGetPrices(apidex_service, sym)
+                                cmc = await golos.libs.dex.apidexGetPrices({ sym })
                                 if (!cmc.price_usd) {
-                                    console.error('Cannot obtain price_usd', cmc)
-                                    throw Error('Cannot obtain price_usd')
+                                    if (sym === 'SUPERCOIN') {
+                                        cmc.price_usd = 1.0000437327709328
+                                    } else {
+                                        console.error('Cannot obtain price_usd', cmc)
+                                        throw Error('Cannot obtain price_usd')
+                                    }
                                 }
                                 const priceUsd = parseFloat(cmc.price_usd)
                                 let minFloat = 1 / priceUsd
@@ -418,13 +430,21 @@ class UIARegister extends React.Component {
                 }
             }
         }
+        const onReached = () => {
+            this.setState({
+                reached: true
+            })
+        }
+        const { clientCfg } = this.props
         return <div>
             <div style={{ fontSize: '90%', marginTop: '0.5rem', marginBottom: '0.25rem' }}>
                 {tt('uia_register_jsx.enter_amount')}<span style={{ fontSize: '130%' }}><b>{waitAmount.floatString}</b></span>
             </div>
             <TransferWaiter
                 username={registrar.name}
-                amount={waitAmount} title={''} onTransfer={onTransfer} />
+                waitingSec={clientCfg.config.registrar.uias.waiting_sec}
+                amount={waitAmount} title={''} onTransfer={onTransfer}
+                onReached={onReached} />
         </div>
     }
 
@@ -474,6 +494,7 @@ class UIARegister extends React.Component {
 
     _onAmountSubmit = async (values) => {
         const waitAmount = values.amount.asset
+        let freeAmount
         try {
             let fp = await callApi('/api/reg/get_free_poller/' + waitAmount.toString())
             fp = await fp.json()
@@ -481,17 +502,29 @@ class UIARegister extends React.Component {
                 throw new Error(fp.error || 'Unknown error')
             }
             if (fp.amount !== waitAmount.toString()) {
+                freeAmount = parseFloat(fp.amount)
                 throw new Error('Slot is used')
             }
         } catch (err) {
             this.setState({
-                amountSubmitError: err.message === 'Slot is used' ? tt('uia_register_jsx.slot_is_used') : err.message
+                amountSubmitError: err.message === 'Slot is used' ?
+                    tt('uia_register_jsx.slot_is_used') + (freeAmount ? (tt('uia_register_jsx.eg') + freeAmount + '.') : '' )
+                    : err.message
             })
             return
         }
         this.setState({
             waiting: true,
             waitAmount
+        })
+    }
+
+    reachedBtnClick = (e) => {
+        e.preventDefault()
+        this.props.updateApiState({
+            step: 'verified',
+            verification_way: 'uia',
+            status: 'ok'
         })
     }
 
@@ -569,7 +602,7 @@ class UIARegister extends React.Component {
             if (error) {
                 form = <div className='error'>{error}</div>
             } else if (sym) {
-                const { deposited, depositedToSym } = this.state
+                const { deposited, depositedToSym, reached } = this.state
                 if (deposited) {
                     form = <div>
                         <center>
@@ -580,6 +613,16 @@ class UIARegister extends React.Component {
                             })}
                             <br />
                             <LoadingIndicator type='circle' />
+                        </center>
+                    </div>
+                } else if (reached) {
+                    form = <div>
+                        <center>
+                            <b>{tt('uia_register_jsx.reached_desc')}</b>
+                            <br />
+                            {tt('uia_register_jsx.reached_desc2')}
+                            <br />
+                            <div style={{marginTop: '0.5rem'}} className='button' onClick={this.reachedBtnClick}>{tt('uia_register_jsx.reached_btn')}</div>
                         </center>
                     </div>
                 } else {
@@ -618,11 +661,14 @@ class UIARegister extends React.Component {
                 {syms}
                 {this.state.sym && <hr />}
                 {form}
+                {!syms.length && !form ? <div>{tt('uia_register_jsx.no_assets_available')}</div> : null}
             </div>
         }
 
         return <div className='UIARegister'>
-            <VerifyWayTabs currentWay={'uia'} />
+            <VerifyWayTabs
+                clientCfg={this.props.clientCfg}
+                currentWay={'uia'} />
             {content}
         </div>
     }

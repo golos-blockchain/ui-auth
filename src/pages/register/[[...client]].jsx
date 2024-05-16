@@ -65,6 +65,9 @@ class Register extends React.Component {
     };
 
     processQuery = () => {
+        const { clientCfg } = this.props
+        const methods = clientCfg.config.registrar.methods
+
         const params = new URLSearchParams(window.location.search)
         const invite = params.get('invite')
         if (invite || params.has('invite')) {
@@ -72,7 +75,7 @@ class Register extends React.Component {
                 console.log('Referrer account will be', invite);
                 if (this.state.referrer !== invite)
                     this.setState({referrer: invite});
-            } else {
+            } else if (!methods || methods.invite_code) {
                 const verificationWay = 'invite_code'
                 if (this.state.verificationWay !== verificationWay) {
                     this.setState({
@@ -87,20 +90,32 @@ class Register extends React.Component {
                     })
                 }
             }
-        } else if (params.has('transfer')) {
+        } else if (params.has('transfer') && (!methods || methods.transfer)) {
             const verificationWay = 'transfer'
             if (this.state.verificationWay !== verificationWay)
                 this.setState({
                     verificationWay,
                 })
-        } else if (params.has('uia')) {
+        } else if (params.has('uia') && (!methods || methods.uia)) {
             const verificationWay = 'uia'
             if (this.state.verificationWay !== verificationWay)
                 this.setState({
                     verificationWay,
                 })
-        } else {
+        } else if (!methods || methods.social) {
             const verificationWay = 'social'
+            if (!this.state.verificationWay.startsWith(verificationWay))
+                this.setState({
+                    verificationWay,
+                })
+        } else if (methods) {
+            let verificationWay
+            const keys = Object.keys(methods).filter(k => methods[k])
+            if (keys[0]) {
+                verificationWay = keys[0]
+            } else {
+                verificationWay = 'no_registration'
+            }
             if (!this.state.verificationWay.startsWith(verificationWay))
                 this.setState({
                     verificationWay,
@@ -336,7 +351,7 @@ class Register extends React.Component {
             oauthEnabled,
         } = state;
 
-        if (cryptographyFailure) {
+        if (cryptographyFailure ) {
             return <CryptoFailure />
         }
 
@@ -398,7 +413,9 @@ class Register extends React.Component {
             const { dailyLimit } = this.props
             if (dailyLimit.limit && dailyLimit.limit.exceed) {
                 form = <div>
-                    <VerifyWayTabs currentWay='social' />
+                    <VerifyWayTabs 
+                        clientCfg={this.props.clientCfg}
+                        currentWay='social' />
                     <div className='callout alert'>
                         {tt('register_jsx.email_exceed')}
                     </div>
@@ -410,6 +427,8 @@ class Register extends React.Component {
                 afterRedirect={this.state.afterRedirect}
                 updateApiState={this.updateApiState}
             />
+        } else if (this.state.verificationWay === 'no_registration') {
+            form = <div>{tt('register_jsx.no_registration')}</div>
         }
 
         form = form || (<form
@@ -420,7 +439,9 @@ class Register extends React.Component {
         >
             {(showMailForm) && (
                 <div>
-                    {showMailForm && <VerifyWayTabs currentWay={state.verificationWay} />}
+                    {showMailForm && <VerifyWayTabs 
+                        clientCfg={this.props.clientCfg}
+                        currentWay={state.verificationWay} />}
                     {isInviteWay && <div>
                         <label>
                             {this._renderInviteCodeField(true)}

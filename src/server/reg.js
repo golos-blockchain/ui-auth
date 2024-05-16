@@ -1,5 +1,7 @@
 import config from 'config';
 import secureRandom from 'secure-random';
+import { Asset, _Asset } from 'golos-lib-js/lib/utils'
+
 import { getVersion, } from '@/server/misc';
 
 function checkSession(session, funcName) {
@@ -166,4 +168,72 @@ export function getClientCfg(req, params, locale = '') {
     }
 
     return data;
+}
+
+function waitingSec() {
+    const cfgKey = 'registrar.uias.waiting_sec'
+    return config.has(cfgKey) ? config.get(cfgKey) : (30*60)
+}
+
+function waitingExpireSec() {
+    const cfgKey = 'registrar.uias.waiting_expire_sec'
+    return config.has(cfgKey) ? config.get(cfgKey) : (30*60)
+}
+
+function isWaitingReached(time) {
+    const now = Math.round(Date.now() / 1000)
+    const waiting = waitingSec()
+    return now >= time + waiting
+}
+
+function isWaitingExpired(time) {
+    const now = Math.round(Date.now() / 1000)
+    const waiting = waitingSec()
+    const waitingExpire = waitingExpireSec()
+    return now >= (time + waiting + waitingExpire)
+}
+
+export async function clearWait(session, save = true) {
+    delete session.wait_start
+    if (save) await session.save()
+}
+
+export async function useReachedWait(session) {
+    if (session.wait_start) {
+        const { wait_start } = session
+        if (isWaitingExpired(wait_start.time)) {
+            await clearWait(session)
+            return { reached: false, err: 'expired' }
+        }
+        if (!isWaitingReached(wait_start.time)) {
+            return { reached: false, err: 'not_reached' }
+        }
+        return { reached: true, amount: await Asset(wait_start.amount) }
+    }
+    return { reached: false, err: 'no_waiting' }
+}
+
+export async function startWait(session, amount) {
+    if (!(amount instanceof _Asset)) throw new Error('amount should be Asset')
+    let save
+    const now = Math.round(Date.now() / 1000)
+
+    if (session.wait_start) {
+        const { wait_start } = session
+        if (isWaitingExpired(wait_start.time)) {
+            await clearWait(session, false)
+            save = true
+        }
+    }
+    const amountStr = amount.toString()
+    if (!session.wait_start || session.wait_start.amount !== amountStr) {
+        session.wait_start = {
+            time: now,
+            amount: amount.toString()
+        }
+        save = true
+    }
+    if (save) {
+        await session.save()
+    }
 }

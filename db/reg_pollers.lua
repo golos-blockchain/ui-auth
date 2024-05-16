@@ -1,4 +1,5 @@
 fiber = require 'fiber'
+decimal = require 'decimal'
 
 function reg_pollers_migration_v1()
     if box.space.reg_pollers ~= nil then
@@ -43,6 +44,7 @@ local function wrap_rp(rp)
 end
 
 function get_free_reg_poller(amount, sym, step, now)
+    amount = decimal.new(amount) -- fix "1.1 + 0.1 ~= 1.2" problem
     local rps = nil
     repeat
         if rps ~= nil then
@@ -55,7 +57,7 @@ function get_free_reg_poller(amount, sym, step, now)
         end
         rps = box.space.reg_pollers.index.by_amount:select{sym, amount}
     until #rps == 0
-    return amount
+    return tostring(amount)
 end
 
 local function clean_reg_pollers(now)

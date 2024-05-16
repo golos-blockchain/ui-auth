@@ -42,7 +42,7 @@ class TransferWaiter extends React.Component {
         this.stopped = false
         this.stoppedPolling = false
         this.setState({
-            seconds: 30*60,
+            seconds: this.props.waitingSec || 30*60,
         })
 
         this.countdown = setInterval(() => {
@@ -50,6 +50,10 @@ class TransferWaiter extends React.Component {
             if (seconds === 0) {
                 console.log('Countdown reached, stop.')
                 this.stop()
+                const { onReached } = this.props
+                if (onReached) {
+                    onReached()
+                }
                 return
             }
             this.setState({
