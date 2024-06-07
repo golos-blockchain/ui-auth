@@ -22,8 +22,15 @@
     },
     "uias": {
       "assets": ["YMUSDT", "YMPZM", "YMHIVE", "YMXMR", "TESTF"],
-      "YMXMR": ["YMXHR/YMPZM", "YMPZM/YMUSDT", "YMUSDT/GOLOS"]
+      "YMXMR": ["YMXHR/YMPZM", "YMPZM/YMUSDT", "YMUSDT/GOLOS"],
+      "waiting_sec": 1800,
+      "waiting_expired_sec": 1800
     }
+  },
+  "notifier_account": {
+      "name": "notify",
+      "posting": "5K67PNheLkmxkgJ5UjvR8Nyt3GVPoLEN1dMZjFuNETzrNyMecPG",
+      "memo": "5K67PNheLkmxkgJ5UjvR8Nyt3GVPoLEN1dMZjFuNETzrNyMecPG"
   },
   "server_session_secret": "exiKdyF+IwRIXJDmtGIl4vWUz4i3eVSISpfZoeYc0s4=",
   "session_cookie_key": "X-Reg-ISession",
@@ -35,10 +42,6 @@
     "port": "3301",
     "username": "guest",
     "password": ""
-  },
-  "gmail_send": {
-    "user": "halfyearforwhat@gmail.com",
-    "pass": "yforlmawttbbczrv"
   },
   "helmet": {
     "directives": {
