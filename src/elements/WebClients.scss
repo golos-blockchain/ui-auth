@@ -1,0 +1,23 @@
+.WebClients {
+    .web-client {
+        display: inline-block;
+        vertical-align: top;
+        width: 150px;
+        height: 80px;
+        position: relative;
+
+        img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .web-label {
+            position: absolute;
+            left: 0.25rem;
+            bottom: 0.25rem;
+        }
+    }
+
+    .desktop {
+        margin-top: 0.5rem;
+    }
+}

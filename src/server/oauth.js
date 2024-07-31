@@ -119,6 +119,7 @@ function getOAuthCfg() {
         ws_connection_client: config.get('oauth.ws_connection_client'),
         chain_id: config.has('oauth.chain_id') && config.get('oauth.chain_id'),
         service_account: config.get('oauth.service_account.name'),
+        web_clients: config.has('oauth.web_clients') && config.get('oauth.web_clients'),
         sign_endpoint: new URL('/api/oauth/sign', config.get('oauth.rest_api')).toString(),
     };
 }

@@ -5,6 +5,7 @@ import tt from 'counterpart';
 import { api } from 'golos-lib-js'
 
 import RemoveAuthority from '@/elements/RemoveAuthority';
+import WebClients from '@/elements/WebClients'
 import Header from '@/modules/Header';
 import { callApi, } from '@/utils/OAuthClient';
 import { withRouterHelpers, } from '@/utils/routing';
@@ -51,7 +52,7 @@ class Index extends React.Component {
     render() {
         const { session, oauthCfg, } = this.props;
         const { account, clients, } = session;
-        const { service_account, sign_endpoint, } = oauthCfg;
+        const { service_account, sign_endpoint, web_clients, } = oauthCfg;
         let actions = [];
         for (let action of [
             'transfer', 'donate', 'delegate_vs', 'transfer_nft']) {
@@ -102,6 +103,7 @@ class Index extends React.Component {
         } else {
             clientList = <div className='callout'>{tt('oauth_main_jsx.apps_empty')}</div>
         }
+
         return (
             <div className='Signer_page'>
                 <Head>
@@ -122,6 +124,7 @@ class Index extends React.Component {
                         <h3>{tt('oauth_main_jsx.apps_title')}</h3>
                         {clientList}
                         <hr/>
+                        <WebClients web_clients={web_clients} />
                         <RemoveAuthority
                             account={account}
                             service_account={service_account}
