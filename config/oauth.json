@@ -10,6 +10,15 @@
       "posting": "5K1aJ8JayUA7c2Ptg9Y2DetKxSvXGXa5GCcvYeHtn1Xh3v4egPS",
       "active": "5JFZC7AtEe1wF2ce6vPAUxDeevzYkPgmtR14z9ZVgvCCtrFAaLw"
     },
+    "web_clients": {
+      "Blogs": { "img": "https://i.imgur.com/36zv8We.png",
+        "ru": "Блоги", "url": "https://golos.id" },
+      "Wallet": { "img": "https://i.imgur.com/CYfDqIy.png",
+        "ru": "Кошелек", "url": "https://wallet.golos.id" },
+      "Messenger": { "img": "https://devimages.golos.today/DQmbzuzhgGnDRbKG8KyqL5HWSu5T2w1ZDP32ygM556TqLSn/Messenger.png",
+        "ru": "Мессенджер", "url": "https://chat.golos.app" },
+      "_desktop": { "host": "https://files.golos.app" }
+    },
     "allowed_clients": {
       "localfile": {
         "origins": ["null"],

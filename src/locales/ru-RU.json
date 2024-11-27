@@ -1,4 +1,9 @@
 {
+  "app_download": {
+    "title": "Скачать приложение",
+    "download_for": "Скачать для",
+    "messenger": "Golos Мессенджер для "
+  },
   "chainvalidation_js": {
     "account_name_should": "Имя аккаунта должно ",
     "not_be_empty": "не может быть пустым.",
@@ -197,10 +202,17 @@
     "unfreeze": "Активировать аккаунт",
     "apps_title": "Приложения",
     "apps_empty": "Вы пока не авторизованы ни в одном приложении.",
+    "web_clients": "Веб-клиенты",
     "link": "Ссылка: ",
     "edit": "Настроить",
     "remove_authority": "Отменить доступ OAuth к моему аккаунту",
     "remove_authority_confirm": "Вы действительно хотите отменить доступ GolosSigner к вашему аккаунту?"
+  },
+  "web_clients_jx": {
+    "title": "Веб-клиенты",
+    "or_desktop": "Или ",
+    "or_desktop_link": "скачайте десктоп-клиент",
+    "or_desktop2": ", где объединены все эти приложения."
   },
   "oauth_transfer": {
     "from": "От",

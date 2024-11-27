@@ -1,4 +1,9 @@
 {
+  "app_download": {
+    "title": "Download application",
+    "download_for": "Download for",
+    "messenger": "Golos Messenger for "
+  },
   "chainvalidation_js": {
     "account_name_should": "Account name should ",
     "not_be_empty": "not be empty.",
@@ -197,6 +202,7 @@
     "unfreeze": "Unfreeze account",
     "apps_title": "Apps",
     "apps_empty": "You are not authorized in any app.",
+    "web_clients": "Web Clients",
     "link": "Link: ",
     "edit": "Edit",
     "remove_authority": "Forbid OAuth access to my account",
@@ -211,6 +217,12 @@
     "memo": "Memo",
     "memo_is_public": "This memo is public.",
     "submit": "Transfer"
+  },
+  "web_clients_jx": {
+    "title": "Web-clients",
+    "or_desktop": "Or ",
+    "or_desktop_link": "download desktop app",
+    "or_desktop2": ", which combines all these applications."
   },
   "oauth_transfer_nft": {
     "no_tokens": "You have not yet any NFT-tokens.",
