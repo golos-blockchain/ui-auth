@@ -84,10 +84,10 @@ let handler = nextConnect()
             throwErr(req, 400, ['Your deposited is too low - ' + fee.toString() + ' when minimum fee is ' + account_creation_fee.toString()])
         }
 
-        if (!await checkCaptcha(account.recaptcha_v2)) {
-            console.error('-- /submit: try to register without ReCaptcha v2 solving, data:', res.data, ', form fields:', account)
-            throwErr(req, 403, ['recaptcha_v2_failed'], null, state)
-        }
+        // if (!await checkCaptcha(account.recaptcha_v2)) {
+        //     console.error('-- /submit: try to register without ReCaptcha v2 solving, data:', res.data, ', form fields:', account)
+        //     throwErr(req, 403, ['recaptcha_v2_failed'], null, state)
+        // }
 
         const signingKey = config.get('registrar.signing_key')
         const operations = [['account_create', {
