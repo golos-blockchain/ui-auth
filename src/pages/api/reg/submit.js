@@ -63,18 +63,20 @@ let handler = nextConnect()
 
         await checkAlreadyUsed(req, user[0][2], user[0][3], state)
 
-        console.log('-- /submit check same_ip_account');
+        if (!account.invite_code) {
+            console.log('-- /submit check same_ip_account');
 
-        const remote_ip = getRemoteIp(req);
-        const same_ip_account = await Tarantool.instance('tarantool').select('accounts', 'by_remote_ip',
-            1, 0, 'eq', [remote_ip]);
-        if (same_ip_account[0]) {
-            const seconds = (Date.now() - parseInt(same_ip_account[0][9])) / 1000;
-            const minSeconds = process.env.REGISTER_INTERVAL_SEC || 10*60;
-            if (seconds < minSeconds) {
-                const minMinutes = Math.ceil(minSeconds / 60);
-                console.log(`api /submit: IP rate limit for user ${req.session.uid} #${user_id}, IP ${remote_ip}`);
-                throwErr(req, 429, ['ip_account_rate_limit_LIMIT', { LIMIT: minMinutes, }], null, state);
+            const remote_ip = getRemoteIp(req);
+            const same_ip_account = await Tarantool.instance('tarantool').select('accounts', 'by_remote_ip',
+                1, 0, 'eq', [remote_ip]);
+            if (same_ip_account[0]) {
+                const seconds = (Date.now() - parseInt(same_ip_account[0][9])) / 1000;
+                const minSeconds = process.env.REGISTER_INTERVAL_SEC || 10*60;
+                if (seconds < minSeconds) {
+                    const minMinutes = Math.ceil(minSeconds / 60);
+                    console.log(`api /submit: IP rate limit for user ${req.session.uid} #${user_id}, IP ${remote_ip}`);
+                    throwErr(req, 429, ['ip_account_rate_limit_LIMIT', { LIMIT: minMinutes, }], null, state);
+                }
             }
         }
 
