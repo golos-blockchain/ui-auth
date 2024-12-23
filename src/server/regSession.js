@@ -4,12 +4,13 @@ import clearOldCookies from '@/server/clearOldCookies';
 
 export const cookieName = config.get('session_cookie_key');
 
+const isProduction = process.env.NODE_ENV === 'production'
 const regSessionOpts = {
     cookieName,
     password: config.get('server_session_secret'),
     cookieOptions: {
-        sameSite: 'none',
-        secure: process.env.NODE_ENV === 'production',
+        sameSite: isProduction ? 'none' : 'strict',
+        secure: isProduction,
         maxAge: 1000 * 3600 * 24 * 60,
     },
 };
