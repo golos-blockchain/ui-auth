@@ -677,6 +677,9 @@ class Register extends React.Component {
             console.warn('captcha.recaptcha_v2 has no site_key');
             return;
         }
+        if (this.state.verificationWay === 'uia') {
+            return
+        }
         return (<ReCAPTCHA
             sitekey={captcha.recaptcha_v2.site_key}
             onChange={this._onRecaptchaChange} />);

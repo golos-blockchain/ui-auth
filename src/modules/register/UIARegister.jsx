@@ -144,7 +144,7 @@ class UIARegister extends React.Component {
                             }
 
                             const min_amount = parseFloat(deposit.min_amount)
-                            if (min_amount != NaN) {
+                            if (!isNaN(min_amount)) {
                                 const minAmountRules = Asset(0, supply.precision, supply.symbol)
                                 minAmountRules.amountFloat = min_amount.toString()
                                 if (minAmountRules.gt(minAmount)) {
