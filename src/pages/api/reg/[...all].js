@@ -528,6 +528,9 @@ let handler = nextConnect({ attachParams: true, })
             amount: exAmount.toString(),
             symbol: 'GOLOS',
             direction: 'sell',
+            hybrid: {
+                strategy: 'spread',
+            },
         }
         if (req.params.use_new !== 'false') {
             try {

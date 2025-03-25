@@ -123,7 +123,7 @@ class UIARegister extends React.Component {
                             try {
                                 cmc = await golos.libs.dex.apidexGetPrices({ sym })
                                 if (!cmc.price_usd) {
-                                    if (sym === 'SUPERCOIN') {
+                                    if (sym === 'GBGF') {
                                         cmc.price_usd = 1.0000437327709328
                                     } else {
                                         console.error('Cannot obtain price_usd', cmc)
