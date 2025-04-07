@@ -54,6 +54,7 @@ export default async function getUIAAddress(accName, symbol, okResp, errResp) {
         } catch (err) {
             return errResp('cannot_get_address_from_gateway', [meta.deposit, err])
         }
+        //return okResp('resp.address')
         try {
             resp = JSON.parse(resp)
         } catch (err) {

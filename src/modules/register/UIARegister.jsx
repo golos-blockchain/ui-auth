@@ -404,6 +404,7 @@ class UIARegister extends React.Component {
                                 if (orr.order_receipts && orr.order_receipts[0]) {
                                     order_receipts = orr.order_receipts
                                     this.setState({
+                                        deposited: Asset(order_receipts[0][0]),
                                         depositedToSym: order_receipts[0][1].split(' ')[1]
                                     })
                                 } else {

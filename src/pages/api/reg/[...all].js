@@ -569,7 +569,7 @@ let handler = nextConnect({ attachParams: true, })
             } else {
                 let tx
                 try {
-                    tx = await dex.makeExchangeTx(best.steps, { owner: 'null' })
+                    tx = await dex.makeExchangeTx(best, { owner: 'null' })
                     if (tx) {
                         if (!tx.length) throw new Error('makeExchangeTx returned empty array')
                         for (const op of tx) {
@@ -622,6 +622,7 @@ let handler = nextConnect({ attachParams: true, })
         if (deposited && deposited === amount.toString()) {
             req.session.order_receipts = order_receipts
             req.session.order_receipt_time = Date.now()
+            req.session.golos_sum = '0.000 GOLOS'
 
             delete req.session.deposited[amount.symbol]
 
@@ -721,7 +722,15 @@ let handler = nextConnect({ attachParams: true, })
 
         const toReceive = await Asset(order_receipts[0][1])
 
-        let received, new_receipts
+        let received = req.session.golos_sum
+        if (!received) {
+            received = await Asset(0, toReceive.precision, toReceive.symbol)
+        } else {
+            received = await Asset(received)
+        }
+
+        let new_receipts
+        let foundEnd
         for (let i = hist.length - 1; i >= 0; --i) {
             const timestamp = +new Date(hist[i][1].timestamp + 'Z') / 1000
             if (orderid - timestamp > 10) {
@@ -735,34 +744,44 @@ let handler = nextConnect({ attachParams: true, })
                         const golosAmount = await Asset(opData.current_orderid == orderid ?
                             opData.open_pays : opData.current_pays)
 
-                        if (!received) {
-                            received = await Asset(0, toReceive.precision, toReceive.symbol)
-                        }
                         received = received.plus(golosAmount)
-                        req.session.golos_received = received.toString()
-                        delete req.session.order_receipts
-                        await req.session.save()
+                        req.session.golos_sum = received.toString()
+
+                        foundEnd = true
                     } else {
                         req.session.order_receipts.shift()
                         await req.session.save()
                         new_receipts = req.session.order_receipts
+                        break
                     }
                 }
             }
         }
 
-        if (received) {
+        if (foundEnd) {
+            if (order_receipts.length === 1) {
+                req.session.golos_received = received.toString()
+                delete req.session.order_receipts
+            } else {
+                req.session.order_receipts.shift()
+                new_receipts = req.session.order_receipts
+            }
+            await req.session.save()
+        }
+
+        if (new_receipts) {
+            res.json({
+                status: 'ok',
+                received,
+                order_receipts: new_receipts
+            })
+            return
+        } else if (received) {
             res.json({
                 status: 'ok',
                 received,
                 step: 'verified',
                 verification_way: 'uia'
-            })
-            return
-        } else if (new_receipts) {
-            res.json({
-                status: 'ok',
-                order_receipts: new_receipts
             })
             return
         }
