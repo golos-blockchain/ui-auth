@@ -660,6 +660,10 @@ class UIARegister extends React.Component {
             content = <div>
                 {syms}
                 {this.state.sym && <hr />}
+                {this.state.sym && (waiting && !reached) && <div>
+                    <div className='pulsing-hint'>{tt('uia_register_jsx.do_not_refresh')}</div>
+                    <hr />
+                </div>}
                 {form}
                 {!syms.length && !form ? <div>{tt('uia_register_jsx.no_assets_available')}</div> : null}
             </div>
