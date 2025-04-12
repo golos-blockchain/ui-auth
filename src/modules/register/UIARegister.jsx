@@ -123,7 +123,7 @@ class UIARegister extends React.Component {
                             try {
                                 cmc = await golos.libs.dex.apidexGetPrices({ sym })
                                 if (!cmc.price_usd) {
-                                    if (sym === 'SUPERCOIN') {
+                                    if (sym === 'GBGF') {
                                         cmc.price_usd = 1.0000437327709328
                                     } else {
                                         console.error('Cannot obtain price_usd', cmc)
@@ -404,6 +404,7 @@ class UIARegister extends React.Component {
                                 if (orr.order_receipts && orr.order_receipts[0]) {
                                     order_receipts = orr.order_receipts
                                     this.setState({
+                                        deposited: Asset(order_receipts[0][0]),
                                         depositedToSym: order_receipts[0][1].split(' ')[1]
                                     })
                                 } else {
@@ -660,6 +661,10 @@ class UIARegister extends React.Component {
             content = <div>
                 {syms}
                 {this.state.sym && <hr />}
+                {this.state.sym && (waiting && !reached) && <div>
+                    <div className='pulsing-hint'>{tt('uia_register_jsx.do_not_refresh')}</div>
+                    <hr />
+                </div>}
                 {form}
                 {!syms.length && !form ? <div>{tt('uia_register_jsx.no_assets_available')}</div> : null}
             </div>

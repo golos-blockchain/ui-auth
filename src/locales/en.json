@@ -129,7 +129,8 @@
     "no_assets_available": "No UIA assets available now.",
     "reached_desc": "You can pass to account creation.",
     "reached_desc2": "And your Golos Power deposit will be processed in the nearest future...",
-    "reached_btn": "Register account"
+    "reached_btn": "Register account",
+    "do_not_refresh": "Do not refresh page! Please wait until funds will be transferred (it can take 15 minutes or more, depending on asset and its gateway)."
   },
   "invites_jsx": {
     "claim_wrong_secret": "Wrong secret",

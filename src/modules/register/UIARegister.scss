@@ -28,4 +28,14 @@
     .error {
         margin-bottom: 0.75rem;
     }
+
+    @keyframes flickerAnimation {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    .pulsing-hint {
+        opacity: 1;  
+        animation: flickerAnimation 5s infinite;
+    }
 }

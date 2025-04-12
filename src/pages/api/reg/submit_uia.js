@@ -107,6 +107,7 @@ let handler = nextConnect()
 
         if (golos_received) {
             delete req.session.golos_received
+            delete req.session.golos_sum
         }
         if (wait) {
             await clearWait(req.session, false)
