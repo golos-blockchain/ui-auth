@@ -157,6 +157,8 @@ export function getClientCfg(req, params, locale = '') {
     cfg.apidex_service = config.has('apidex_service')
         && config.get('apidex_service')
 
+    cfg.images = config.has('images') && config.get('images')
+
     let data = {
         config: cfg,
         oauthEnabled: config.has('oauth'),

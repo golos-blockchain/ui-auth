@@ -55,6 +55,10 @@
       "frameAncestors": "'none'"
     }
   },
+  "images": {
+    "img_proxy_prefix": "https://devimages.golos.today",
+    "img_proxy_backup_prefix": "https://steemitimages.com"
+  },
   "captcha": {
     "recaptcha_v2": {
       "enabled": true,

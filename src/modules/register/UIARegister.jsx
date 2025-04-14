@@ -17,6 +17,7 @@ import TransferWaiter from '@/modules/register/TransferWaiter'
 import KeyFile from '@/utils/KeyFile'
 import { delay, } from '@/utils/misc'
 import { emptyAuthority } from '@/utils/RecoveryUtils'
+import { proxifyTokenImage, } from '@/utils/ProxifyUrl'
 import { callApi, } from '@/utils/RegApiClient'
 import { withRouterHelpers, } from '@/utils/routing'
 
@@ -590,9 +591,10 @@ class UIARegister extends React.Component {
                 if (meta.deposit) {
                     const symbol = Asset(asset.supply).symbol
                     const displaySym = symbol.startsWith('YM') ? symbol.substring(2) : symbol
+                    const { clientCfg } = this.props
                     syms.push(<a href={path + '?uia=' + symbol} key={symbol}>
                         <div className={'uia' + (symbol === sym ? ' selected' : '')}>
-                            <img src={meta.image_url} />
+                            <img src={proxifyTokenImage(clientCfg.config.images, meta.image_url)} />
                             {displaySym}
                         </div>
                     </a>)
