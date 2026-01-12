@@ -101,7 +101,13 @@ let handler = nextConnect({ attachParams: true, })
                     auth[type] = verified
                 }
             }
-            const { posting: { key_auths: [[posting_pubkey, weight]], weight_threshold } } = chainAccount;
+
+            const { posting: { key_auths, weight_threshold } } = chainAccount
+            if (!key_auths[0]) {
+                throwErr(req, 400, 'account somewhy has no posting key_auths')
+            }
+            const [posting_pubkey, weight] = key_auths[0]
+
             verify('posting', signatures.posting, posting_pubkey, weight, weight_threshold);
             if (!auth.posting) {
                 throwErr(req, 400, 'wrong signatures');
